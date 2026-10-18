@@ -1,4 +1,8 @@
 .celebration{width:min(calc(100% - 28px),440px);text-align:center;padding:30px 24px 24px;background:linear-gradient(155deg,#faf7ff,#ede0ff 58%,#ffe9f1);overflow-x:hidden}
+.mission{width:100%;text-align:left;font-weight:inherit;border:1px solid transparent}
+.mission:hover{border-color:#c4a5e4;background:#f0e9fb}
+.mission:focus-visible{outline:3px solid #aa7fea;outline-offset:3px}
+.confirm-mission-name{font-size:20px;font-weight:800;overflow-wrap:anywhere;color:var(--purple);line-height:1.6}
 .celebration::backdrop{background:#25103bd1;backdrop-filter:blur(7px)}
 .celebration-close{position:absolute;right:12px;top:12px;background:#ffffff90;font-size:22px}
 .celebration>.eyebrow{color:#8c52bd;letter-spacing:2.4px;margin:14px 0 12px}

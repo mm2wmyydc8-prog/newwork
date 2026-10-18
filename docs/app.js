@@ -3,6 +3,7 @@ import { initialState, validateState, settle, totalMinutes, remainingSeconds, st
 const $ = selector => document.querySelector(selector);
 const key = 'yeonwoo-pocket-web-v1';
 let state = initialState(), editingId = null, pendingNewMission = false, storageAvailable = true;
+let confirmingMissionId = null;
 try {
   const saved = localStorage.getItem(key);
   if (saved) {
@@ -57,6 +58,32 @@ $('#celebration-close').addEventListener('click', closeCelebration);
 $('#celebration-continue').addEventListener('click', closeCelebration);
 $('#celebration-replay').addEventListener('click', replayCelebration);
 $('#celebration-dialog').addEventListener('close', () => $('#celebration-dialog').classList.remove('playing'));
+function completeMission(id) {
+  settle(state);
+  const mission = state.missions.find(x => x.id === id);
+  if (!mission) return;
+  if (missionDone(state, id)) { saveAndRender(); toast('오늘 보상은 이미 받았어요! 내일 또 도전하자 ✦'); return; }
+  const applied = adjust(state, mission.minutes, `${mission.title} 완료`, Date.now(), id);
+  saveAndRender();
+  if (applied > 0) celebrate(mission, applied);
+  else toast('오늘 시간볼이 가득 찼어요! (최대 240분)');
+}
+function confirmMission(id) {
+  settle(state);
+  const mission = state.missions.find(x => x.id === id);
+  if (!mission) return;
+  if (missionDone(state, id)) { saveAndRender(); toast('오늘 보상은 이미 받았어요! 내일 또 도전하자 ✦'); return; }
+  confirmingMissionId = id;
+  $('#mission-confirm-name').textContent = `${mission.title} · +${mission.minutes}분`;
+  $('#mission-confirm-reward').textContent = `확인하고 ${mission.minutes}분 받기`;
+  showDialog('#mission-confirm-dialog');
+}
+$('#mission-confirm-reward').addEventListener('click', () => {
+  const id = confirmingMissionId;
+  confirmingMissionId = null;
+  $('#mission-confirm-dialog').close();
+  if (id) completeMission(id);
+});
 function saveAndRender() { persist(); render(); }
 function renderClock() {
   const seconds = remainingSeconds(state);
@@ -75,9 +102,12 @@ function render() {
   $('#parent-missions').replaceChildren();
   for (const mission of state.missions) {
     const done = missionDone(state, mission.id);
-    const row = el('div', 'mission');
+    const row = el('button', 'mission');
+    row.type = 'button';
+    row.setAttribute('aria-label', `${mission.title}, ${done ? '오늘 완료됨' : `보상 ${mission.minutes}분, 완료 확인하기`}`);
+    row.addEventListener('click', () => confirmMission(mission.id));
     const badge = el('div', 'badge'), image = el('img'); image.src = 'assets/masterball.svg'; image.alt = ''; badge.append(image);
-    const copy = el('div', 'mission-copy'); copy.append(el('div', 'mission-title', mission.title), el('div', 'mission-subtitle', done ? '오늘 미션 성공! ✦' : '부모님과 함께 도전해요'));
+    const copy = el('div', 'mission-copy'); copy.append(el('div', 'mission-title', mission.title), el('div', 'mission-subtitle', done ? '오늘 미션 성공! ✦' : '눌러서 완료 확인하기 ›'));
     row.append(badge, copy, el('span', 'reward-pill', done ? '✓ 완료' : `+${mission.minutes}분`));
     $('#mission-list').append(row);
 
@@ -85,13 +115,7 @@ function render() {
     top.append(el('strong', '', mission.title), el('span', '', `+${mission.minutes}분`));
     const actions = el('div', 'parent-mission-actions');
     const complete = el('button', 'secondary', done ? '✓ 오늘 완료' : '완료 확인 · 보상'); complete.disabled = done;
-    complete.addEventListener('click', () => {
-      if (missionDone(state, mission.id)) return;
-      const applied = adjust(state, mission.minutes, `${mission.title} 완료`, Date.now(), mission.id);
-      saveAndRender();
-      if (applied > 0) celebrate(mission, applied);
-      else toast('오늘 시간볼이 가득 찼어요! (최대 240분)');
-    });
+    complete.addEventListener('click', () => completeMission(mission.id));
     const edit = el('button', 'quiet', '수정'); edit.setAttribute('aria-label', `${mission.title} 수정`);
     edit.addEventListener('click', () => openEditor(mission));
     actions.append(complete, edit); parentRow.append(top, actions); $('#parent-missions').append(parentRow);

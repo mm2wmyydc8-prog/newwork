@@ -12,8 +12,8 @@
   <link rel="apple-touch-icon" href="assets/touch-icon.png">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="celebration.css">
-  <script type="module" src="app.js"></script>
+  <link rel="stylesheet" href="celebration.css?v=mission-tap">
+  <script type="module" src="app.js?v=mission-tap"></script>
 </head>
 <body>
   <main>
@@ -32,11 +32,18 @@
       </section>
       <section class="card bank-card"><img src="assets/masterball.svg" class="bank-ball" alt="마스터볼"><span class="eyebrow">연우의 마스터 시간볼</span><h2 id="total-time">30분</h2><p id="budget-detail">기본 30분 + 오늘 보상 0분</p><div class="bank-note">오늘 받은 총시간이에요.<br>이미 본 시간도 포함돼요.</div></section>
     </div>
-    <section class="card missions"><div class="section-heading"><div><span class="eyebrow">MISSION QUEST</span><h2>오늘의 미션</h2></div><button id="mission-add-shortcut" class="round" aria-label="부모님 확인 후 미션 추가">＋</button></div><div id="mission-list" class="mission-grid"></div><p class="footnote">완료하면 부모님이 확인하고 시간을 넣어줘요.<br>미션 보상은 오늘만 적용돼요.</p></section>
+    <section class="card missions"><div class="section-heading"><div><span class="eyebrow">MISSION QUEST</span><h2>오늘의 미션</h2></div><button id="mission-add-shortcut" class="round" aria-label="부모님 확인 후 미션 추가">＋</button></div><div id="mission-list" class="mission-grid"></div><p class="footnote">미션을 누르고 부모님께 완료 확인을 받아요.<br>미션 보상은 오늘만 적용돼요.</p></section>
     <section class="history"><div class="section-heading"><h2>✦ 연우의 모험 기록</h2><span class="small">최근 기록</span></div><div id="history-list"></div></section>
     <footer>연우를 위한 작은 모험 · 웹 체험판<br>기록은 지금 쓰는 브라우저에만 저장돼요.<br><a href="https://github.com/mm2wmyydc8-prog/newwork/blob/main/ARTWORK.md">캐릭터 그림 출처</a></footer>
   </main>
   <div id="toast" role="status" aria-live="polite"></div>
+
+  <dialog id="mission-confirm-dialog" aria-labelledby="mission-confirm-title" aria-describedby="mission-confirm-description">
+    <div class="dialog-heading"><h2 id="mission-confirm-title">미션을 마쳤나요?</h2><button type="button" data-close="mission-confirm-dialog" class="round" aria-label="미션 완료 확인 닫기">×</button></div>
+    <p id="mission-confirm-name" class="confirm-mission-name"></p>
+    <p id="mission-confirm-description" class="footnote">부모님이 미션을 마쳤는지 확인한 뒤 눌러주세요. 체험판에서는 비밀번호 확인 없이 진행돼요.</p>
+    <div class="editor-actions"><button type="button" data-close="mission-confirm-dialog" class="secondary">아직이에요</button><button id="mission-confirm-reward" class="primary">확인하고 보상 받기</button></div>
+  </dialog>
 
   <dialog id="celebration-dialog" class="celebration" aria-labelledby="celebration-title" aria-describedby="celebration-message">
     <button id="celebration-close" class="round celebration-close" aria-label="축하 화면 닫기">×</button>
