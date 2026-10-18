@@ -1064,8 +1064,8 @@ export const REWARD_RULES = new Map();
 let basic = 0, rare = 0, legendary = 0;
 for (const pokemon of POKEMON) {
   const rule = pokemon.id === 'mewtwo' ? { level: 'hard', target: 25, label: '어려움', tier: '상위 전설' }
-    : pokemon.id === 'mewtwo-mega-x' ? { level: 'easy', target: 100, label: '모든 난이도', tier: '상위 전설', stone: '뮤츠나이트 X' }
-    : pokemon.id === 'mewtwo-mega-y' ? { level: 'easy', target: 100, label: '모든 난이도', tier: '상위 전설', stone: '뮤츠나이트 Y' }
+    : pokemon.id === 'mewtwo-mega-x' ? { level: 'easy', target: 100, label: '모든 난이도', tier: '상위 전설' }
+    : pokemon.id === 'mewtwo-mega-y' ? { level: 'easy', target: 100, label: '모든 난이도', tier: '상위 전설' }
     : pokemon.id === 'mew' ? { level: 'hard', target: 40, label: '어려움', tier: '환상' }
     : pokemon.rarity === '전설' ? { level: 'medium', target: 40 + (++legendary) * 10, label: '보통 이상', tier: '전설' }
     : pokemon.rarity === '희귀' ? { level: 'medium', target: (++rare) * 5, label: '보통 이상', tier: '희귀' }
@@ -1151,9 +1151,6 @@ export function setupCollection({ getState, save, speech }) {
     const shinyIds = new Set(shiny), shinyView = $('#pokedex-form').value === 'shiny';
     $('#collection-count').textContent = `${owned.length} / ${revealedPokemon(state).length}모습`;
     $('#trainer-summary').textContent = `친구 ${owned.length}마리 · 퀘스트 ${total}개 성공`;
-    const stones = owned.filter(p => p.form).map(p => REWARD_RULES.get(p.id).stone);
-    $('#collection-stones').hidden = !stones.length;
-    $('#collection-stones').textContent = stones.length ? `💎 보유 아이템: ${stones.join(' · ')} — 메가 모습 해금!` : '';
     $('#collection-total').textContent = `누적 ${total}개 · 보통 ${byDifficulty.medium} · 어려움 ${byDifficulty.hard}`;
     const advanced = byDifficulty.medium + byDifficulty.hard;
     $('#collection-shiny').textContent = `✦ 이로치 ${shiny.length}마리 · 보통 이상 ${20 - advanced % 20}개 더 성공하면 확정 만남`;
@@ -1202,14 +1199,9 @@ export function setupCollection({ getState, save, speech }) {
     if (pokemon.shiny) { $('#capture-label').textContent = 'SHINY ENCOUNTER!'; $('#capture-title').textContent = `색이 다른 ${pokemon.name} 등장!`; }
     $('#capture-rarity').textContent = rule.tier;
     $('#capture-message').textContent = preview ? '포획 연출 미리보기예요. 포켓몬이나 실적은 추가되지 않아요.' : pokemon.shinyBonus ? `보통 이상 모험의 특별 보너스! 색이 다른 ${pokemon.name}가 연우의 친구가 되었어요.` : `${rule.label} 퀘스트 ${rule.target}개 성공! ${pokemon.name}가 연우의 친구가 되었어요.`;
-    if (rule.stone && !pokemon.shiny && !preview) {
-      $('#capture-label').textContent = 'SECRET REWARD!';
-      $('#capture-title').textContent = `${rule.stone} 획득!`;
-      $('#capture-message').textContent = `퀴즈 누적 100개 성공! ${rule.stone}를 얻어 ${pokemon.name} 모습이 해금됐어요!`;
-    }
     $('#capture-continue').textContent = special ? '마스터볼 던지기! ✦' : '몬스터볼 던지기! ✦';
     $('#capture-dialog').showModal();
-    if (getState().speechAuto !== false) speech.speak(pokemon.shiny ? `반짝! 색이 다른 이로치 ${pokemon.name} 등장! ${preview ? '미리보기야.' : '연우가 특별한 친구를 만났어!'}` : preview ? `전설 등장 미리보기. ${pokemon.name}!` : rule.stone ? `연우야! 퀴즈 100개 성공! 비밀 보상 ${rule.stone}를 얻었어! ${pokemon.name} 모습이 열렸어!` : special ? `전설의 기운이 느껴져! ${pokemon.name} 등장! 연우가 전설의 파트너를 만났어! 정말 멋진 모험이었어!` : `와! ${pokemon.name}를 만났어! 연우의 새로운 친구야. 정말 잘했어!`);
+    if (getState().speechAuto !== false) speech.speak(pokemon.shiny ? `반짝! 색이 다른 이로치 ${pokemon.name} 등장! ${preview ? '미리보기야.' : '연우가 특별한 친구를 만났어!'}` : preview ? `전설 등장 미리보기. ${pokemon.name}!`  : special ? `전설의 기운이 느껴져! ${pokemon.name} 등장! 연우가 전설의 파트너를 만났어! 정말 멋진 모험이었어!` : `와! ${pokemon.name}를 만났어! 연우의 새로운 친구야. 정말 잘했어!`);
   }
   $('#pokedex-open').addEventListener('click', () => { render(); $('#pokedex-dialog').showModal(); });
   $('#pokedex-filter').addEventListener('change', render);

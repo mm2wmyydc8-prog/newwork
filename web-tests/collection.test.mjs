@@ -90,13 +90,13 @@ test('20 advanced successes guarantee a shiny even when every random roll misses
   assert.equal(state.collection.shiny.length, 1);
 });
 
-test('100 total successes unlock both stone rewards at any difficulty, duplicates do not count', () => {
+test('100 total successes award both Mega Pokemon capture encounters at any difficulty, duplicates do not count', () => {
   const state = initialState();
-  for (let i = 0; i < 99; i++) recordQuest(state, `stone-${i}`, 'easy');
+  for (let i = 0; i < 99; i++) recordQuest(state, `capture-${i}`, 'easy');
   assert.ok(!collectionProgress(state).owned.some(p => p.form));
-  assert.equal(recordQuest(state, 'stone-0', 'easy').counted, false);
+  assert.equal(recordQuest(state, 'capture-0', 'easy').counted, false);
   assert.ok(!collectionProgress(state).owned.some(p => p.form));
-  const result = recordQuest(state, 'stone-99', 'easy');
+  const result = recordQuest(state, 'capture-99', 'easy');
   assert.equal(result.unlocked.filter(p => p.form).length, 2);
   const restored = JSON.parse(JSON.stringify(state));
   assert.equal(collectionProgress(restored).owned.filter(p => p.form).length, 2);
