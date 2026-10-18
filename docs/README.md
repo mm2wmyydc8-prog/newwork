@@ -1,0 +1,22 @@
+# 연우의 포켓 타임 웹 체험판
+
+외부 의존성이나 서버 없이 동작하는 정적 웹 앱입니다. 기록은 localStorage에 저장됩니다. 부모 메뉴는 체험판에서 비밀번호 없이 열리며 화면에 이를 안내합니다. 실제 시청 감지, 스크린 타임 차단, TV 전원 제어, 기기 간 동기화는 포함하지 않습니다.
+
+## GitHub Pages 켜기 (저장소 소유자)
+
+1. https://github.com/mm2wmyydc8-prog/newwork/settings/pages
+2. **Build and deployment → Source → Deploy from a branch**.
+3. **Branch: main**, 폴더 **/docs** 선택 후 **Save**.
+4. Pages 배포가 성공하면 설정 화면의 **Visit site**로 확인합니다.
+
+배포 성공 시 예상 주소: `https://mm2wmyydc8-prog.github.io/newwork/`
+
+이 주소는 Pages를 켜고 배포를 마쳐야 열립니다. 저장소가 비공개이고 계정 플랜에서 Pages를 지원하지 않으면 활성화할 수 없습니다. **저장소를 자동으로 공개로 바꾸지 마세요.** 웹 페이지의 연우 이름과 캐릭터 그림은 Pages 공개 시 방문자에게 표시됩니다. 사용 기록과 사용자 추가 미션은 방문자의 브라우저에 저장되며 GitHub로 전송하지 않습니다.
+
+## 아이폰에서 열기
+
+Safari 주소창에 배포 주소를 입력하세요. Mac의 이 대화를 아이폰에서 열 필요는 없습니다. Safari → 공유 → **홈 화면에 추가**로 앱처럼 열 수 있습니다. 최초 접속은 네트워크가 필요하며 오프라인 실행을 보장하지 않습니다. 타이머는 절대 시작 시각으로 계산하므로 페이지를 닫았다 다시 열면 지난 시간을 반영하지만, 닫힌 동안 알림이나 TV 끄기 명령을 실행하지는 않습니다.
+
+## 개발 검증
+
+프로젝트 루트에서 `python3 -m http.server 8080 --directory docs`로 정적 파일을 제공할 수 있습니다. 테스트는 `node --test web-tests/model.test.mjs`로 실행합니다.

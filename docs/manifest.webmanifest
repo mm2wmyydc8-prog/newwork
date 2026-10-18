@@ -1,0 +1,12 @@
+{
+  "id": "./",
+  "name": "연우의 포켓 타임",
+  "short_name": "연우 포켓 타임",
+  "lang": "ko",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f5f2fb",
+  "theme_color": "#7550b7",
+  "icons": [{ "src": "assets/touch-icon.png", "sizes": "192x192", "type": "image/png" }]
+}

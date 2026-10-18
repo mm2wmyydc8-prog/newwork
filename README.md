@@ -1,5 +1,9 @@
 # 연우의 포켓 타임 · TimeGarden
 
+## 아이폰 Safari용 웹 체험판
+
+`docs/`에 설치 없이 사용할 수 있는 웹 체험판을 추가했습니다. 미션 추가·수정·삭제, 보상 시간 변경, 부모의 완료 확인, 총시간과 남은 시간, 시작·멈춤, 브라우저 내 기록 저장을 지원합니다. 부모 메뉴는 체험판에서 비밀번호 없이 열립니다. [사이트 공개 설정 안내](docs/README.md)에 따라 GitHub Pages를 켜야 접속할 수 있습니다. 공개 예상 주소는 `https://mm2wmyydc8-prog.github.io/newwork/`이며, 배포 전에는 동작하지 않습니다.
+
 연우가 좋아하는 뮤·뮤츠 그림과 보라색 마스터볼 모티프의 모험 테마를 적용했습니다. 캐릭터 그림은 앱에 포함되어 오프라인에서도 표시됩니다. iPhone과 iPad 공용이며, iPad에서는 미션을 두 열로 표시합니다. **기본 틀부터 실행하려면 [Mac 시작 안내](MAC_START.md)를 따라 `project-basic.yml`을 사용하세요.** 기본 버전에는 Screen Time 확장·App Group entitlement가 없어 시뮬레이터와 개인 기기에서 먼저 화면과 타이머를 확인할 수 있습니다. [그림 출처](ARTWORK.md).
 
 아이의 약속 실천에 따라 부모가 YouTube 허용 시간을 늘리거나 줄이는 **iPhone / iPad 네이티브 앱**입니다. SwiftUI와 Apple Screen Time API를 사용하며 iOS / iPadOS 18 이상을 대상으로 합니다.
