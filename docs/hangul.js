@@ -52,6 +52,7 @@ export function chooseAnswer(quiz, answer) {
 export function nextQuestion(quiz) {
   if (!quiz.answered) return false;
   quiz.index++; quiz.answered = false; quiz.selected = [];
+  quiz.assisted = false; quiz.failedAttempts = 0; quiz.recovery = null;
   return true;
 }
 export function chooseQuizTile(quiz, tileIndex) {
@@ -64,9 +65,34 @@ export function chooseQuizTile(quiz, tileIndex) {
   return chooseAnswer(quiz, q.reading) ? 'correct' : 'blocked';
 }
 
+// Recovery never grants collection credit; only an unassisted answer can do so.
+export function noteQuizMistake(quiz) {
+  quiz.mistakes = (quiz.mistakes ?? 0) + 1;
+  quiz.assisted = true;
+  if (quiz.mistakes >= 3) {
+    quiz.failedAttempts = (quiz.failedAttempts ?? 0) + 1;
+    quiz.recovery = quiz.failedAttempts >= 2 ? 'easy-practice' : 'practice';
+  }
+  return quiz.recovery ?? 'hint';
+}
+export function retryQuizQuestion(quiz, random = Math.random) {
+  const q = quiz.questions[quiz.index], old = [...q.choices];
+  q.choices = shuffled(old, random);
+  if (q.choices.length > 1 && q.choices.every((x, i) => x === old[i])) q.choices.push(q.choices.shift());
+  quiz.selected = []; quiz.answered = false; quiz.assisted = false;
+  quiz.mistakes = 0; quiz.recovery = null;
+}
+export function quizCreditReady(quiz) { return quiz.answered && !quiz.assisted && !quiz.recovery; }
+
 export function setupHangulQuiz({ getState, confirmMission, notify, speech, collection, saveSettings }) {
   const $ = selector => document.querySelector(selector);
   let quiz;
+  let inputLocked = false;
+  let unlockTimer;
+  function lockInput() {
+    inputLocked = true; clearTimeout(unlockTimer);
+    unlockTimer = setTimeout(() => { inputLocked = false; }, 650);
+  }
   const mission = () => getState().missions.find(m => m.id === 'hangul') ?? getState().missions.find(m => m.title.includes('한글'));
   const canSpeak = speech.supported;
   const savedLevel = getState().quizDifficulty;
@@ -101,6 +127,8 @@ export function setupHangulQuiz({ getState, confirmMission, notify, speech, coll
       return;
     }
     const question = quiz.questions[quiz.index];
+    if (quiz.recovery) { renderPractice(question); return; }
+    lockInput();
     $('#quiz-picture').textContent = question.picture;
     $('#quiz-word').textContent = question.word;
     $('#quiz-word').hidden = !question.word;
@@ -114,7 +142,8 @@ export function setupHangulQuiz({ getState, confirmMission, notify, speech, coll
       const button = document.createElement('button');
       button.type = 'button'; button.className = answer.length > 1 ? 'quiz-answer quiz-answer-word' : 'quiz-answer'; button.textContent = answer;
       button.addEventListener('click', () => {
-        if (quiz.answered) return;
+        if (quiz.answered || inputLocked) return;
+        lockInput();
         const result = quiz.difficulty === 'hard' ? chooseQuizTile(quiz, tileIndex) : (chooseAnswer(quiz, answer) ? 'correct' : 'wrong');
         if (result === 'blocked') return;
         if (result === 'partial') {
@@ -126,6 +155,9 @@ export function setupHangulQuiz({ getState, confirmMission, notify, speech, coll
         }
         if (result === 'correct') {
           if (quiz.difficulty === 'hard') $('#quiz-word').textContent = question.reading;
+          if (!quizCreditReady(quiz)) {
+            quiz.recovery = 'practice'; render(); return;
+          }
           collection.recordCorrect(question.id, quiz.difficulty);
           button.classList.add('correct');
           $('#quiz-feedback').textContent = `맞았어! ${(question.reading ?? question.word.replace('□', question.answer))}! 잘했어, 연우! ✦`;
@@ -135,6 +167,8 @@ export function setupHangulQuiz({ getState, confirmMission, notify, speech, coll
           $('#quiz-answers').querySelectorAll('.quiz-answer').forEach(node => { node.disabled = true; });
           $('#quiz-next').focus();
         } else {
+          const recovery = noteQuizMistake(quiz);
+          if (recovery !== 'hint') { render(); return; }
           const hint = quiz.difficulty === 'hard' ? `천천히 해보자. 다음 글자는 ‘${question.reading[quiz.selected.length]}’야.` : question.hint;
           $('#quiz-feedback').textContent = hint;
           say(hint);
@@ -148,6 +182,41 @@ export function setupHangulQuiz({ getState, confirmMission, notify, speech, coll
       cell.append(button, listen); $('#quiz-answers').append(cell);
     }
     say(questionText(question));
+  }
+  function renderPractice(question) {
+    const easy = quiz.recovery === 'easy-practice';
+    const mew = document.createElement('img'); mew.src = 'assets/mew.png'; mew.alt = '함께 연습하는 뮤'; mew.width = 96; mew.height = 96;
+    $('#quiz-picture').replaceChildren(mew);
+    $('#quiz-word').hidden = false;
+    $('#quiz-word').textContent = easy ? question.reading[0] : question.reading;
+    $('#quiz-prompt').textContent = easy
+      ? '뮤: 조금 어려웠구나! 쉬운 글자부터 같이 해보자. 같은 글자를 찾아봐!'
+      : '뮤: 포획은 잠깐 기다려! 틀린 낱말을 같이 연습하고 다시 도전하자.';
+    $('#quiz-feedback').textContent = easy ? '연습에서는 틀려도 괜찮아. 보상과 오답 횟수는 변하지 않아.' : `${question.picture} ${question.reading}. ${question.hint}`;
+    $('#quiz-collection-note').textContent = '연습 중에는 포획 실적이 올라가지 않아. 포켓몬과 확정 보상 기회는 그대로야!';
+    $('#quiz-next').hidden = true;
+    $('#quiz-answers').replaceChildren();
+    $('#quiz-answers').style.gridTemplateColumns = '1fr';
+    const retry = document.createElement('button');
+    retry.type = 'button'; retry.className = 'primary'; retry.textContent = '연습했어! 다시 도전';
+    retry.addEventListener('click', () => { retryQuizQuestion(quiz); render(); });
+    if (easy) {
+      const target = question.reading[0];
+      const choices = shuffled([target, target === '가' ? '나' : '가'], Math.random);
+      for (const letter of choices) {
+        const button = document.createElement('button'); button.type = 'button';
+        button.className = 'quiz-answer'; button.textContent = letter;
+        button.addEventListener('click', () => {
+          if (letter === target) {
+            $('#quiz-feedback').textContent = '같은 글자를 찾았어! 준비되면 다시 도전해보자.';
+            $('#quiz-answers').replaceChildren(retry);
+            say($('#quiz-feedback').textContent);
+          } else { $('#quiz-feedback').textContent = `뮤랑 찾아보자. ${target}!`; say($('#quiz-feedback').textContent); }
+        });
+        $('#quiz-answers').append(button);
+      }
+    } else $('#quiz-answers').append(retry);
+    say(`${$('#quiz-prompt').textContent} ${easy ? question.reading[0] : question.reading + '. ' + question.hint}`);
   }
   $('#hangul-start').addEventListener('click', () => {
     const state = getState();
@@ -169,5 +238,5 @@ export function setupHangulQuiz({ getState, confirmMission, notify, speech, coll
     if (!linked) { notify('부모님 메뉴에서 한글 미션을 추가해 주세요.'); return; }
     $('#quiz-dialog').close(); confirmMission(linked.id);
   });
-  $('#quiz-dialog').addEventListener('close', stopSpeaking);
+  $('#quiz-dialog').addEventListener('close', () => { clearTimeout(unlockTimer); stopSpeaking(); });
 }

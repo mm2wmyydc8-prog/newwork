@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { QUESTIONS, createQuiz, chooseAnswer, nextQuestion, chooseQuizTile } from '../docs/hangul.js';
+import { QUESTIONS, createQuiz, chooseAnswer, nextQuestion, chooseQuizTile, noteQuizMistake, retryQuizQuestion, quizCreditReady } from '../docs/hangul.js';
 
 test('questions have unique IDs and exactly one correct choice', () => {
   assert.equal(new Set(QUESTIONS.map(q => q.id)).size, QUESTIONS.length);
@@ -64,4 +64,37 @@ test('hard requires ordered, distinct tiles including repeated syllables', () =>
   assert.equal(chooseQuizTile(quiz, 2), 'correct');
   assert.equal(chooseQuizTile(quiz, 2), 'blocked');
   assert.equal(nextQuestion(quiz), true); assert.deepEqual(quiz.selected, []);
+});
+
+test('answer revealed by hint cannot earn credit until a shuffled independent retry', () => {
+ const quiz = createQuiz(() => 0.4);
+ const question = quiz.questions[0];
+ noteQuizMistake(quiz);
+ chooseAnswer(quiz, question.answer);
+ assert.equal(quizCreditReady(quiz), false);
+ const before = [...question.choices];
+ retryQuizQuestion(quiz, () => 0.999);
+ assert.notDeepEqual(question.choices, before);
+ assert.equal(quiz.answered, false);
+ assert.equal(quiz.selected.length, 0);
+ chooseAnswer(quiz, question.answer);
+ assert.equal(quizCreditReady(quiz), true);
+});
+test('three errors suspend reward; a second failed attempt enters easy practice', () => {
+ const quiz = createQuiz(() => 0.4, [], 'hard');
+ assert.equal(noteQuizMistake(quiz), 'hint');
+ assert.equal(noteQuizMistake(quiz), 'hint');
+ assert.equal(noteQuizMistake(quiz), 'practice');
+ assert.equal(quizCreditReady(quiz), false);
+ retryQuizQuestion(quiz);
+ assert.equal(quiz.mistakes, 0);
+ assert.equal(quiz.failedAttempts, 1);
+ noteQuizMistake(quiz); noteQuizMistake(quiz);
+ assert.equal(noteQuizMistake(quiz), 'easy-practice');
+ retryQuizQuestion(quiz);
+ quiz.questions[0].choices = [...quiz.questions[0].reading];
+ for (let i = 0; i < quiz.questions[0].choices.length; i++) chooseQuizTile(quiz, i);
+ assert.equal(quizCreditReady(quiz), true);
+ nextQuestion(quiz);
+ assert.equal(quiz.failedAttempts, 0);
 });
