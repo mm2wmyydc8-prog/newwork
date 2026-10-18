@@ -1120,6 +1120,7 @@ export function setupCollection({ getState, save, speech }) {
   const $ = selector => document.querySelector(selector);
   let pending = [];
   let previewing = false;
+  let captureTimer, currentCapture;
   function render() {
     const { total, owned, next, byDifficulty } = collectionProgress(getState());
     const ownedIds = new Set(owned.map(p => p.id));
@@ -1155,22 +1156,62 @@ export function setupCollection({ getState, save, speech }) {
     $('#capture-name').textContent = pokemon.name;
     const rule = REWARD_RULES.get(pokemon.id);
     const special = ['전설', '상위 전설', '환상'].includes(rule.tier);
+    clearTimeout(captureTimer);
+    currentCapture = { pokemon, preview, special };
+    $('#capture-dialog').dataset.phase = 'encounter';
+    $('#capture-ball').style.setProperty('--ball-image', `url("assets/${special ? 'masterball' : 'pokeball'}.svg")`);
+    $('#capture-ball').setAttribute('aria-label', special ? '마스터볼' : '몬스터볼');
+    $('#capture-continue').disabled = false;
+    $('#capture-skip').hidden = true;
+    $('#capture-replay').hidden = true;
     $('#capture-dialog').dataset.grade = ['상위 전설', '환상'].includes(rule.tier) ? 'ultimate' : special ? 'legendary' : 'normal';
     $('#capture-label').textContent = special ? rule.tier === '환상' ? 'MYTHICAL ENCOUNTER' : 'LEGENDARY ENCOUNTER' : 'NEW FRIEND!';
     $('#capture-title').textContent = rule.tier === '환상' ? '환상의 포켓몬이 나타났다!' : special ? '전설의 포켓몬이 나타났다!' : '새 포켓몬을 만났어!';
     $('#capture-rarity').textContent = rule.tier;
     $('#capture-message').textContent = preview ? '전설 등장 연출 미리보기예요. 포켓몬이나 실적은 추가되지 않아요.' : `${rule.label} 퀘스트 ${rule.target}개 성공! ${pokemon.name}가 연우의 친구가 되었어요.`;
-    $('#capture-continue').textContent = preview ? '미리보기 닫기' : special ? '전설의 파트너로 함께하자! ✦' : '친구가 되어줘! ✦';
+    $('#capture-continue').textContent = special ? '마스터볼 던지기! ✦' : '몬스터볼 던지기! ✦';
     $('#capture-dialog').showModal();
     if (getState().speechAuto !== false) speech.speak(preview ? `전설 등장 미리보기. ${pokemon.name}!` : special ? `전설의 기운이 느껴져! ${pokemon.name} 등장! 연우가 전설의 파트너를 만났어! 정말 멋진 모험이었어!` : `와! ${pokemon.name}를 만났어! 연우의 새로운 친구야. 정말 잘했어!`);
   }
   $('#pokedex-open').addEventListener('click', () => { render(); $('#pokedex-dialog').showModal(); });
   $('#pokedex-filter').addEventListener('change', render);
   $('#legendary-preview').addEventListener('click', () => showCapture(POKEMON.find(p => p.id === 'mewtwo'), true));
+  function captureSuccess() {
+    clearTimeout(captureTimer);
+    if (!$('#capture-dialog').open || !currentCapture) return;
+    const { pokemon, preview } = currentCapture;
+    $('#capture-dialog').dataset.phase = 'caught';
+    $('#capture-label').textContent = 'GOTCHA!';
+    $('#capture-title').textContent = '포획 성공! ✦';
+    $('#capture-message').textContent = preview ? '포획 연출 미리보기예요. 실제 도감에는 추가되지 않아요.' : `${pokemon.name}를 잡았다! 연우의 도감에 저장했어요.`;
+    $('#capture-continue').disabled = false;
+    $('#capture-continue').textContent = preview ? '미리보기 닫기' : '도감에 있는 친구 확인! ✦';
+    $('#capture-skip').hidden = true;
+    $('#capture-replay').hidden = false;
+    if (getState().speechAuto !== false) speech.speak(preview ? '포획 성공! 미리보기야.' : `신난다! ${pokemon.name} 포획 성공! 연우의 새로운 친구야!`);
+  }
+  function throwBall() {
+    if (!currentCapture || !$('#capture-dialog').open) return;
+    clearTimeout(captureTimer); speech.stop();
+    const dialog = $('#capture-dialog');
+    dialog.dataset.phase = 'encounter'; void dialog.offsetWidth;
+    dialog.dataset.phase = 'throwing';
+    $('#capture-title').textContent = currentCapture.special ? '마스터볼, 가라!' : '몬스터볼, 가라!';
+    $('#capture-message').textContent = '볼 안에 쏙! 두근두근…';
+    $('#capture-continue').disabled = true;
+    $('#capture-continue').textContent = '두근두근… 포획 중';
+    $('#capture-skip').hidden = false;
+    $('#capture-replay').hidden = true;
+    if (getState().speechAuto !== false) speech.speak(currentCapture.special ? '마스터볼, 가라!' : '몬스터볼, 가라!');
+    captureTimer = setTimeout(captureSuccess, window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 100 : 3400);
+  }
   $('#capture-continue').addEventListener('click', () => {
-    $('#capture-dialog').close();
+    if ($('#capture-dialog').dataset.phase === 'encounter') throwBall();
+    else if ($('#capture-dialog').dataset.phase === 'caught') $('#capture-dialog').close();
   });
-  $('#capture-dialog').addEventListener('close', () => { speech.stop(); if (previewing) { previewing = false; return; } if (pending.length) showCapture(); });
+  $('#capture-skip').addEventListener('click', captureSuccess);
+  $('#capture-replay').addEventListener('click', throwBall);
+  $('#capture-dialog').addEventListener('close', () => { clearTimeout(captureTimer); speech.stop(); if (previewing) { previewing = false; return; } if (pending.length) showCapture(); });
   return {
     render,
     completedAtDifficulty(level) { return completedAtDifficulty(getState(), level); },
