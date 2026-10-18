@@ -4,7 +4,11 @@ export const MOVES = {
   aurasphere: { name: '파동탄', quote: '연우의 노력, 힘차게 날아가라!', description: '푸른 파동을 모아 파동탄 발사!' },
   psychic: { name: '사이코키네시스', quote: '연우의 힘이 깨어났어! 사이코키네시스!', description: '마스터볼이 공중으로! 연우가 특별 기술을 깨웠어요!' }
 };
-export const PSYCHIC_THRESHOLD = 90;
+export const PSYCHIC_THRESHOLD = 60;
+export function earnedMissionMinutes(state) {
+  return state.entries.filter(entry => entry.day === state.day && entry.missionId && entry.minutes > 0)
+    .reduce((sum, entry) => sum + entry.minutes, 0);
+}
 export function missionMove(mission) {
   if (['confusion', 'shadowball', 'aurasphere'].includes(mission.move)) return mission.move;
   return { hangul: 'confusion', bookclub: 'shadowball', reading: 'aurasphere' }[mission.id] ?? 'confusion';

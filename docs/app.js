@@ -1,5 +1,5 @@
 import { initialState, validateState, settle, totalMinutes, remainingSeconds, start, pause, adjust, missionDone } from './model.js';
-import { MOVES, PSYCHIC_THRESHOLD, missionMove, celebrationMoves } from './moves.js';
+import { MOVES, PSYCHIC_THRESHOLD, missionMove, celebrationMoves, earnedMissionMinutes } from './moves.js?v=daily60';
 
 const $ = selector => document.querySelector(selector);
 const key = 'yeonwoo-pocket-web-v1';
@@ -52,7 +52,7 @@ function renderCelebration() {
   $('#celebration-title').textContent = special ? '특별 기술 해금!' : '연우, 미션 성공!';
   $('#move-name').textContent = `뮤츠의 ${move.name}!`;
   $('.mewtwo-quote').textContent = `“${move.quote}”`;
-  $('#celebration-mission').textContent = special ? `오늘 총 ${PSYCHIC_THRESHOLD}분 달성!` : `${mission.title} 성공!`;
+  $('#celebration-mission').textContent = special ? `오늘 미션 보상 ${PSYCHIC_THRESHOLD}분 달성!` : `${mission.title} 성공!`;
   $('#celebration-reward').textContent = special ? '기술 해금 ✦' : `+${minutes}분`;
   $('#celebration-message').textContent = move.description + (special ? ' (추가 시간 보상은 없어요.)' : ' 보상은 시간볼에 넣었어요!');
   $('#celebration-continue').textContent = index + 1 < moves.length ? '특별 기술 보기 · 사이코키네시스 ✦' : '좋아! 모험 계속하기 ✦';
@@ -81,10 +81,10 @@ function completeMission(id) {
   const mission = state.missions.find(x => x.id === id);
   if (!mission) return;
   if (missionDone(state, id)) { saveAndRender(); toast('오늘 보상은 이미 받았어요! 내일 또 도전하자 ✦'); return; }
-  const before = totalMinutes(state);
+  const before = earnedMissionMinutes(state);
   const applied = adjust(state, mission.minutes, `${mission.title} 완료`, Date.now(), id);
   saveAndRender();
-  if (applied > 0) celebrate(mission, applied, before, totalMinutes(state));
+  if (applied > 0) celebrate(mission, applied, before, earnedMissionMinutes(state));
   else toast('오늘 시간볼이 가득 찼어요! (최대 240분)');
 }
 function confirmMission(id) {
@@ -117,8 +117,9 @@ function render() {
   const total = totalMinutes(state), bonus = total - state.baseMinutes;
   $('#total-time').textContent = readable(total);
   $('#budget-detail').textContent = `기본 ${state.baseMinutes}분 ${bonus >= 0 ? '+' : '−'} 오늘 보상·차감 ${Math.abs(bonus)}분`;
-  $('#unlock-label').textContent = total >= PSYCHIC_THRESHOLD ? '✦ 사이코키네시스 해금 성공!' : `사이코키네시스까지 ${PSYCHIC_THRESHOLD - total}분!`;
-  $('#unlock-progress').value = Math.min(total, PSYCHIC_THRESHOLD);
+  const earned = earnedMissionMinutes(state);
+  $('#unlock-label').textContent = earned >= PSYCHIC_THRESHOLD ? '✦ 오늘 60분 달성! 사이코키네시스 해금!' : `오늘 모은 미션 보상 ${earned} / ${PSYCHIC_THRESHOLD}분`;
+  $('#unlock-progress').value = Math.min(earned, PSYCHIC_THRESHOLD);
   $('#mission-list').replaceChildren();
   $('#parent-missions').replaceChildren();
   for (const mission of state.missions) {
