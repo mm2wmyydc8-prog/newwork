@@ -43,6 +43,7 @@ function replayCelebration() {
   dialog.classList.remove('playing');
   void dialog.offsetWidth; // Restart visual effects only; never re-apply the reward.
   dialog.classList.add('playing');
+  dialog.scrollTop = 0;
 }
 function renderCelebration() {
   const { mission, minutes, moves, index } = celebration;
