@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { QUESTIONS, createQuiz, chooseAnswer, nextQuestion } from '../docs/hangul.js';
+import { QUESTIONS, createQuiz, chooseAnswer, nextQuestion, chooseQuizTile } from '../docs/hangul.js';
 
 test('questions have unique IDs and exactly one correct choice', () => {
   assert.equal(new Set(QUESTIONS.map(q => q.id)).size, QUESTIONS.length);
@@ -42,4 +42,26 @@ test('new quests are preferred over same-day review', () => {
   const next = createQuiz(() => 0.4, completed);
   assert.ok(next.questions.every(q => !completed.includes(q.id)));
   assert.equal(createQuiz(() => 0.4, QUESTIONS.map(q => q.id)).questions.length, 5);
+});
+test('three levels keep quest identity but present different tasks', () => {
+  const easy = createQuiz(() => 0.4, [], 'easy');
+  const medium = createQuiz(() => 0.4, [], 'medium');
+  const hard = createQuiz(() => 0.4, [], 'hard');
+  assert.deepEqual(easy.questions.map(q => q.id), hard.questions.map(q => q.id));
+  easy.questions.forEach(q => { assert.equal(q.word, q.answer); assert.equal(q.answer.length, 1); });
+  medium.questions.forEach(q => { assert.ok(q.word.endsWith('□')); assert.equal(q.word.replace('□', q.answer), q.reading); });
+  hard.questions.forEach(q => { assert.equal(q.answer, q.reading); assert.deepEqual([...q.choices].sort(), [...q.reading].sort()); });
+});
+test('hard requires ordered, distinct tiles including repeated syllables', () => {
+  const quiz = createQuiz(() => 0.4, [], 'hard');
+  quiz.questions[0] = { id: 'banana', reading: '바나나', answer: '바나나', choices: ['나', '바', '나'] };
+  assert.equal(chooseQuizTile(quiz, 0), 'wrong');
+  assert.equal(quiz.selected.length, 0);
+  assert.equal(chooseQuizTile(quiz, 1), 'partial');
+  assert.equal(chooseQuizTile(quiz, 1), 'blocked');
+  assert.equal(chooseQuizTile(quiz, 0), 'partial');
+  assert.equal(quiz.answered, false);
+  assert.equal(chooseQuizTile(quiz, 2), 'correct');
+  assert.equal(chooseQuizTile(quiz, 2), 'blocked');
+  assert.equal(nextQuestion(quiz), true); assert.deepEqual(quiz.selected, []);
 });

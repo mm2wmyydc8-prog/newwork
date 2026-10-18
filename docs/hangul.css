@@ -21,3 +21,5 @@
 .mission-item{min-width:0}.mission-listen{display:block;background:transparent;color:#765b92;font-size:11px;padding:6px 12px;min-height:40px;margin-left:auto}#celebration-speak{font-size:12px;margin:0 0 12px;background:#ffffff90}#speech-stop{margin-top:12px}
 
 .quiz-choice{min-width:0}.quiz-choice>.quiz-answer{width:100%}.quiz-choice-listen{background:transparent;color:#765b92;font-size:12px;padding:8px 4px;width:100%;min-height:44px}.welcome-speak{display:block;width:100%;margin-top:16px;background:#eae1f5;color:#654080;font-size:13px}.speech-auto-label{display:flex;align-items:center;gap:10px;line-height:1.7}.speech-auto-label input{width:20px;height:20px;min-width:20px}
+
+.hangul-copy .difficulty-label{font-size:12px;margin:16px 0 8px}.hangul-copy #quiz-difficulty{font-size:13px;padding:11px 8px;width:100%;max-width:100%;white-space:normal}.hangul-copy .difficulty-help{font-size:11px;margin-top:8px;line-height:1.7}.quiz-word{overflow-wrap:anywhere}

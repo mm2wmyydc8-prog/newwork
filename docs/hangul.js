@@ -21,11 +21,27 @@ function shuffled(items, random) {
   }
   return result;
 }
-export function createQuiz(random = Math.random, completed = []) {
+export const DIFFICULTIES = {
+  easy: { name: '쉬움', help: '소리를 듣고, 크게 보이는 글자와 같은 글자를 찾아요.' },
+  medium: { name: '보통', help: '익숙한 낱말에서 비어 있는 글자 하나를 채워요.' },
+  hard: { name: '어려움', help: '글자를 순서대로 눌러 낱말을 직접 만들어요.' }
+};
+export function createQuiz(random = Math.random, completed = [], difficulty = 'easy') {
+  const level = DIFFICULTIES[difficulty] ? difficulty : 'easy';
   const fresh = shuffled(QUESTIONS.filter(q => !completed.includes(q.id)), random);
   const review = shuffled(QUESTIONS.filter(q => completed.includes(q.id)), random);
-  return { index: 0, answered: false,
-    questions: [...fresh, ...review].slice(0, 5).map(q => ({ ...q, choices: shuffled(q.choices, random) })) };
+  return { index: 0, answered: false, selected: [], difficulty: level,
+    questions: [...fresh, ...review].slice(0, 5).map(q => {
+      const reading = q.reading ?? q.word.replace('□', q.answer);
+      if (level === 'hard') return { ...q, reading, word: '□'.repeat(reading.length), answer: reading,
+        prompt: '글자를 순서대로 눌러 낱말을 만들어볼까?', choices: shuffled([...reading], random) };
+      const answer = level === 'easy' ? reading[0] : reading.at(-1);
+      const alternatives = shuffled(['가', '나', '다', '라', '마', '바', '사', '자', '아', '이', '오', '우', '비', '토', '스'].filter(x => x !== answer), random).slice(0, 2);
+      return { ...q, reading, answer, word: level === 'easy' ? answer : reading.slice(0, -1) + '□',
+        prompt: level === 'easy' ? '위에 보이는 글자와 같은 글자를 찾아봐!' : '빈 곳에 들어갈 글자를 골라봐!',
+        hint: `다시 들어보자. ${reading}. ${level === 'easy' ? '찾을' : '빈 곳의'} 글자는 ‘${answer}’야.`,
+        choices: shuffled([answer, ...alternatives], random) };
+    }) };
 }
 export function chooseAnswer(quiz, answer) {
   if (quiz.index >= quiz.questions.length || quiz.answered) return false;
@@ -35,26 +51,44 @@ export function chooseAnswer(quiz, answer) {
 }
 export function nextQuestion(quiz) {
   if (!quiz.answered) return false;
-  quiz.index++; quiz.answered = false;
+  quiz.index++; quiz.answered = false; quiz.selected = [];
   return true;
 }
+export function chooseQuizTile(quiz, tileIndex) {
+  if (quiz.difficulty !== 'hard' || quiz.answered || quiz.index >= quiz.questions.length || !Number.isInteger(tileIndex)) return 'blocked';
+  const q = quiz.questions[quiz.index];
+  if (tileIndex < 0 || tileIndex >= q.choices.length || quiz.selected.includes(tileIndex)) return 'blocked';
+  if (q.choices[tileIndex] !== q.reading[quiz.selected.length]) return 'wrong';
+  quiz.selected.push(tileIndex);
+  if (quiz.selected.length < q.reading.length) return 'partial';
+  return chooseAnswer(quiz, q.reading) ? 'correct' : 'blocked';
+}
 
-export function setupHangulQuiz({ getState, confirmMission, notify, speech, collection }) {
+export function setupHangulQuiz({ getState, confirmMission, notify, speech, collection, saveSettings }) {
   const $ = selector => document.querySelector(selector);
   let quiz;
   const mission = () => getState().missions.find(m => m.id === 'hangul') ?? getState().missions.find(m => m.title.includes('한글'));
   const canSpeak = speech.supported;
+  const savedLevel = getState().quizDifficulty;
+  $('#quiz-difficulty').value = DIFFICULTIES[savedLevel] ? savedLevel : 'easy';
+  $('#difficulty-help').textContent = DIFFICULTIES[$('#quiz-difficulty').value].help;
+  $('#quiz-difficulty').addEventListener('change', () => {
+    const level = $('#quiz-difficulty').value;
+    getState().quizDifficulty = level; saveSettings();
+    $('#difficulty-help').textContent = DIFFICULTIES[level].help;
+    say(`${DIFFICULTIES[level].name} 모험. ${DIFFICULTIES[level].help}`);
+  });
   function stopSpeaking() { speech.stop(); }
   function say(text) { if (getState().speechAuto !== false) speech.speak(text); }
   function questionText(question) {
-    return `${question.reading ?? question.word.replace('□', question.answer)}. ${question.prompt} 글자가 궁금하면 작은 스피커를 눌러 들어 봐.`;
+    return `${quiz.difficulty === 'easy' ? question.answer : question.reading}. ${question.prompt} 글자가 궁금하면 작은 스피커를 눌러 들어 봐.`;
   }
   function render() {
     stopSpeaking();
     const finished = quiz.index === quiz.questions.length;
     $('#quiz-question-area').hidden = finished;
     $('#quiz-finish-area').hidden = !finished;
-    $('#quiz-progress').textContent = finished ? '오늘의 작은 도전 성공!' : `${quiz.index + 1} / ${quiz.questions.length} 퀘스트`;
+    $('#quiz-progress').textContent = finished ? '오늘의 작은 도전 성공!' : `${DIFFICULTIES[quiz.difficulty].name} · ${quiz.index + 1} / ${quiz.questions.length} 퀘스트`;
     $('#quiz-progress-bar').value = quiz.index;
     $('#quiz-dialog').scrollTop = 0;
     if (finished) {
@@ -73,13 +107,24 @@ export function setupHangulQuiz({ getState, confirmMission, notify, speech, coll
     $('#quiz-feedback').textContent = '천천히 골라 봐. 틀려도 괜찮아!';
     $('#quiz-next').hidden = true;
     $('#quiz-answers').replaceChildren();
-    for (const answer of question.choices) {
+    $('#quiz-answers').style.gridTemplateColumns = `repeat(${question.choices.length}, 1fr)`;
+    for (const [tileIndex, answer] of question.choices.entries()) {
       const cell = document.createElement('div'); cell.className = 'quiz-choice';
       const button = document.createElement('button');
       button.type = 'button'; button.className = answer.length > 1 ? 'quiz-answer quiz-answer-word' : 'quiz-answer'; button.textContent = answer;
       button.addEventListener('click', () => {
         if (quiz.answered) return;
-        if (chooseAnswer(quiz, answer)) {
+        const result = quiz.difficulty === 'hard' ? chooseQuizTile(quiz, tileIndex) : (chooseAnswer(quiz, answer) ? 'correct' : 'wrong');
+        if (result === 'blocked') return;
+        if (result === 'partial') {
+          button.disabled = true;
+          $('#quiz-word').textContent = [...question.reading].map((letter, index) => index < quiz.selected.length ? letter : '□').join('');
+          $('#quiz-feedback').textContent = '좋아! 다음 글자도 이어보자.';
+          say($('#quiz-feedback').textContent);
+          return;
+        }
+        if (result === 'correct') {
+          if (quiz.difficulty === 'hard') $('#quiz-word').textContent = question.reading;
           collection.recordCorrect(question.id);
           button.classList.add('correct');
           $('#quiz-feedback').textContent = `맞았어! ${(question.reading ?? question.word.replace('□', question.answer))}! 잘했어, 연우! ✦`;
@@ -89,8 +134,9 @@ export function setupHangulQuiz({ getState, confirmMission, notify, speech, coll
           $('#quiz-answers').querySelectorAll('.quiz-answer').forEach(node => { node.disabled = true; });
           $('#quiz-next').focus();
         } else {
-          $('#quiz-feedback').textContent = question.hint;
-          say(question.hint);
+          const hint = quiz.difficulty === 'hard' ? `천천히 해보자. 다음 글자는 ‘${question.reading[quiz.selected.length]}’야.` : question.hint;
+          $('#quiz-feedback').textContent = hint;
+          say(hint);
           button.classList.add('try-again');
         }
       });
@@ -105,7 +151,7 @@ export function setupHangulQuiz({ getState, confirmMission, notify, speech, coll
   $('#hangul-start').addEventListener('click', () => {
     const state = getState();
     const completed = state.collection?.day === state.day ? state.collection.questions : [];
-    quiz = createQuiz(Math.random, completed); $('#quiz-collection-note').textContent = '퀘스트를 성공하면 새로운 포켓몬을 만날 수 있어!'; render(); $('#quiz-dialog').showModal();
+    quiz = createQuiz(Math.random, completed, $('#quiz-difficulty').value); $('#quiz-collection-note').textContent = '어느 난이도든 퀘스트 성공은 똑같이 1개!'; render(); $('#quiz-dialog').showModal();
   });
   $('#quiz-next').addEventListener('click', () => { if (nextQuestion(quiz)) render(); });
   $('#quiz-speak').disabled = !canSpeak;
