@@ -38,7 +38,7 @@ test('collection persists across days, reward deductions and serialization', () 
 test('easy cannot unlock rare or legendary species; medium and hard have separate goals', () => {
   const state = initialState();
   for (let i = 0; i < 800; i++) recordQuest(state, `easy-${i}`, 'easy');
-  assert.ok(collectionProgress(state).owned.every(p => !['희귀', '전설', '환상'].includes(p.rarity)));
+  assert.ok(collectionProgress(state).owned.filter(p => !p.form).every(p => !['희귀', '전설', '환상'].includes(p.rarity)));
   for (let i = 0; i < 50; i++) recordQuest(state, `medium-${i}`, 'medium');
   assert.ok(collectionProgress(state).owned.some(p => p.id === 'articuno'));
   assert.ok(!collectionProgress(state).owned.some(p => p.id === 'mewtwo'));
@@ -61,7 +61,7 @@ test('harder repeat upgrades its difficulty without counting the quest twice', (
 test('migration keeps previously collected legendary Pokemon without inventing hard scores', () => {
   const state = initialState();
   state.collection = { total: 755, day: state.day, questions: ['tree'] };
-  assert.equal(collectionProgress(state).owned.length, 151);
+  assert.equal(collectionProgress(state).owned.length, 153);
   assert.equal(state.collection.byDifficulty.hard, 0);
   assert.ok(validateState(state));
 });
@@ -90,29 +90,27 @@ test('20 advanced successes guarantee a shiny even when every random roll misses
   assert.equal(state.collection.shiny.length, 1);
 });
 
-test('Mega Mewtwo forms unlock at hard 50 and 60 without awarding them during legacy migration', () => {
+test('100 total successes unlock both stone rewards at any difficulty, duplicates do not count', () => {
   const state = initialState();
-  for (let i = 0; i < 60; i++) {
-    const result = recordQuest(state, `mega-${i}`, 'hard', () => 0.999);
-    if (i === 48) assert.ok(!collectionProgress(state).owned.some(p => p.form));
-    if (i === 49) assert.ok(result.unlocked.some(p => p.id === 'mewtwo-mega-x' && !p.shiny));
-    if (i === 59) assert.ok(result.unlocked.some(p => p.id === 'mewtwo-mega-y' && !p.shiny));
-  }
+  for (let i = 0; i < 99; i++) recordQuest(state, `stone-${i}`, 'easy');
+  assert.ok(!collectionProgress(state).owned.some(p => p.form));
+  assert.equal(recordQuest(state, 'stone-0', 'easy').counted, false);
+  assert.ok(!collectionProgress(state).owned.some(p => p.form));
+  const result = recordQuest(state, 'stone-99', 'easy');
+  assert.equal(result.unlocked.filter(p => p.form).length, 2);
   const restored = JSON.parse(JSON.stringify(state));
   assert.equal(collectionProgress(restored).owned.filter(p => p.form).length, 2);
   assert.ok(validateState(restored));
-  const legacy = initialState();
-  legacy.collection = { total: 755, day: legacy.day, questions: [] };
-  assert.ok(!collectionProgress(legacy).owned.some(p => p.form));
+  assert.equal(shinyDifficulty(POKEMON.find(p => p.form)), 'hard');
 });
 
 test('secret forms stay absent from catalog and next reward until each is earned', () => {
   const state = initialState();
   assert.equal(revealedPokemon(state).length, 151);
-  for (let i = 0; i < 60; i++) {
+  for (let i = 0; i < 100; i++) {
     recordQuest(state, `secret-${i}`, 'hard', () => 0.999);
     assert.ok(!collectionProgress(state, 'hard').next?.form);
-    assert.equal(revealedPokemon(state).filter(p => p.form).length, i < 49 ? 0 : i < 59 ? 1 : 2);
+    assert.equal(revealedPokemon(state).filter(p => p.form).length, i < 99 ? 0 : 2);
   }
   state.collection.shiny = [];
   assert.equal(revealedPokemon(state, true).filter(p => p.form).length, 0);
