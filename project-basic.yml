@@ -1,0 +1,42 @@
+name: YeonwooPocket
+options:
+  deploymentTarget:
+    iOS: '18.0'
+settings:
+  base:
+    SWIFT_VERSION: '5.0'
+    TARGETED_DEVICE_FAMILY: '1,2'
+    CODE_SIGN_STYLE: Automatic
+    SWIFT_ACTIVE_COMPILATION_CONDITIONS: $(inherited) BASIC_DEMO
+targets:
+  TimeGarden:
+    type: application
+    platform: iOS
+    sources: [TimeGarden, Shared]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.yeonwoopocket.demo
+    info:
+      path: Generated/Basic-Info.plist
+      properties:
+        CFBundleDisplayName: 연우의 포켓 타임
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+  TimeGardenTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [TimeGardenTests]
+    dependencies:
+      - target: TimeGarden
+schemes:
+  YeonwooPocket:
+    build:
+      targets:
+        TimeGarden: all
+    test:
+      targets: [TimeGardenTests]

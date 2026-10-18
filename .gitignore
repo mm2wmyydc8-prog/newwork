@@ -1,0 +1,9 @@
+Generated/
+*.xcodeproj/
+DerivedData/
+.DS_Store
+xcuserdata/
+.env
+.env.*
+!.env.example
+server/data/

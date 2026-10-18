@@ -1,0 +1,65 @@
+name: TimeGarden
+options:
+  bundleIdPrefix: com.example.timegarden
+  deploymentTarget:
+    iOS: '18.0'
+settings:
+  base:
+    SWIFT_VERSION: '5.0'
+    TARGETED_DEVICE_FAMILY: '1,2'
+    CODE_SIGN_STYLE: Automatic
+targets:
+  TimeGarden:
+    type: application
+    platform: iOS
+    sources: [TimeGarden, Shared]
+    info:
+      path: Generated/App-Info.plist
+      properties:
+        CFBundleDisplayName: 연우의 포켓 타임
+        UILaunchScreen: {}
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+    entitlements:
+      path: TimeGarden/TimeGarden.entitlements
+      properties:
+        com.apple.developer.family-controls: true
+        com.apple.security.application-groups: [group.com.example.timegarden]
+    dependencies:
+      - target: TimeMonitor
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.timegarden
+  TimeMonitor:
+    type: app-extension
+    platform: iOS
+    sources: [TimeMonitor, Shared]
+    info:
+      path: Generated/Monitor-Info.plist
+      properties:
+        CFBundleDisplayName: 시간정원 사용 제한
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.deviceactivity.monitor-extension
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ActivityMonitor
+    entitlements:
+      path: TimeMonitor/TimeMonitor.entitlements
+      properties:
+        com.apple.developer.family-controls: true
+        com.apple.security.application-groups: [group.com.example.timegarden]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.timegarden.monitor
+        APPLICATION_EXTENSION_API_ONLY: YES
+  TimeGardenTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [TimeGardenTests]
+    dependencies:
+      - target: TimeGarden
+schemes:
+  TimeGarden:
+    build:
+      targets:
+        TimeGarden: all
+    test:
+      targets: [TimeGardenTests]

@@ -1,0 +1,32 @@
+services:
+  timer:
+    build:
+      context: .
+    restart: unless-stopped
+    init: true
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    ports:
+      # DSM reverse proxy connects here; do not expose the raw HTTP API.
+      - "127.0.0.1:3130:3000"
+    environment:
+      SMARTTHINGS_TOKEN: ${SMARTTHINGS_TOKEN:?Set SMARTTHINGS_TOKEN in .env}
+      SMARTTHINGS_DEVICE_ID: ${SMARTTHINGS_DEVICE_ID:?Set SMARTTHINGS_DEVICE_ID in .env}
+      APP_API_KEY: ${APP_API_KEY:?Set APP_API_KEY in .env}
+      TIMER_TIMEZONE: Asia/Seoul
+      STATE_FILE: /app/data/timer.json
+      BIND_HOST: 0.0.0.0
+      PORT: "3000"
+    volumes:
+      - timer-data:/app/data
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "2"
+
+volumes:
+  timer-data:
