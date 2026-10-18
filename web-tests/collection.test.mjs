@@ -114,3 +114,25 @@ test('previously stored forms cannot leak before 100 successes', () => {
  assert.ok(!collectionProgress(state).owned.some(p => p.form));
  assert.equal(canUseMegaMoves(state, 'mewtwo-mega-x'), false);
 });
+
+test('25th total success grants shiny Pikachu once even on easy, without consuming shiny guarantees', () => {
+ const state = initialState();
+ for (let i = 1; i < 25; i++) recordQuest(state, `gift-${i}`, 'easy');
+ assert.ok(!state.collection.shiny.includes('pikachu'));
+ const result = recordQuest(state, 'gift-25', 'easy');
+ assert.equal(result.unlocked.filter(p => p.id === 'pikachu' && p.shinyGift).length, 1);
+ assert.ok(state.collection.shiny.includes('pikachu'));
+ assert.ok(collectionProgress(state).owned.some(p => p.id === 'pikachu'));
+ assert.equal(state.collection.shinyBonusAwards, 0);
+ const restored = JSON.parse(JSON.stringify(state));
+ assert.ok(validateState(restored));
+ assert.equal(recordQuest(restored, 'gift-25', 'easy').unlocked.length, 0);
+ assert.ok(!recordQuest(restored, 'gift-26', 'easy').unlocked.some(p => p.shinyGift));
+ assert.ok(!recordQuest(restored, 'gift-25', 'hard').unlocked.some(p => p.shinyGift));
+});
+test('existing progress above 25 receives the introductory gift on next success only', () => {
+ const state = initialState(); collectionProgress(state);
+ state.collection.total = 30; state.collection.byDifficulty.easy = 30;
+ assert.ok(recordQuest(state, 'catchup', 'easy').unlocked.some(p => p.shinyGift));
+ assert.ok(!recordQuest(state, 'next', 'easy').unlocked.some(p => p.shinyGift));
+});

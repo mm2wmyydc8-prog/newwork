@@ -1131,9 +1131,18 @@ export function recordQuest(state, questionId, difficulty = 'easy', random = Mat
   data.byDifficulty[level]++; data.levels[questionId] = level;
   const unlocked = POKEMON.filter(p => !previousOwned.has(p.id) && eligible(data, p)).map(p => ({ ...p, shiny: false }));
   data.owned = [...new Set([...data.owned, ...unlocked.map(p => p.id)])];
+  // A one-time introductory shiny, independent of random rolls and guarantees.
+  if (data.total >= 25 && !data.pikachuGiftClaimed) {
+    data.pikachuGiftClaimed = true;
+    if (!data.shiny.includes('pikachu')) {
+      data.shiny.push('pikachu');
+      data.owned = [...new Set([...data.owned, 'pikachu'])];
+      unlocked.push({ ...POKEMON.find(p => p.id === 'pikachu'), shiny: true, shinyGift: true });
+    }
+  }
   // One shiny attempt per real medium/hard success; easy practice cannot roll one.
   if (level !== 'easy') {
-    const pool = POKEMON.filter(p => eligible(data, p) && !data.shiny.includes(p.id) && RANK[shinyDifficulty(p)] <= RANK[level]);
+    const pool = POKEMON.filter(p => eligible(data, p) && (p.id !== 'pikachu' || data.total >= 25) && !data.shiny.includes(p.id) && RANK[shinyDifficulty(p)] <= RANK[level]);
     const successes = data.byDifficulty.medium + data.byDifficulty.hard;
     const guaranteed = Math.floor(successes / 20) > data.shinyBonusAwards;
     if (pool.length && (guaranteed || random() < SHINY_CHANCE[level])) {
@@ -1206,10 +1215,10 @@ export function setupCollection({ getState, save, speech }) {
     $('#capture-title').textContent = rule.tier === '환상' ? '환상의 포켓몬이 나타났다!' : special ? '전설의 포켓몬이 나타났다!' : '새 포켓몬을 만났어!';
     if (pokemon.shiny) { $('#capture-label').textContent = 'SHINY ENCOUNTER!'; $('#capture-title').textContent = `색이 다른 ${pokemon.name} 등장!`; }
     $('#capture-rarity').textContent = rule.tier;
-    $('#capture-message').textContent = preview ? '포획 연출 미리보기예요. 포켓몬이나 실적은 추가되지 않아요.' : pokemon.shinyBonus ? `보통 이상 모험의 특별 보너스! 색이 다른 ${pokemon.name}가 연우의 친구가 되었어요.` : `${rule.label} 퀘스트 ${rule.target}개 성공! ${pokemon.name}가 연우의 친구가 되었어요.`;
+    $('#capture-message').textContent = preview ? '포획 연출 미리보기예요. 포켓몬이나 실적은 추가되지 않아요.' : pokemon.shinyGift ? '퀴즈 누적 25개 성공 선물! 평소와 색이 다른 포켓몬을 이로치라고 해! 모험을 계속하면 다른 이로치 친구도 만날 수 있어!' : pokemon.shinyBonus ? `보통 이상 모험의 특별 보너스! 색이 다른 ${pokemon.name}가 연우의 친구가 되었어요.` : `${rule.label} 퀘스트 ${rule.target}개 성공! ${pokemon.name}가 연우의 친구가 되었어요.`;
     $('#capture-continue').textContent = special ? '마스터볼 던지기! ✦' : '몬스터볼 던지기! ✦';
     $('#capture-dialog').showModal();
-    if (getState().speechAuto !== false) speech.speak(pokemon.shiny ? `반짝! 색이 다른 이로치 ${pokemon.name} 등장! ${preview ? '미리보기야.' : '연우가 특별한 친구를 만났어!'}` : preview ? `전설 등장 미리보기. ${pokemon.name}!`  : special ? `전설의 기운이 느껴져! ${pokemon.name} 등장! 연우가 전설의 파트너를 만났어! 정말 멋진 모험이었어!` : `와! ${pokemon.name}를 만났어! 연우의 새로운 친구야. 정말 잘했어!`);
+    if (getState().speechAuto !== false) speech.speak(pokemon.shinyGift ? '연우야! 퀴즈 25개 성공! 특별한 피카츄를 만났어! 평소와 색이 다른 포켓몬을 이로치라고 해! 반짝반짝 멋지지? 모험을 계속하면 다른 이로치 친구도 만날 수 있어!' : pokemon.shiny ? `반짝! 색이 다른 이로치 ${pokemon.name} 등장! ${preview ? '미리보기야.' : '연우가 특별한 친구를 만났어!'}` : preview ? `전설 등장 미리보기. ${pokemon.name}!`  : special ? `전설의 기운이 느껴져! ${pokemon.name} 등장! 연우가 전설의 파트너를 만났어! 정말 멋진 모험이었어!` : `와! ${pokemon.name}를 만났어! 연우의 새로운 친구야. 정말 잘했어!`);
   }
   $('#pokedex-open').addEventListener('click', () => { render(); $('#pokedex-dialog').showModal(); });
   $('#pokedex-filter').addEventListener('change', render);
