@@ -2,7 +2,7 @@ import { initialState, validateState, settle, totalMinutes, remainingSeconds, st
 import { MOVES, PSYCHIC_THRESHOLD, missionMove, celebrationMoves, earnedMissionMinutes } from './moves.js?v=daily60';
 import { setupHangulQuiz } from './hangul.js?v=difficulty-rewards';
 import { createKoreanSpeech } from './speech.js';
-import { setupCollection } from './collection.js?v=shiny-forms';
+import { setupCollection } from './collection.js?v=mega-mewtwo';
 import { setupTrainer } from './trainer.js?v=photo-picker-fix';
 
 const $ = selector => document.querySelector(selector);

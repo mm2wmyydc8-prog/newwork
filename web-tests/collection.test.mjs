@@ -4,9 +4,9 @@ import { readFileSync } from 'node:fs';
 import { POKEMON, collectionProgress, recordQuest, shinyDifficulty, SHINY_CHANCE } from '../docs/collection.js';
 import { initialState, settle, validateState } from '../docs/model.js';
 
-test('151 ordered species have PNG artwork, basic to legendary and mythical', () => {
-  assert.equal(POKEMON.length, 151);
-  assert.equal(new Set(POKEMON.map(p => p.id)).size, 151);
+test('151 species plus two Mega forms have PNG artwork', () => {
+  assert.equal(POKEMON.length, 153);
+  assert.equal(new Set(POKEMON.map(p => p.id)).size, 153);
   assert.equal(POKEMON[0].threshold, 5);
   POKEMON.forEach((p, i) => {
     if (i) assert.ok(p.threshold > POKEMON[i - 1].threshold);
@@ -88,4 +88,20 @@ test('20 advanced successes guarantee a shiny even when every random roll misses
   assert.ok(state.collection.shiny.every(id => shinyDifficulty(POKEMON.find(p => p.id === id)) === 'medium'));
   for (let i = 0; i < 20; i++) recordQuest(state, `q${i}`, 'medium', () => 0);
   assert.equal(state.collection.shiny.length, 1);
+});
+
+test('Mega Mewtwo forms unlock at hard 50 and 60 without awarding them during legacy migration', () => {
+  const state = initialState();
+  for (let i = 0; i < 60; i++) {
+    const result = recordQuest(state, `mega-${i}`, 'hard', () => 0.999);
+    if (i === 48) assert.ok(!collectionProgress(state).owned.some(p => p.form));
+    if (i === 49) assert.ok(result.unlocked.some(p => p.id === 'mewtwo-mega-x' && !p.shiny));
+    if (i === 59) assert.ok(result.unlocked.some(p => p.id === 'mewtwo-mega-y' && !p.shiny));
+  }
+  const restored = JSON.parse(JSON.stringify(state));
+  assert.equal(collectionProgress(restored).owned.filter(p => p.form).length, 2);
+  assert.ok(validateState(restored));
+  const legacy = initialState();
+  legacy.collection = { total: 755, day: legacy.day, questions: [] };
+  assert.ok(!collectionProgress(legacy).owned.some(p => p.form));
 });

@@ -1055,13 +1055,17 @@ export const POKEMON = [
     "rarity": "환상",
     "threshold": 755,
     "dex": 151
-  }
+  },
+  { "id": "mewtwo-mega-x", "name": "메가뮤츠 X", "rarity": "전설", "threshold": 760, "dex": 150, "form": "mega-x" },
+  { "id": "mewtwo-mega-y", "name": "메가뮤츠 Y", "rarity": "전설", "threshold": 765, "dex": 150, "form": "mega-y" }
 ];
 const RANK = { easy: 0, medium: 1, hard: 2 };
 export const REWARD_RULES = new Map();
 let basic = 0, rare = 0, legendary = 0;
 for (const pokemon of POKEMON) {
   const rule = pokemon.id === 'mewtwo' ? { level: 'hard', target: 25, label: '어려움', tier: '상위 전설' }
+    : pokemon.id === 'mewtwo-mega-x' ? { level: 'hard', target: 50, label: '어려움', tier: '상위 전설' }
+    : pokemon.id === 'mewtwo-mega-y' ? { level: 'hard', target: 60, label: '어려움', tier: '상위 전설' }
     : pokemon.id === 'mew' ? { level: 'hard', target: 40, label: '어려움', tier: '환상' }
     : pokemon.rarity === '전설' ? { level: 'medium', target: 40 + (++legendary) * 10, label: '보통 이상', tier: '전설' }
     : pokemon.rarity === '희귀' ? { level: 'medium', target: (++rare) * 5, label: '보통 이상', tier: '희귀' }
@@ -1140,7 +1144,7 @@ export function setupCollection({ getState, save, speech }) {
     const { total, owned, next, byDifficulty, shiny } = collectionProgress(getState());
     const ownedIds = new Set(owned.map(p => p.id));
     const shinyIds = new Set(shiny), shinyView = $('#pokedex-form').value === 'shiny';
-    $('#collection-count').textContent = `${owned.length} / ${POKEMON.length}마리`;
+    $('#collection-count').textContent = `${owned.length} / ${POKEMON.length}모습`;
     $('#trainer-summary').textContent = `친구 ${owned.length}마리 · 퀘스트 ${total}개 성공`;
     $('#collection-total').textContent = `누적 ${total}개 · 보통 ${byDifficulty.medium} · 어려움 ${byDifficulty.hard}`;
     const advanced = byDifficulty.medium + byDifficulty.hard;
