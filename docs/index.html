@@ -12,8 +12,8 @@
   <link rel="apple-touch-icon" href="assets/touch-icon.png">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="celebration.css?v=mission-tap">
-  <script type="module" src="app.js?v=mission-tap"></script>
+  <link rel="stylesheet" href="celebration.css?v=mission-moves">
+  <script type="module" src="app.js?v=mission-moves"></script>
 </head>
 <body>
   <main>
@@ -30,7 +30,7 @@
         <div class="timer-actions"><button id="toggle-timer" class="primary">▶ 보기 시작</button><button id="stop-timer" class="secondary">다 봤어요</button></div>
         <p class="footnote">TV·패드로 볼 때 직접 시작하고 멈춰요.<br>체험판에서는 TV가 자동으로 꺼지지 않아요.</p>
       </section>
-      <section class="card bank-card"><img src="assets/masterball.svg" class="bank-ball" alt="마스터볼"><span class="eyebrow">연우의 마스터 시간볼</span><h2 id="total-time">30분</h2><p id="budget-detail">기본 30분 + 오늘 보상 0분</p><div class="bank-note">오늘 받은 총시간이에요.<br>이미 본 시간도 포함돼요.</div></section>
+      <section class="card bank-card"><img src="assets/masterball.svg" class="bank-ball" alt="마스터볼"><span class="eyebrow">연우의 마스터 시간볼</span><h2 id="total-time">30분</h2><p id="budget-detail">기본 30분 + 오늘 보상 0분</p><div class="bank-note">오늘 받은 총시간이에요.<br>이미 본 시간도 포함돼요.</div><div class="move-unlock"><span id="unlock-label"></span><progress id="unlock-progress" max="90" value="30" aria-label="사이코키네시스 해금까지 오늘의 총 허용 시간"></progress><small>기본 시간 포함 · 시청해도 해금 진행은 줄지 않아요</small></div></section>
     </div>
     <section class="card missions"><div class="section-heading"><div><span class="eyebrow">MISSION QUEST</span><h2>오늘의 미션</h2></div><button id="mission-add-shortcut" class="round" aria-label="부모님 확인 후 미션 추가">＋</button></div><div id="mission-list" class="mission-grid"></div><p class="footnote">미션을 누르고 부모님께 완료 확인을 받아요.<br>미션 보상은 오늘만 적용돼요.</p></section>
     <section class="history"><div class="section-heading"><h2>✦ 연우의 모험 기록</h2><span class="small">최근 기록</span></div><div id="history-list"></div></section>
@@ -49,11 +49,14 @@
     <button id="celebration-close" class="round celebration-close" aria-label="축하 화면 닫기">×</button>
     <span class="eyebrow">MISSION CLEAR!</span>
     <h2 id="celebration-title">연우, 미션 성공!</h2>
+    <div id="move-name" class="move-name">염동력</div>
     <div class="psychic-stage" aria-hidden="true">
       <div class="psychic-aura"></div><div class="psychic-ring ring-one"></div><div class="psychic-ring ring-two"></div>
       <span class="psychic-star star-one">✦</span><span class="psychic-star star-two">✧</span><span class="psychic-star star-three">✦</span>
       <img class="psychic-mewtwo" src="assets/mewtwo.png" alt="" width="475" height="475">
       <img class="psychic-mew" src="assets/mew.png" alt="" width="475" height="475">
+      <div class="move-orb"></div><div class="move-beam"></div>
+      <img class="floating-ball floating-one" src="assets/masterball.svg" alt=""><img class="floating-ball floating-two" src="assets/masterball.svg" alt=""><img class="floating-ball floating-three" src="assets/masterball.svg" alt="">
       <img class="reward-ball" src="assets/masterball.svg" alt="">
     </div>
     <p class="mewtwo-quote">“멋진 도전이었어, 연우!”</p>
@@ -78,6 +81,7 @@
       <div class="dialog-heading"><h2 id="editor-title">새 미션 추가</h2><button type="button" data-close="editor-dialog" class="round" aria-label="미션 편집 닫기">×</button></div>
       <label for="mission-name">미션 이름</label><input id="mission-name" maxlength="60" placeholder="예: 장난감 정리하기" required>
       <label for="mission-minutes">완료하면 받는 시간 (분)</label><input id="mission-minutes" type="number" min="1" max="120" value="30" inputmode="numeric" required>
+      <label for="mission-move">성공하면 뮤츠가 쓸 기술</label><select id="mission-move"><option value="confusion">염동력 · 초능력 고리</option><option value="shadowball">섀도볼 · 보라색 에너지 발사</option><option value="aurasphere">파동탄 · 푸른 파동 발사</option></select>
       <div id="minute-presets" class="presets"><button type="button" data-minutes="5">5분</button><button type="button" data-minutes="10">10분</button><button type="button" data-minutes="15">15분</button><button type="button" data-minutes="30">30분</button></div>
       <p class="footnote">보상 시간을 바꿔도 이미 받은 시간은 바뀌지 않아요.</p>
       <div class="editor-actions"><button id="delete-mission" type="button" class="danger" hidden>미션 삭제</button><button type="submit" class="primary">저장</button></div>

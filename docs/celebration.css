@@ -3,6 +3,46 @@
 .mission:hover{border-color:#c4a5e4;background:#f0e9fb}
 .mission:focus-visible{outline:3px solid #aa7fea;outline-offset:3px}
 .confirm-mission-name{font-size:20px;font-weight:800;overflow-wrap:anywhere;color:var(--purple);line-height:1.6}
+.move-name{display:inline-block;margin-top:10px;background:#ffffffb8;padding:7px 14px;border-radius:20px;color:#7447a4;font-size:13px;font-weight:800}
+.move-unlock{width:100%;margin-top:20px;padding-top:16px;border-top:1px solid #dbcbee;font-size:12px;font-weight:750}
+.move-unlock small{display:block;font-size:10px;font-weight:400;color:var(--muted);line-height:1.5;margin-top:6px}
+.move-unlock progress{display:block;appearance:none;width:100%;height:8px;border:0;border-radius:8px;overflow:hidden;margin-top:10px;background:#ded1ef}
+.move-unlock progress::-webkit-progress-bar{background:#ded1ef;border-radius:8px}.move-unlock progress::-webkit-progress-value{background:linear-gradient(90deg,#ba8de5,#7550b7);border-radius:8px}.move-unlock progress::-moz-progress-bar{background:#7550b7}
+select{width:100%;font:inherit;font-size:16px;color:var(--ink);border:1px solid #d8cce9;background:#fcfaff;border-radius:12px;padding:12px}
+.move-orb,.move-beam,.floating-ball{display:none;position:absolute;pointer-events:none}
+.move-orb{z-index:2;width:72px;height:72px;border-radius:50%;top:63px;left:calc(50% - 75px);background:radial-gradient(circle at 40% 40%,#f1c0ff,#a255da 38%,#351048 70%);box-shadow:0 0 20px #9a54d988}
+.move-beam{height:30px;width:110px;top:90px;left:50%;border-radius:50%;background:linear-gradient(90deg,#b8ecffb0,#65aaf000);transform-origin:left center;opacity:0}
+.floating-ball{width:35px;height:35px;z-index:2}.floating-one{left:12%;top:150px}.floating-two{right:8%;top:65px}.floating-three{right:15%;top:180px}
+.celebration[data-move="confusion"] .psychic-ring{border-color:#d1a24f}
+.celebration[data-move="confusion"] .psychic-aura{background:radial-gradient(circle,#f4d88d88,transparent 70%)}
+.celebration[data-move="confusion"].playing .psychic-mewtwo{animation:focus-pulse 2.2s ease-in-out both}
+.celebration[data-move="shadowball"]{background:linear-gradient(155deg,#f9f5ff,#dfcff1,#f3e1f9)}
+.celebration[data-move="shadowball"] .move-orb{display:block}
+.celebration[data-move="shadowball"] .psychic-ring{display:none}
+.celebration[data-move="shadowball"].playing .move-orb{animation:shadow-launch 2.5s ease-in-out both}
+.celebration[data-move="shadowball"].playing .psychic-mewtwo{animation:attack-stance 2.5s ease-in-out both}
+.celebration[data-move="aurasphere"]{background:linear-gradient(155deg,#f7fbff,#d9edff,#ece4ff)}
+.celebration[data-move="aurasphere"] .move-orb{display:block;background:radial-gradient(circle,#fff,#a1edff 25%,#3ba8f1 55%,#1c64b9 80%);box-shadow:0 0 24px #70d2ff}
+.celebration[data-move="aurasphere"] .move-beam{display:block}
+.celebration[data-move="aurasphere"] .psychic-ring{border-color:#6cc5f6}
+.celebration[data-move="aurasphere"].playing .move-orb{animation:aura-launch 2.5s ease-in-out both}
+.celebration[data-move="aurasphere"].playing .move-beam{animation:aura-beam 2.5s ease-out both}
+.celebration[data-move="aurasphere"].playing .psychic-mewtwo{animation:attack-stance 2.5s ease-in-out both}
+.celebration[data-move="psychic"] .floating-ball{display:block}
+.celebration[data-move="psychic"] .move-name{color:#fff;background:#8050b9}
+.celebration[data-move="psychic"] .psychic-aura{background:radial-gradient(circle,#b075e9aa,#e3b0fa66 50%,transparent 72%)}
+.celebration[data-move="psychic"].playing .psychic-mewtwo{animation:psychic-master 3s ease-in-out both}
+.celebration[data-move="psychic"].playing .floating-one{animation:levitate-one 3s ease-in-out both}
+.celebration[data-move="psychic"].playing .floating-two{animation:levitate-two 3s ease-in-out both}
+.celebration[data-move="psychic"].playing .floating-three{animation:levitate-one 3s .2s ease-in-out both}
+@keyframes focus-pulse{0%{transform:translateX(-50%) scale(.9)}40%{transform:translateX(-50%) scale(1.04);filter:drop-shadow(0 0 15px #d8ab53)}100%{transform:translateX(-50%)}}
+@keyframes attack-stance{0%{transform:translateX(-50%)}35%{transform:translateX(-54%) rotate(-4deg)}65%{transform:translateX(-44%) rotate(3deg)}100%{transform:translateX(-50%)}}
+@keyframes shadow-launch{0%{transform:scale(.1);opacity:0}35%{transform:scale(1);opacity:1}50%{transform:scale(1.2);opacity:1}80%{transform:translate(130px,-30px) scale(.6);opacity:0}100%{opacity:0;transform:translate(160px,-40px)}}
+@keyframes aura-launch{0%{transform:scale(.1);opacity:0}35%{transform:scale(.85);opacity:1}55%{transform:scale(1.1);opacity:1}80%,100%{transform:translate(150px,15px) scale(.5);opacity:0}}
+@keyframes aura-beam{0%,50%{opacity:0;transform:scaleX(.2)}65%{opacity:.8;transform:scaleX(1.5)}90%,100%{opacity:0;transform:scaleX(1.8)}}
+@keyframes psychic-master{0%{transform:translateX(-50%) translateY(12px)}45%{transform:translateX(-50%) translateY(-22px);filter:drop-shadow(0 0 22px #9b52df)}75%{transform:translateX(-50%) translateY(-18px)}100%{transform:translateX(-50%)}}
+@keyframes levitate-one{0%{opacity:0;transform:translateY(30px) rotate(-30deg)}35%{opacity:1}65%{opacity:1;transform:translateY(-48px) rotate(30deg)}100%{opacity:1;transform:translateY(-16px) rotate(-12deg)}}
+@keyframes levitate-two{0%{opacity:0;transform:translateY(35px) rotate(30deg)}40%{opacity:1}70%{opacity:1;transform:translateY(-24px) rotate(-35deg)}100%{opacity:1;transform:translateY(5px) rotate(12deg)}}
 .celebration::backdrop{background:#25103bd1;backdrop-filter:blur(7px)}
 .celebration-close{position:absolute;right:12px;top:12px;background:#ffffff90;font-size:22px}
 .celebration>.eyebrow{color:#8c52bd;letter-spacing:2.4px;margin:14px 0 12px}

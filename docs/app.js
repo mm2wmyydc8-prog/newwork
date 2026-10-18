@@ -1,9 +1,11 @@
 import { initialState, validateState, settle, totalMinutes, remainingSeconds, start, pause, adjust, missionDone } from './model.js';
+import { MOVES, PSYCHIC_THRESHOLD, missionMove, celebrationMoves } from './moves.js';
 
 const $ = selector => document.querySelector(selector);
 const key = 'yeonwoo-pocket-web-v1';
 let state = initialState(), editingId = null, pendingNewMission = false, storageAvailable = true;
 let confirmingMissionId = null;
+let celebration = null;
 try {
   const saved = localStorage.getItem(key);
   if (saved) {
@@ -42,10 +44,21 @@ function replayCelebration() {
   void dialog.offsetWidth; // Restart visual effects only; never re-apply the reward.
   dialog.classList.add('playing');
 }
-function celebrate(mission, minutes) {
-  $('#celebration-mission').textContent = `${mission.title} 성공!`;
-  $('#celebration-reward').textContent = `+${minutes}분`;
-  $('#celebration-message').textContent = '마스터 시간볼에 보상을 넣었어요!';
+function renderCelebration() {
+  const { mission, minutes, moves, index } = celebration;
+  const id = moves[index], move = MOVES[id], special = id === 'psychic';
+  $('#celebration-dialog').dataset.move = id;
+  $('#celebration-title').textContent = special ? '특별 기술 해금!' : '연우, 미션 성공!';
+  $('#move-name').textContent = `뮤츠의 ${move.name}!`;
+  $('.mewtwo-quote').textContent = `“${move.quote}”`;
+  $('#celebration-mission').textContent = special ? `오늘 총 ${PSYCHIC_THRESHOLD}분 달성!` : `${mission.title} 성공!`;
+  $('#celebration-reward').textContent = special ? '기술 해금 ✦' : `+${minutes}분`;
+  $('#celebration-message').textContent = move.description + (special ? ' (추가 시간 보상은 없어요.)' : ' 보상은 시간볼에 넣었어요!');
+  $('#celebration-continue').textContent = index + 1 < moves.length ? '특별 기술 보기 · 사이코키네시스 ✦' : '좋아! 모험 계속하기 ✦';
+}
+function celebrate(mission, minutes, before, after) {
+  celebration = { mission, minutes, moves: celebrationMoves(mission, before, after), index: 0 };
+  renderCelebration();
   showDialog('#celebration-dialog');
   replayCelebration();
 }
@@ -55,7 +68,11 @@ function closeCelebration() {
   $('#clock').scrollIntoView({ block: 'center', behavior: 'instant' });
 }
 $('#celebration-close').addEventListener('click', closeCelebration);
-$('#celebration-continue').addEventListener('click', closeCelebration);
+$('#celebration-continue').addEventListener('click', () => {
+  if (celebration && celebration.index + 1 < celebration.moves.length) {
+    celebration.index++; renderCelebration(); replayCelebration();
+  } else closeCelebration();
+});
 $('#celebration-replay').addEventListener('click', replayCelebration);
 $('#celebration-dialog').addEventListener('close', () => $('#celebration-dialog').classList.remove('playing'));
 function completeMission(id) {
@@ -63,9 +80,10 @@ function completeMission(id) {
   const mission = state.missions.find(x => x.id === id);
   if (!mission) return;
   if (missionDone(state, id)) { saveAndRender(); toast('오늘 보상은 이미 받았어요! 내일 또 도전하자 ✦'); return; }
+  const before = totalMinutes(state);
   const applied = adjust(state, mission.minutes, `${mission.title} 완료`, Date.now(), id);
   saveAndRender();
-  if (applied > 0) celebrate(mission, applied);
+  if (applied > 0) celebrate(mission, applied, before, totalMinutes(state));
   else toast('오늘 시간볼이 가득 찼어요! (최대 240분)');
 }
 function confirmMission(id) {
@@ -98,6 +116,8 @@ function render() {
   const total = totalMinutes(state), bonus = total - state.baseMinutes;
   $('#total-time').textContent = readable(total);
   $('#budget-detail').textContent = `기본 ${state.baseMinutes}분 ${bonus >= 0 ? '+' : '−'} 오늘 보상·차감 ${Math.abs(bonus)}분`;
+  $('#unlock-label').textContent = total >= PSYCHIC_THRESHOLD ? '✦ 사이코키네시스 해금 성공!' : `사이코키네시스까지 ${PSYCHIC_THRESHOLD - total}분!`;
+  $('#unlock-progress').value = Math.min(total, PSYCHIC_THRESHOLD);
   $('#mission-list').replaceChildren();
   $('#parent-missions').replaceChildren();
   for (const mission of state.missions) {
@@ -107,7 +127,7 @@ function render() {
     row.setAttribute('aria-label', `${mission.title}, ${done ? '오늘 완료됨' : `보상 ${mission.minutes}분, 완료 확인하기`}`);
     row.addEventListener('click', () => confirmMission(mission.id));
     const badge = el('div', 'badge'), image = el('img'); image.src = 'assets/masterball.svg'; image.alt = ''; badge.append(image);
-    const copy = el('div', 'mission-copy'); copy.append(el('div', 'mission-title', mission.title), el('div', 'mission-subtitle', done ? '오늘 미션 성공! ✦' : '눌러서 완료 확인하기 ›'));
+    const copy = el('div', 'mission-copy'); copy.append(el('div', 'mission-title', mission.title), el('div', 'mission-subtitle', done ? '오늘 미션 성공! ✦' : `${MOVES[missionMove(mission)].name} · 눌러서 완료 확인 ›`));
     row.append(badge, copy, el('span', 'reward-pill', done ? '✓ 완료' : `+${mission.minutes}분`));
     $('#mission-list').append(row);
 
@@ -142,6 +162,7 @@ function openEditor(mission = null) {
   $('#editor-title').textContent = mission ? '미션 수정' : '새 미션 추가';
   $('#mission-name').value = mission?.title ?? '';
   $('#mission-minutes').value = mission?.minutes ?? 30;
+  $('#mission-move').value = mission ? missionMove(mission) : 'confusion';
   $('#delete-mission').hidden = !mission;
   showDialog('#editor-dialog');
 }
@@ -158,8 +179,9 @@ $('#mission-form').addEventListener('submit', event => {
   const title = $('#mission-name').value.trim(), minutes = Number($('#mission-minutes').value);
   if (!title || title.length > 60 || !Number.isInteger(minutes) || minutes < 1 || minutes > 120) { toast('이름과 1~120분 사이의 시간을 입력해 주세요.'); return; }
   const current = state.missions.find(x => x.id === editingId);
-  if (current) { current.title = title; current.minutes = minutes; }
-  else state.missions.push({ id: crypto.randomUUID(), title, minutes });
+  const move = $('#mission-move').value;
+  if (current) { current.title = title; current.minutes = minutes; current.move = move; }
+  else state.missions.push({ id: crypto.randomUUID(), title, minutes, move });
   saveAndRender(); $('#editor-dialog').close(); toast('미션을 저장했어요!');
 });
 $('#delete-mission').addEventListener('click', () => {
