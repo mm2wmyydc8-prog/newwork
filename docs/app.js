@@ -35,6 +35,28 @@ function readable(minutes) {
   return `${Math.floor(minutes / 60)}시간${minutes % 60 ? ` ${minutes % 60}분` : ''}`;
 }
 function showDialog(id) { if (!$(id).open) $(id).showModal(); }
+function replayCelebration() {
+  const dialog = $('#celebration-dialog');
+  dialog.classList.remove('playing');
+  void dialog.offsetWidth; // Restart visual effects only; never re-apply the reward.
+  dialog.classList.add('playing');
+}
+function celebrate(mission, minutes) {
+  $('#celebration-mission').textContent = `${mission.title} 성공!`;
+  $('#celebration-reward').textContent = `+${minutes}분`;
+  $('#celebration-message').textContent = '마스터 시간볼에 보상을 넣었어요!';
+  showDialog('#celebration-dialog');
+  replayCelebration();
+}
+function closeCelebration() {
+  $('#celebration-dialog').close();
+  $('#parent-dialog').close();
+  $('#clock').scrollIntoView({ block: 'center', behavior: 'instant' });
+}
+$('#celebration-close').addEventListener('click', closeCelebration);
+$('#celebration-continue').addEventListener('click', closeCelebration);
+$('#celebration-replay').addEventListener('click', replayCelebration);
+$('#celebration-dialog').addEventListener('close', () => $('#celebration-dialog').classList.remove('playing'));
 function saveAndRender() { persist(); render(); }
 function renderClock() {
   const seconds = remainingSeconds(state);
@@ -66,7 +88,9 @@ function render() {
     complete.addEventListener('click', () => {
       if (missionDone(state, mission.id)) return;
       const applied = adjust(state, mission.minutes, `${mission.title} 완료`, Date.now(), mission.id);
-      saveAndRender(); toast(applied > 0 ? `연우야, 미션 성공! +${applied}분 ✨` : '오늘 시간볼이 가득 찼어요! (최대 240분)');
+      saveAndRender();
+      if (applied > 0) celebrate(mission, applied);
+      else toast('오늘 시간볼이 가득 찼어요! (최대 240분)');
     });
     const edit = el('button', 'quiet', '수정'); edit.setAttribute('aria-label', `${mission.title} 수정`);
     edit.addEventListener('click', () => openEditor(mission));

@@ -1,0 +1,33 @@
+.celebration{width:min(calc(100% - 28px),440px);text-align:center;padding:30px 24px 24px;background:linear-gradient(155deg,#faf7ff,#ede0ff 58%,#ffe9f1);overflow-x:hidden}
+.celebration::backdrop{background:#25103bd1;backdrop-filter:blur(7px)}
+.celebration-close{position:absolute;right:12px;top:12px;background:#ffffff90;font-size:22px}
+.celebration>.eyebrow{color:#8c52bd;letter-spacing:2.4px;margin:14px 0 12px}
+.celebration h2{font-size:27px;font-weight:850;letter-spacing:-1px}
+.psychic-stage{height:255px;position:relative;isolation:isolate;margin:12px -10px 0;overflow:hidden}
+.psychic-aura{position:absolute;width:225px;height:225px;left:50%;top:10px;transform:translateX(-50%);background:radial-gradient(circle,#cb9cf580,#dbb3fa44 50%,transparent 72%);border-radius:50%}
+.psychic-mewtwo{position:absolute;width:210px;height:210px;object-fit:contain;left:50%;top:14px;transform:translateX(-50%);filter:drop-shadow(0 7px 12px #7e3cb855)}
+.psychic-mew{position:absolute;width:85px;height:85px;object-fit:contain;left:3%;top:25px;transform:rotate(-12deg)}
+.psychic-ring{position:absolute;width:190px;height:190px;border:2px solid #b277e0;border-radius:50%;left:50%;top:22px;transform:translateX(-50%);opacity:0}
+.reward-ball{position:absolute;width:55px;height:55px;bottom:7px;left:calc(50% - 27px);filter:drop-shadow(0 5px 5px #66399f44)}
+.psychic-star{position:absolute;color:#a45ad4;font-size:28px}.star-one{top:18px;right:16%}.star-two{bottom:42px;left:10%;font-size:36px}.star-three{bottom:70px;right:8%;font-size:23px}
+.mewtwo-quote{font-size:16px;font-weight:750;color:#633293;margin-bottom:14px}
+.celebration-mission{font-size:14px;overflow-wrap:anywhere;color:#756080}
+.celebration-reward{display:inline-block;font-size:42px;font-weight:900;letter-spacing:-1px;color:#7545b2;background:#ffffffb0;border-radius:18px;padding:7px 28px;margin:10px 0}
+#celebration-message{font-size:12px;line-height:1.7;color:#756080;margin-bottom:20px}
+#celebration-continue{width:100%;min-height:50px}#celebration-replay{font-size:12px;background:transparent;margin-top:8px}
+.celebration.playing .psychic-mewtwo{animation:psychic-lift 1.8s ease-in-out both}
+.celebration.playing .psychic-mew{animation:mew-cheer 1.8s ease-in-out both}
+.celebration.playing .psychic-aura{animation:aura-charge 1.8s ease-out both}
+.celebration.playing .ring-one{animation:psychic-wave 1.6s .3s ease-out both}.celebration.playing .ring-two{animation:psychic-wave 1.6s .7s ease-out both}
+.celebration.playing .reward-ball{animation:ball-reward 1.9s ease-in-out both}
+.celebration.playing .psychic-star{animation:star-drift 1.8s ease-out both}.celebration.playing .star-two{animation-delay:.15s}
+.celebration.playing .celebration-reward{animation:reward-pop .65s 1.2s ease-out both}
+@keyframes psychic-lift{0%{transform:translateX(-50%) translateY(16px) scale(.88);opacity:.3}35%{transform:translateX(-50%) translateY(-8px) scale(1.04);opacity:1}65%{transform:translateX(-50%) translateY(-13px) scale(1.04)}100%{transform:translateX(-50%)}}
+@keyframes mew-cheer{0%{transform:translate(-20px,18px) rotate(-20deg);opacity:0}45%{transform:translate(4px,-8px) rotate(6deg);opacity:1}100%{transform:rotate(-12deg);opacity:1}}
+@keyframes aura-charge{0%{opacity:.2;transform:translateX(-50%) scale(.6)}60%{opacity:1;transform:translateX(-50%) scale(1.2)}100%{opacity:.8;transform:translateX(-50%)}}
+@keyframes psychic-wave{0%{transform:translateX(-50%) scale(.4);opacity:0}25%{opacity:.65}100%{transform:translateX(-50%) scale(1.65);opacity:0}}
+@keyframes ball-reward{0%,25%{transform:translateY(25px) scale(.6);opacity:0}50%{transform:translateY(-22px) rotate(-15deg);opacity:1}70%{transform:translateY(-8px) rotate(12deg)}100%{transform:none;opacity:1}}
+@keyframes star-drift{0%{opacity:0;transform:translateY(15px) scale(.5)}55%{opacity:1;transform:translateY(-8px) scale(1.15)}100%{opacity:.8;transform:none}}
+@keyframes reward-pop{0%{opacity:0;transform:translateY(10px) scale(.8)}70%{opacity:1;transform:scale(1.08)}100%{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){.celebration.playing *{animation:none!important}.psychic-ring{display:none}}
+@media(max-height:740px){.celebration{padding-top:20px}.psychic-stage{height:195px}.psychic-mewtwo{width:165px;height:165px}.psychic-aura{width:175px;height:175px}.psychic-mew{width:65px;height:65px}.reward-ball{width:44px;height:44px;left:calc(50% - 22px)}.celebration h2{font-size:24px}.celebration-reward{font-size:34px}.celebration>.eyebrow{margin-top:8px}}
