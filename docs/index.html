@@ -5,24 +5,28 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#7550b7">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="연우의 포켓 타임">
+  <meta name="apple-mobile-web-app-title" content="연우의 포켓몬 모험">
   <meta name="description" content="연우의 미션과 보상 시간을 모으는 작은 모험">
-  <title>연우의 포켓 타임</title>
+  <title>연우의 포켓몬 모험</title>
   <link rel="icon" href="assets/masterball.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="assets/touch-icon.png">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="celebration.css?v=mission-moves">
-  <link rel="stylesheet" href="hangul.css">
-  <script type="module" src="app.js?v=hangul-quiz"></script>
+  <link rel="stylesheet" href="hangul.css?v=spoken-learning">
+  <link rel="stylesheet" href="collection.css">
+  <script type="module" src="app.js?v=pokedex151"></script>
 </head>
 <body>
   <main>
-    <header class="topbar"><a href="#" class="brand"><img src="assets/masterball.svg" alt="">연우의 포켓 타임</a><button id="parent-open" class="quiet">🔒 부모님</button></header>
+    <header class="topbar"><a href="#" class="brand"><img src="assets/masterball.svg" alt="">연우의 포켓몬 모험</a><button id="parent-open" class="quiet">🔒 부모님</button></header>
     <section class="hero">
       <div class="hero-copy"><span class="eyebrow">✦ 연우의 오늘 모험</span><h1>뮤·뮤츠와 함께<br>미션 출발!</h1><p>작은 도전으로 즐거운 시간을 모으자.</p></div>
       <div class="companions"><figure><img src="assets/mew.png" alt="뮤" width="475" height="475"><figcaption>뮤 <span>작은 도전도 좋아!</span></figcaption></figure><figure><img src="assets/mewtwo.png" alt="뮤츠" width="475" height="475"><figcaption>뮤츠 <span>연우, 넌 할 수 있어!</span></figcaption></figure></div>
     </section>
+    <button id="welcome-speak" class="welcome-speak">🔊 연우야, 여기를 눌러 봐! · 사용 방법 듣기</button>
+    <section class="card collection-card"><div class="section-heading"><div><span class="eyebrow">YEONWOO'S POKÉDEX</span><h2>연우의 포켓몬 도감</h2></div><button id="pokedex-open" class="secondary">도감 보기</button></div><p><strong id="collection-count">0 / 151마리</strong> · <span id="collection-total">누적 퀘스트 0개 성공</span></p><progress id="collection-progress" value="0" max="5" aria-label="다음 포켓몬까지 퀘스트 진행"></progress><p id="collection-next">이상해씨까지 퀘스트 5개!</p><p class="collection-footnote">퀘스트를 모으면 기본 → 희귀 → 전설·환상 포켓몬을 만나요.<br>오늘 같은 문제는 한 번만 기록돼요. 모은 포켓몬은 내일도 함께해요.</p></section>
+    <section class="card hangul-card"><img src="assets/mew.png" alt="응원하는 뮤"><div class="hangul-copy"><span class="eyebrow">뮤와 함께 떠나는 퀘스트</span><h2>연우의 포켓몬 모험</h2><p>뮤의 퀘스트를 풀고 포켓몬을 만나자!<br>문제·힌트 자동 읽기 · 보기마다 🔊 듣기</p><button id="hangul-start" class="primary">🔊 모험 떠나기 ✦</button></div></section>
     <div class="dashboard">
       <section class="card timer-card" aria-labelledby="timer-title">
         <span class="eyebrow" id="timer-title">⏱ 연우의 남은 시간</span>
@@ -33,19 +37,22 @@
       </section>
       <section class="card bank-card"><img src="assets/masterball.svg" class="bank-ball" alt="마스터볼"><span class="eyebrow">연우의 마스터 시간볼</span><h2 id="total-time">30분</h2><p id="budget-detail">기본 30분 + 오늘 보상 0분</p><div class="bank-note">오늘 받은 총시간이에요.<br>이미 본 시간도 포함돼요.</div><div class="move-unlock"><span id="unlock-label"></span><progress id="unlock-progress" max="60" value="0" aria-label="사이코키네시스 해금까지 오늘 모은 미션 보상 시간"></progress><small>오늘 미션 보상 60분이면 해금! 시청·차감과 관계없어요</small></div></section>
     </div>
-    <section class="card hangul-card"><img src="assets/mew.png" alt="응원하는 뮤"><div class="hangul-copy"><span class="eyebrow">뮤와 함께 한 글자씩</span><h2>연우의 한글 모험</h2><p>받침 없는 낱말을 읽어보자!<br>그림 낱말 찾기 · 빈 글자 채우기 · 5문제</p><button id="hangul-start" class="primary">한글 모험 시작 ✦</button></div></section>
-    <section class="card missions"><div class="section-heading"><div><span class="eyebrow">MISSION QUEST</span><h2>오늘의 미션</h2></div><button id="mission-add-shortcut" class="round" aria-label="부모님 확인 후 미션 추가">＋</button></div><div id="mission-list" class="mission-grid"></div><p class="footnote">미션을 누르고 부모님께 완료 확인을 받아요.<br>미션 보상은 오늘만 적용돼요.</p></section>
+
+    <section class="card missions"><div class="section-heading"><div><span class="eyebrow">MISSION QUEST</span><h2>오늘의 퀘스트</h2></div><button id="mission-add-shortcut" class="round" aria-label="부모님 확인 후 미션 추가">＋</button></div><div id="mission-list" class="mission-grid"></div><p class="footnote">미션을 누르고 부모님께 완료 확인을 받아요.<br>미션 보상은 오늘만 적용돼요.</p></section>
     <section class="history"><div class="section-heading"><h2>✦ 연우의 모험 기록</h2><span class="small">최근 기록</span></div><div id="history-list"></div></section>
     <footer>연우를 위한 작은 모험 · 웹 체험판<br>기록은 지금 쓰는 브라우저에만 저장돼요.<br><a href="https://github.com/mm2wmyydc8-prog/newwork/blob/main/ARTWORK.md">캐릭터 그림 출처</a></footer>
   </main>
   <div id="toast" role="status" aria-live="polite"></div>
 
+  <dialog id="pokedex-dialog" class="pokedex-dialog" aria-labelledby="pokedex-title"><div class="dialog-heading"><h2 id="pokedex-title">연우의 포켓몬 도감 · 151종</h2><button type="button" data-close="pokedex-dialog" class="round" aria-label="도감 닫기">×</button></div><p class="notice">그림자가 보이면 아직 모험 중인 친구예요. 퀘스트를 모아 만나보자! 도감과 누적 기록은 이 브라우저에 저장돼요.</p><label for="pokedex-filter">어떤 친구들을 볼까?</label><select id="pokedex-filter"><option value="all">전체 · 151종</option><option value="owned">연우가 만난 친구</option><option value="기본">기본 포켓몬</option><option value="희귀">희귀 포켓몬</option><option value="전설">전설 포켓몬</option><option value="환상">환상 포켓몬</option></select><div id="pokedex-grid" class="pokedex-grid"></div></dialog>
+  <dialog id="capture-dialog" class="capture-dialog" aria-labelledby="capture-title"><span class="eyebrow">NEW FRIEND!</span><h2 id="capture-title">새 포켓몬을 만났어!</h2><div class="capture-art"><img id="capture-image" src="assets/bulbasaur.png" alt="이상해씨"></div><span id="capture-rarity" class="rarity">첫 파트너</span><h3 id="capture-name">이상해씨</h3><p id="capture-message"></p><button id="capture-continue" class="primary">친구가 되어줘! ✦</button></dialog>
+
   <dialog id="quiz-dialog" class="quiz-dialog" aria-labelledby="quiz-title">
-    <div class="dialog-heading"><h2 id="quiz-title">연우의 한글 모험</h2><button type="button" data-close="quiz-dialog" class="round" aria-label="한글 모험 닫기">×</button></div>
+    <div class="dialog-heading"><h2 id="quiz-title">연우의 포켓몬 모험</h2><button type="button" data-close="quiz-dialog" class="round" aria-label="모험 닫기">×</button></div>
     <span id="quiz-progress" class="eyebrow">1 / 5 문제</span><progress id="quiz-progress-bar" class="quiz-progress-bar" max="5" value="0" aria-label="끝낸 문제 수"></progress>
-    <div id="quiz-question-area"><div id="quiz-picture" class="quiz-picture" aria-hidden="true"></div><div id="quiz-word" class="quiz-word"></div><p id="quiz-prompt"></p><button id="quiz-speak" class="quiet">🔊 문제 듣기</button><div id="quiz-answers" class="quiz-answers" role="group" aria-label="정답을 골라요"></div><p id="quiz-feedback" role="status" aria-live="polite"></p><button id="quiz-next" class="primary" hidden>다음 문제 →</button></div>
+    <div id="quiz-question-area"><div id="quiz-picture" class="quiz-picture" aria-hidden="true"></div><div id="quiz-word" class="quiz-word"></div><p id="quiz-prompt"></p><button id="quiz-speak" class="quiet">🔊 낱말·문제 듣기</button><div id="quiz-answers" class="quiz-answers" role="group" aria-label="정답을 골라요"></div><p id="quiz-feedback" role="status" aria-live="polite"></p><p id="quiz-collection-note" role="status" aria-live="polite"></p><button id="quiz-next" class="primary" hidden>다음 퀘스트 →</button></div>
     <div id="quiz-finish-area" hidden><img src="assets/mew.png" class="quiz-finish-mew" alt="응원하는 뮤"><h3>다섯 번의 도전 성공!<br>잘했어, 연우! ✦</h3><p id="quiz-reward-note"></p><button id="quiz-claim" class="primary">부모님께 완료 확인 받기</button></div>
-    <p class="footnote">중간에 쉬어도 괜찮아요. 다시 시작하면 새 5문제가 나와요.<br>문제 듣기는 기기의 한국어 음성 지원에 따라 달라요.</p>
+    <p class="footnote">중간에 쉬어도 괜찮아요. 다시 시작하면 새 5문제가 나와요.<br>혼자 읽기 확인은 음성을 듣기 전에 해주세요.<br>음성은 기기의 한국어 TTS 지원에 따라 달라요.</p>
   </dialog>
 
   <dialog id="mission-confirm-dialog" aria-labelledby="mission-confirm-title" aria-describedby="mission-confirm-description">
@@ -70,6 +77,7 @@
       <img class="reward-ball" src="assets/masterball.svg" alt="">
     </div>
     <p class="mewtwo-quote">“멋진 도전이었어, 연우!”</p>
+    <button id="celebration-speak" class="quiet">🔊 뮤츠 응원 듣기</button>
     <p id="celebration-mission" class="celebration-mission"></p>
     <div id="celebration-reward" class="celebration-reward">+30분</div>
     <p id="celebration-message">마스터 시간볼에 보상을 넣었어요!</p>
@@ -82,6 +90,7 @@
     <p class="notice">웹 체험판이에요. 부모님 메뉴는 비밀번호 없이 열립니다. 실제 보호 기능은 아직 적용하지 않았어요.</p>
     <div class="section-heading"><h3>미션과 보상 시간</h3><button id="add-mission" class="primary compact">＋ 미션 추가</button></div>
     <div id="parent-missions"></div>
+    <section class="setting"><h3>한국어 음성 읽기</h3><label class="speech-auto-label"><input id="speech-auto" type="checkbox" checked> 문제·힌트·칭찬 자동으로 읽기</label><label for="speech-rate">읽어주는 속도</label><select id="speech-rate"><option value="0.65">아주 천천히</option><option value="0.8">천천히</option><option value="1">보통</option></select><button id="speech-stop" type="button" class="quiet">음성 멈추기</button><p class="footnote">미션 듣기, 문제 듣기, 뮤츠 응원에 적용돼요. 기기의 한국어 TTS 음성을 사용하며 캐릭터 원작 목소리는 아니에요.</p></section>
     <section class="setting"><h3>매일 기본 시간</h3><label for="base-minutes">매일 받는 시간 (분)</label><div class="input-action"><input id="base-minutes" type="number" min="0" max="180" step="1" inputmode="numeric"><button id="save-base" class="secondary">저장</button></div></section>
     <section class="setting"><h3>시간 직접 조절</h3><label for="adjust-reason">이유</label><input id="adjust-reason" maxlength="60" placeholder="예: 약속을 잘 지켰어요"><label for="adjust-minutes">조절할 시간 (분)</label><input id="adjust-minutes" type="number" min="1" max="120" value="5" inputmode="numeric"><div class="timer-actions"><button id="reward-custom" class="secondary">＋ 시간 추가</button><button id="deduct-custom" class="danger">− 시간 차감</button></div></section>
     <p class="footnote">하루 총 허용 시간은 최대 240분이에요. 앱 삭제·브라우저 데이터 삭제 시 기록은 복구할 수 없어요. 아이폰과 Mac 사이에 기록이 동기화되지는 않아요.</p>

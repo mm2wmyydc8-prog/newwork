@@ -21,9 +21,11 @@ function shuffled(items, random) {
   }
   return result;
 }
-export function createQuiz(random = Math.random) {
+export function createQuiz(random = Math.random, completed = []) {
+  const fresh = shuffled(QUESTIONS.filter(q => !completed.includes(q.id)), random);
+  const review = shuffled(QUESTIONS.filter(q => completed.includes(q.id)), random);
   return { index: 0, answered: false,
-    questions: shuffled(QUESTIONS, random).slice(0, 5).map(q => ({ ...q, choices: shuffled(q.choices, random) })) };
+    questions: [...fresh, ...review].slice(0, 5).map(q => ({ ...q, choices: shuffled(q.choices, random) })) };
 }
 export function chooseAnswer(quiz, answer) {
   if (quiz.index >= quiz.questions.length || quiz.answered) return false;
@@ -37,24 +39,30 @@ export function nextQuestion(quiz) {
   return true;
 }
 
-export function setupHangulQuiz({ getState, confirmMission, notify }) {
+export function setupHangulQuiz({ getState, confirmMission, notify, speech, collection }) {
   const $ = selector => document.querySelector(selector);
   let quiz;
   const mission = () => getState().missions.find(m => m.id === 'hangul') ?? getState().missions.find(m => m.title.includes('한글'));
-  const canSpeak = 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
-  function stopSpeaking() { if (canSpeak) window.speechSynthesis.cancel(); }
+  const canSpeak = speech.supported;
+  function stopSpeaking() { speech.stop(); }
+  function say(text) { if (getState().speechAuto !== false) speech.speak(text); }
+  function questionText(question) {
+    return `${question.reading ?? question.word.replace('□', question.answer)}. ${question.prompt} 글자가 궁금하면 작은 스피커를 눌러 들어 봐.`;
+  }
   function render() {
     stopSpeaking();
     const finished = quiz.index === quiz.questions.length;
     $('#quiz-question-area').hidden = finished;
     $('#quiz-finish-area').hidden = !finished;
-    $('#quiz-progress').textContent = finished ? '오늘의 작은 도전 성공!' : `${quiz.index + 1} / ${quiz.questions.length} 문제`;
+    $('#quiz-progress').textContent = finished ? '오늘의 작은 도전 성공!' : `${quiz.index + 1} / ${quiz.questions.length} 퀘스트`;
     $('#quiz-progress-bar').value = quiz.index;
     $('#quiz-dialog').scrollTop = 0;
     if (finished) {
-      $('#quiz-reward-note').textContent = mission() ? `부모님이 확인하면 ‘${mission().title}’ 미션의 보상을 받을 수 있어요. 오늘 이미 받았다면 연습만 해요.` : '연결할 한글 미션이 없어요. 부모님 메뉴에서 이름에 ‘한글’이 들어가는 미션을 추가해 주세요.';
+      $('#quiz-reward-note').textContent = mission() ? '부모님이 확인하면 모험 보상을 받을 수 있어요. 오늘 시간 보상을 이미 받았어도 포켓몬 퀘스트는 계속할 수 있어요.' : '연결할 한글 미션이 없어요. 부모님 메뉴에서 이름에 ‘한글’이 들어가는 미션을 추가해 주세요.';
       $('#quiz-claim').disabled = !mission();
       $('#quiz-claim').focus();
+      say('다섯 번의 도전 성공! 잘했어, 연우! 부모님께 보여드리자.');
+      collection.finishRound();
       return;
     }
     const question = quiz.questions[quiz.index];
@@ -66,27 +74,38 @@ export function setupHangulQuiz({ getState, confirmMission, notify }) {
     $('#quiz-next').hidden = true;
     $('#quiz-answers').replaceChildren();
     for (const answer of question.choices) {
+      const cell = document.createElement('div'); cell.className = 'quiz-choice';
       const button = document.createElement('button');
       button.type = 'button'; button.className = answer.length > 1 ? 'quiz-answer quiz-answer-word' : 'quiz-answer'; button.textContent = answer;
       button.addEventListener('click', () => {
         if (quiz.answered) return;
         if (chooseAnswer(quiz, answer)) {
+          collection.recordCorrect(question.id);
           button.classList.add('correct');
           $('#quiz-feedback').textContent = `맞았어! ${(question.reading ?? question.word.replace('□', question.answer))}! 잘했어, 연우! ✦`;
+          say($('#quiz-feedback').textContent);
           $('#quiz-next').hidden = false;
-          $('#quiz-next').textContent = quiz.index === 4 ? '다 풀었어요! ✦' : '다음 문제 →';
-          $('#quiz-answers').querySelectorAll('button').forEach(node => { node.disabled = true; });
+          $('#quiz-next').textContent = quiz.index === 4 ? '다 풀었어요! ✦' : '다음 퀘스트 →';
+          $('#quiz-answers').querySelectorAll('.quiz-answer').forEach(node => { node.disabled = true; });
           $('#quiz-next').focus();
         } else {
           $('#quiz-feedback').textContent = question.hint;
+          say(question.hint);
           button.classList.add('try-again');
         }
       });
-      $('#quiz-answers').append(button);
+      const listen = document.createElement('button');
+      listen.type = 'button'; listen.className = 'quiz-choice-listen'; listen.textContent = '🔊 듣기';
+      listen.setAttribute('aria-label', `${answer} 소리 듣기`); listen.disabled = !canSpeak;
+      listen.addEventListener('click', () => speech.speak(answer));
+      cell.append(button, listen); $('#quiz-answers').append(cell);
     }
+    say(questionText(question));
   }
   $('#hangul-start').addEventListener('click', () => {
-    quiz = createQuiz(); render(); $('#quiz-dialog').showModal();
+    const state = getState();
+    const completed = state.collection?.day === state.day ? state.collection.questions : [];
+    quiz = createQuiz(Math.random, completed); $('#quiz-collection-note').textContent = '퀘스트를 성공하면 새로운 포켓몬을 만날 수 있어!'; render(); $('#quiz-dialog').showModal();
   });
   $('#quiz-next').addEventListener('click', () => { if (nextQuestion(quiz)) render(); });
   $('#quiz-speak').disabled = !canSpeak;
@@ -94,12 +113,8 @@ export function setupHangulQuiz({ getState, confirmMission, notify }) {
     if (!canSpeak || quiz.index >= quiz.questions.length) return;
     stopSpeaking();
     const question = quiz.questions[quiz.index];
-    const text = `${(question.reading ?? question.word.replace('□', question.answer))}. ${question.prompt}`;
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'ko-KR'; utterance.rate = 0.8;
-    const voice = window.speechSynthesis.getVoices().find(v => v.lang.startsWith('ko'));
-    if (voice) utterance.voice = voice;
-    window.speechSynthesis.speak(utterance);
+    const text = questionText(question);
+    speech.speak(text);
   });
   $('#quiz-claim').addEventListener('click', () => {
     if (!quiz || quiz.index !== quiz.questions.length) return;

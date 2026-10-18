@@ -59,6 +59,9 @@ export function validateState(value) {
       !Number.isFinite(value.usedSeconds) || value.usedSeconds < 0 ||
       !(value.startedAt === null || Number.isFinite(value.startedAt)) ||
       !Array.isArray(value.entries) || !Array.isArray(value.missions)) return false;
+  if (value.collection !== undefined && (!value.collection || !Number.isSafeInteger(value.collection.total) || value.collection.total < 0 ||
+      typeof value.collection.day !== 'string' || !Array.isArray(value.collection.questions) ||
+      !value.collection.questions.every(id => typeof id === 'string'))) return false;
   return value.entries.every(x => typeof x.id === 'string' && typeof x.day === 'string' && Number.isInteger(x.minutes) &&
     Number.isFinite(x.date) && typeof x.reason === 'string') &&
     value.missions.every(x => typeof x.id === 'string' && typeof x.title === 'string' &&

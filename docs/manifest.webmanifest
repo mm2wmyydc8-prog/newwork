@@ -1,7 +1,7 @@
 {
   "id": "./",
-  "name": "연우의 포켓 타임",
-  "short_name": "연우 포켓 타임",
+  "name": "연우의 포켓몬 모험",
+  "short_name": "연우의 모험",
   "lang": "ko",
   "start_url": "./",
   "scope": "./",

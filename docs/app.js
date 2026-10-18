@@ -1,6 +1,8 @@
-import { initialState, validateState, settle, totalMinutes, remainingSeconds, start, pause, adjust, missionDone } from './model.js';
+import { initialState, validateState, settle, totalMinutes, remainingSeconds, start, pause, adjust, missionDone } from './model.js?v=collection151';
 import { MOVES, PSYCHIC_THRESHOLD, missionMove, celebrationMoves, earnedMissionMinutes } from './moves.js?v=daily60';
-import { setupHangulQuiz } from './hangul.js';
+import { setupHangulQuiz } from './hangul.js?v=pokedex151';
+import { createKoreanSpeech } from './speech.js';
+import { setupCollection } from './collection.js?v=151';
 
 const $ = selector => document.querySelector(selector);
 const key = 'yeonwoo-pocket-web-v1';
@@ -23,6 +25,21 @@ function toast(text) {
   clearTimeout(toastTimeout);
   toastTimeout = setTimeout(() => $('#toast').classList.remove('visible'), 3500);
 }
+const speech = createKoreanSpeech({ getRate: () => state.speechRate ?? 0.8, onError: toast });
+const collection = setupCollection({ getState: () => { settle(state); return state; }, save: persist, speech });
+const autoSpeak = text => { if (state.speechAuto !== false) speech.speak(text); };
+$('#speech-auto').checked = state.speechAuto !== false;
+$('#speech-auto').addEventListener('change', () => { state.speechAuto = $('#speech-auto').checked; persist(); if (!state.speechAuto) speech.stop(); });
+$('#welcome-speak').addEventListener('click', () => speech.speak('연우야, 안녕! 뮤와 포켓몬 모험을 떠나자. 모험 떠나기를 누르면 퀘스트를 읽어줄게. 작은 스피커를 누르면 글자도 들을 수 있어.'));
+$('#speech-rate').value = String(state.speechRate ?? 0.8);
+$('#speech-rate').addEventListener('change', () => {
+  state.speechRate = Number($('#speech-rate').value); persist();
+  speech.speak('연우야, 천천히 함께 읽어보자.');
+});
+$('#celebration-speak').addEventListener('click', () => {
+  speech.speak(`${$('#move-name').textContent}. ${$('.mewtwo-quote').textContent}. ${$('#celebration-mission').textContent}`);
+});
+$('#speech-stop').addEventListener('click', speech.stop);
 function persist() {
   if (!storageAvailable) return;
   try { localStorage.setItem(key, JSON.stringify(state)); }
@@ -38,6 +55,7 @@ function readable(minutes) {
   if (minutes < 60) return `${minutes}분`;
   return `${Math.floor(minutes / 60)}시간${minutes % 60 ? ` ${minutes % 60}분` : ''}`;
 }
+function questTitle(mission) { return mission.id === 'hangul' && mission.title === '한글 공부' ? '뮤의 퀴즈 퀘스트' : mission.title; }
 function showDialog(id) { if (!$(id).open) $(id).showModal(); }
 function replayCelebration() {
   const dialog = $('#celebration-dialog');
@@ -53,7 +71,7 @@ function renderCelebration() {
   $('#celebration-title').textContent = special ? '특별 기술 해금!' : '연우, 미션 성공!';
   $('#move-name').textContent = `뮤츠의 ${move.name}!`;
   $('.mewtwo-quote').textContent = `“${move.quote}”`;
-  $('#celebration-mission').textContent = special ? `오늘 미션 보상 ${PSYCHIC_THRESHOLD}분 달성!` : `${mission.title} 성공!`;
+  $('#celebration-mission').textContent = special ? `오늘 미션 보상 ${PSYCHIC_THRESHOLD}분 달성!` : `${questTitle(mission)} 성공!`;
   $('#celebration-reward').textContent = special ? '기술 해금 ✦' : `+${minutes}분`;
   $('#celebration-message').textContent = move.description + (special ? ' (추가 시간 보상은 없어요.)' : ' 보상은 시간볼에 넣었어요!');
   $('#celebration-continue').textContent = index + 1 < moves.length ? '특별 기술 보기 · 사이코키네시스 ✦' : '좋아! 모험 계속하기 ✦';
@@ -63,6 +81,7 @@ function celebrate(mission, minutes, before, after) {
   renderCelebration();
   showDialog('#celebration-dialog');
   replayCelebration();
+  autoSpeak(`${$('#move-name').textContent}. ${$('.mewtwo-quote').textContent}. ${$('#celebration-mission').textContent}`);
 }
 function closeCelebration() {
   $('#celebration-dialog').close();
@@ -76,7 +95,7 @@ $('#celebration-continue').addEventListener('click', () => {
   } else closeCelebration();
 });
 $('#celebration-replay').addEventListener('click', replayCelebration);
-$('#celebration-dialog').addEventListener('close', () => $('#celebration-dialog').classList.remove('playing'));
+$('#celebration-dialog').addEventListener('close', () => { $('#celebration-dialog').classList.remove('playing'); speech.stop(); });
 function completeMission(id) {
   settle(state);
   const mission = state.missions.find(x => x.id === id);
@@ -94,9 +113,10 @@ function confirmMission(id) {
   if (!mission) return;
   if (missionDone(state, id)) { saveAndRender(); toast('오늘 보상은 이미 받았어요! 내일 또 도전하자 ✦'); return; }
   confirmingMissionId = id;
-  $('#mission-confirm-name').textContent = `${mission.title} · +${mission.minutes}분`;
+  $('#mission-confirm-name').textContent = `${questTitle(mission)} · +${mission.minutes}분`;
   $('#mission-confirm-reward').textContent = `확인하고 ${mission.minutes}분 받기`;
   showDialog('#mission-confirm-dialog');
+  autoSpeak(`${questTitle(mission)}. 퀘스트를 마쳤나요? 부모님이 확인하면 ${mission.minutes}분을 받을 수 있어요.`);
 }
 $('#mission-confirm-reward').addEventListener('click', () => {
   const id = confirmingMissionId;
@@ -130,9 +150,13 @@ function render() {
     row.setAttribute('aria-label', `${mission.title}, ${done ? '오늘 완료됨' : `보상 ${mission.minutes}분, 완료 확인하기`}`);
     row.addEventListener('click', () => confirmMission(mission.id));
     const badge = el('div', 'badge'), image = el('img'); image.src = 'assets/masterball.svg'; image.alt = ''; badge.append(image);
-    const copy = el('div', 'mission-copy'); copy.append(el('div', 'mission-title', mission.title), el('div', 'mission-subtitle', done ? '오늘 미션 성공! ✦' : `${MOVES[missionMove(mission)].name} · 눌러서 완료 확인 ›`));
+    const copy = el('div', 'mission-copy'); copy.append(el('div', 'mission-title', questTitle(mission)), el('div', 'mission-subtitle', done ? '오늘 퀘스트 성공! ✦' : `${MOVES[missionMove(mission)].name} · 눌러서 완료 확인 ›`));
     row.append(badge, copy, el('span', 'reward-pill', done ? '✓ 완료' : `+${mission.minutes}분`));
-    $('#mission-list').append(row);
+    const item = el('div', 'mission-item');
+    const listen = el('button', 'mission-listen', '🔊 미션 듣기');
+    listen.type = 'button'; listen.setAttribute('aria-label', `${mission.title} 미션 소리로 듣기`);
+    listen.addEventListener('click', () => speech.speak(`${questTitle(mission)}. 완료하면 ${mission.minutes}분을 받아요.`));
+    item.append(row, listen); $('#mission-list').append(item);
 
     const parentRow = el('div', 'parent-mission'), top = el('div', 'parent-mission-top');
     top.append(el('strong', '', mission.title), el('span', '', `+${mission.minutes}분`));
@@ -219,9 +243,10 @@ function tick() {
     if (wasRunning && state.day === previousDay) toast('시간이 끝났어요! TV 전원도 꺼 주세요.');
   } else renderClock();
 }
-document.addEventListener('visibilitychange', () => { tick(); persist(); });
+document.addEventListener('visibilitychange', () => { tick(); persist(); if (document.hidden) speech.stop(); });
 window.addEventListener('pagehide', persist);
 setInterval(tick, 500);
 settle(state); saveAndRender();
 if (!storageAvailable) toast('저장된 기록을 읽지 못했어요. 기존 기록을 덮어쓰지 않고 임시 체험으로 열었어요.');
-setupHangulQuiz({ getState: () => { settle(state); return state; }, confirmMission, notify: toast });
+collection.render();
+setupHangulQuiz({ getState: () => { settle(state); return state; }, confirmMission, notify: toast, speech, collection });

@@ -36,3 +36,10 @@ test('five unique questions, retries do not advance, all five must be answered',
   assert.equal(nextQuestion(quiz), false);
   assert.equal(chooseAnswer(quiz, '나'), false);
 });
+test('new quests are preferred over same-day review', () => {
+  const first = createQuiz(() => 0.4);
+  const completed = first.questions.map(q => q.id);
+  const next = createQuiz(() => 0.4, completed);
+  assert.ok(next.questions.every(q => !completed.includes(q.id)));
+  assert.equal(createQuiz(() => 0.4, QUESTIONS.map(q => q.id)).questions.length, 5);
+});
