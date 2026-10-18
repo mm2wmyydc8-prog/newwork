@@ -1064,8 +1064,8 @@ export const REWARD_RULES = new Map();
 let basic = 0, rare = 0, legendary = 0;
 for (const pokemon of POKEMON) {
   const rule = pokemon.id === 'mewtwo' ? { level: 'hard', target: 25, label: '어려움', tier: '상위 전설' }
-    : pokemon.id === 'mewtwo-mega-x' ? { level: 'easy', target: 100, label: '모든 난이도', tier: '상위 전설' }
-    : pokemon.id === 'mewtwo-mega-y' ? { level: 'easy', target: 100, label: '모든 난이도', tier: '상위 전설' }
+    : pokemon.id === 'mewtwo-mega-x' ? { level: 'easy', target: 120, label: '모든 난이도', tier: '상위 전설' }
+    : pokemon.id === 'mewtwo-mega-y' ? { level: 'easy', target: 140, label: '모든 난이도', tier: '상위 전설' }
     : pokemon.id === 'mew' ? { level: 'hard', target: 40, label: '어려움', tier: '환상' }
     : pokemon.rarity === '전설' ? { level: 'medium', target: 40 + (++legendary) * 10, label: '보통 이상', tier: '전설' }
     : pokemon.rarity === '희귀' ? { level: 'medium', target: (++rare) * 5, label: '보통 이상', tier: '희귀' }
@@ -1091,20 +1091,26 @@ function ruleProgress(data, rule) {
   if (rule.level === 'medium') return data.byDifficulty.medium + data.byDifficulty.hard;
   return data.byDifficulty.hard;
 }
+export function hasMewtwonite(state) { return ensureCollection(state).total >= 100; }
+export function canUseMegaMoves(state, id) {
+  const pokemon = POKEMON.find(p => p.id === id && p.form);
+  return Boolean(pokemon && hasMewtwonite(state) && eligible(ensureCollection(state), pokemon));
+}
 function eligible(data, pokemon) {
   const rule = REWARD_RULES.get(pokemon.id);
+  if (pokemon.form && data.total < 100) return false;
   return data.owned.includes(pokemon.id) || ruleProgress(data, rule) >= rule.target;
 }
 export function revealedPokemon(state, shinyView = false) {
   const data = ensureCollection(state);
-  return POKEMON.filter(p => !p.form || (shinyView ? data.shiny.includes(p.id) : eligible(data, p)));
+  return POKEMON.filter(p => !p.form || data.total >= 100);
 }
 export function collectionProgress(state, difficulty = state.quizDifficulty ?? 'easy') {
   const data = ensureCollection(state);
   const owned = POKEMON.filter(p => eligible(data, p));
   const targetLevel = RANK[difficulty] === undefined ? 'easy' : difficulty;
-  const nextPokemon = POKEMON.find(p => !p.form && !eligible(data, p) && REWARD_RULES.get(p.id).level === targetLevel)
-    ?? POKEMON.find(p => !p.form && !eligible(data, p));
+  const nextPokemon = POKEMON.find(p => (!p.form || data.total >= 100) && !eligible(data, p) && REWARD_RULES.get(p.id).level === targetLevel)
+    ?? POKEMON.find(p => (!p.form || data.total >= 100) && !eligible(data, p));
   const rule = nextPokemon ? REWARD_RULES.get(nextPokemon.id) : null;
   const next = nextPokemon ? { ...nextPokemon, threshold: rule.target, progress: ruleProgress(data, rule), requirement: rule.label } : null;
   return { total: data.total, owned, next, byDifficulty: data.byDifficulty, shiny: data.shiny };
@@ -1150,6 +1156,8 @@ export function setupCollection({ getState, save, speech }) {
     const ownedIds = new Set(owned.map(p => p.id));
     const shinyIds = new Set(shiny), shinyView = $('#pokedex-form').value === 'shiny';
     $('#collection-count').textContent = `${owned.length} / ${revealedPokemon(state).length}모습`;
+    $('#collection-stone').hidden = !hasMewtwonite(state);
+    $('#collection-stone').textContent = hasMewtwonite(state) ? '💎 뮤츠나이트 획득! · X·Y 포획 후 특별 기술 사용 가능' : '';
     $('#trainer-summary').textContent = `친구 ${owned.length}마리 · 퀘스트 ${total}개 성공`;
     $('#collection-total').textContent = `누적 ${total}개 · 보통 ${byDifficulty.medium} · 어려움 ${byDifficulty.hard}`;
     const advanced = byDifficulty.medium + byDifficulty.hard;
@@ -1244,6 +1252,7 @@ export function setupCollection({ getState, save, speech }) {
   $('#capture-skip').addEventListener('click', captureSuccess);
   $('#capture-replay').addEventListener('click', throwBall);
   $('#capture-dialog').addEventListener('close', () => { clearTimeout(captureTimer); speech.stop(); if (previewing) { previewing = false; return; } if (pending.length) showCapture(); });
+  $('#stone-dialog').addEventListener('close', () => { speech.stop(); if (pending.length) showCapture(); });
   return {
     render,
     completedAtDifficulty(level) { return completedAtDifficulty(getState(), level); },
@@ -1253,6 +1262,13 @@ export function setupCollection({ getState, save, speech }) {
       const progress = collectionProgress(getState());
       $('#quiz-collection-note').textContent = result.counted || result.upgraded ? `${result.upgraded ? '상위 난이도 도전 성공!' : '퀘스트 +1!'} · ${progress.next ? `${progress.next.name}까지 ${progress.next.requirement} ${Math.max(0, progress.next.threshold - progress.next.progress)}개` : '도감 완성!'}` : '오늘 이 난이도는 이미 성공했어! 복습도 멋져.';
     },
-    finishRound() { if (pending.length) showCapture(); }
+    finishRound() {
+      const state = getState();
+      if (hasMewtwonite(state) && !state.collection.stoneNoticeSeen) {
+        state.collection.stoneNoticeSeen = true; save();
+        $('#stone-dialog').showModal();
+        if (state.speechAuto !== false) speech.speak('연우야! 퀴즈 100개 성공! 비밀 보상 뮤츠나이트를 얻었어! 뮤츠에게는 메가뮤츠 X와 Y라는 특별한 모습이 있대! 앞으로 포획해서 특별한 기술을 써 보자!');
+      } else if (pending.length) showCapture();
+    }
   };
 }

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { POKEMON, collectionProgress, recordQuest, revealedPokemon, shinyDifficulty, SHINY_CHANCE } from '../docs/collection.js';
+import { POKEMON, collectionProgress, recordQuest, hasMewtwonite, canUseMegaMoves, revealedPokemon, shinyDifficulty, SHINY_CHANCE } from '../docs/collection.js';
 import { initialState, settle, validateState } from '../docs/model.js';
 
 test('151 species plus two Mega forms have PNG artwork', () => {
@@ -90,30 +90,27 @@ test('20 advanced successes guarantee a shiny even when every random roll misses
   assert.equal(state.collection.shiny.length, 1);
 });
 
-test('100 total successes award both Mega Pokemon capture encounters at any difficulty, duplicates do not count', () => {
+test('100 successes reveal the stone and forms; captures at 120/140 enable moves separately', () => {
   const state = initialState();
-  for (let i = 0; i < 99; i++) recordQuest(state, `capture-${i}`, 'easy');
-  assert.ok(!collectionProgress(state).owned.some(p => p.form));
-  assert.equal(recordQuest(state, 'capture-0', 'easy').counted, false);
-  assert.ok(!collectionProgress(state).owned.some(p => p.form));
-  const result = recordQuest(state, 'capture-99', 'easy');
-  assert.equal(result.unlocked.filter(p => p.form).length, 2);
-  const restored = JSON.parse(JSON.stringify(state));
-  assert.equal(collectionProgress(restored).owned.filter(p => p.form).length, 2);
-  assert.ok(validateState(restored));
+  for (let i = 1; i <= 140; i++) {
+    const result = recordQuest(state, `stone-${i}`, 'easy');
+    assert.equal(hasMewtwonite(state), i >= 100);
+    assert.equal(revealedPokemon(state).length, i < 100 ? 151 : 153);
+    assert.equal(canUseMegaMoves(state, 'mewtwo-mega-x'), i >= 120);
+    assert.equal(canUseMegaMoves(state, 'mewtwo-mega-y'), i >= 140);
+    if (i === 100) assert.equal(result.unlocked.filter(p => p.form).length, 0);
+    if (i === 120) assert.ok(result.unlocked.some(p => p.id === 'mewtwo-mega-x'));
+    if (i === 140) assert.ok(result.unlocked.some(p => p.id === 'mewtwo-mega-y'));
+    if (i < 100) assert.ok(!collectionProgress(state, 'hard').next?.form);
+  }
+  assert.equal(recordQuest(state, 'stone-140', 'easy').counted, false);
+  assert.ok(validateState(JSON.parse(JSON.stringify(state))));
   assert.equal(shinyDifficulty(POKEMON.find(p => p.form)), 'hard');
 });
-
-test('secret forms stay absent from catalog and next reward until each is earned', () => {
-  const state = initialState();
-  assert.equal(revealedPokemon(state).length, 151);
-  for (let i = 0; i < 100; i++) {
-    recordQuest(state, `secret-${i}`, 'hard', () => 0.999);
-    assert.ok(!collectionProgress(state, 'hard').next?.form);
-    assert.equal(revealedPokemon(state).filter(p => p.form).length, i < 99 ? 0 : 2);
-  }
-  state.collection.shiny = [];
-  assert.equal(revealedPokemon(state, true).filter(p => p.form).length, 0);
-  state.collection.shiny.push('mewtwo-mega-x');
-  assert.deepEqual(revealedPokemon(state, true).filter(p => p.form).map(p => p.id), ['mewtwo-mega-x']);
+test('previously stored forms cannot leak before 100 successes', () => {
+ const state = initialState(); collectionProgress(state);
+ state.collection.owned.push('mewtwo-mega-x'); state.collection.shiny.push('mewtwo-mega-x');
+ assert.equal(revealedPokemon(state, true).length, 151);
+ assert.ok(!collectionProgress(state).owned.some(p => p.form));
+ assert.equal(canUseMegaMoves(state, 'mewtwo-mega-x'), false);
 });

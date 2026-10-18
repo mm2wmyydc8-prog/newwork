@@ -69,6 +69,7 @@ export function validateState(value) {
         !c.levels || typeof c.levels !== 'object' || Array.isArray(c.levels) ||
         !Object.values(c.levels).every(level => ['easy', 'medium', 'hard'].includes(level))) return false;
   }
+  if (value.collection?.stoneNoticeSeen !== undefined && typeof value.collection.stoneNoticeSeen !== 'boolean') return false;
   if (value.collection?.shiny !== undefined && (!Array.isArray(value.collection.shiny) ||
       !value.collection.shiny.every(id => typeof id === 'string') || new Set(value.collection.shiny).size !== value.collection.shiny.length)) return false;
   if (value.collection?.shinyBonusAwards !== undefined && (!Number.isSafeInteger(value.collection.shinyBonusAwards) || value.collection.shinyBonusAwards < 0)) return false;
