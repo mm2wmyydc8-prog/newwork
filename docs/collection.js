@@ -1077,6 +1077,8 @@ function ensureCollection(state) {
     data.byDifficulty = { easy: data.total, medium: 0, hard: 0 };
     data.levels = {};
   }
+  if (!data.shiny) data.shiny = [];
+  if (!Number.isSafeInteger(data.shinyBonusAwards)) data.shinyBonusAwards = 0;
   if (data.day !== state.day) { data.day = state.day; data.questions = []; data.levels = {}; }
   return data;
 }
@@ -1097,13 +1099,15 @@ export function collectionProgress(state, difficulty = state.quizDifficulty ?? '
     ?? POKEMON.find(p => !eligible(data, p));
   const rule = nextPokemon ? REWARD_RULES.get(nextPokemon.id) : null;
   const next = nextPokemon ? { ...nextPokemon, threshold: rule.target, progress: ruleProgress(data, rule), requirement: rule.label } : null;
-  return { total: data.total, owned, next, byDifficulty: data.byDifficulty };
+  return { total: data.total, owned, next, byDifficulty: data.byDifficulty, shiny: data.shiny };
 }
 export function completedAtDifficulty(state, difficulty) {
   const data = ensureCollection(state);
   return data.questions.filter(id => RANK[data.levels[id] ?? 'easy'] >= RANK[difficulty]);
 }
-export function recordQuest(state, questionId, difficulty = 'easy') {
+export const SHINY_CHANCE = { easy: 0, medium: 1 / 24, hard: 1 / 16 };
+export function shinyDifficulty(pokemon) { return REWARD_RULES.get(pokemon.id).level === 'easy' ? 'medium' : 'hard'; }
+export function recordQuest(state, questionId, difficulty = 'easy', random = Math.random) {
   const data = ensureCollection(state), level = RANK[difficulty] === undefined ? 'easy' : difficulty;
   const previousOwned = new Set(POKEMON.filter(p => eligible(data, p)).map(p => p.id));
   const already = data.questions.includes(questionId), oldLevel = data.levels[questionId] ?? 'easy';
@@ -1111,8 +1115,19 @@ export function recordQuest(state, questionId, difficulty = 'easy') {
   if (already) data.byDifficulty[oldLevel] = Math.max(0, data.byDifficulty[oldLevel] - 1);
   else { data.questions.push(questionId); data.total++; }
   data.byDifficulty[level]++; data.levels[questionId] = level;
-  const unlocked = POKEMON.filter(p => !previousOwned.has(p.id) && eligible(data, p));
+  const unlocked = POKEMON.filter(p => !previousOwned.has(p.id) && eligible(data, p)).map(p => ({ ...p, shiny: false }));
   data.owned = [...new Set([...data.owned, ...unlocked.map(p => p.id)])];
+  // One shiny attempt per real medium/hard success; easy practice cannot roll one.
+  if (level !== 'easy') {
+    const pool = POKEMON.filter(p => eligible(data, p) && !data.shiny.includes(p.id) && RANK[shinyDifficulty(p)] <= RANK[level]);
+    const successes = data.byDifficulty.medium + data.byDifficulty.hard;
+    const guaranteed = Math.floor(successes / 20) > data.shinyBonusAwards;
+    if (pool.length && (guaranteed || random() < SHINY_CHANCE[level])) {
+      const pokemon = pool[Math.min(pool.length - 1, Math.floor(random() * pool.length))];
+      data.shiny.push(pokemon.id); unlocked.push({ ...pokemon, shiny: true, shinyBonus: true });
+      if (guaranteed) data.shinyBonusAwards++;
+    }
+  }
   return { counted: !already, upgraded: already, unlocked };
 }
 
@@ -1122,25 +1137,28 @@ export function setupCollection({ getState, save, speech }) {
   let previewing = false;
   let captureTimer, currentCapture;
   function render() {
-    const { total, owned, next, byDifficulty } = collectionProgress(getState());
+    const { total, owned, next, byDifficulty, shiny } = collectionProgress(getState());
     const ownedIds = new Set(owned.map(p => p.id));
+    const shinyIds = new Set(shiny), shinyView = $('#pokedex-form').value === 'shiny';
     $('#collection-count').textContent = `${owned.length} / ${POKEMON.length}마리`;
     $('#trainer-summary').textContent = `친구 ${owned.length}마리 · 퀘스트 ${total}개 성공`;
     $('#collection-total').textContent = `누적 ${total}개 · 보통 ${byDifficulty.medium} · 어려움 ${byDifficulty.hard}`;
+    const advanced = byDifficulty.medium + byDifficulty.hard;
+    $('#collection-shiny').textContent = `✦ 이로치 ${shiny.length}마리 · 보통 이상 ${20 - advanced % 20}개 더 성공하면 확정 만남`;
     $('#collection-next').textContent = next ? `${next.name}까지 ${next.requirement} ${Math.max(0, next.threshold - next.progress)}개!` : '전설과 환상까지, 연우의 도감 완성!';
     $('#collection-progress').max = next?.threshold ?? 1;
     $('#collection-progress').value = next?.progress ?? 1;
     const grid = $('#pokedex-grid'); grid.replaceChildren();
     const filter = $('#pokedex-filter').value;
-    const visible = POKEMON.filter(p => filter === 'all' || (filter === 'owned' ? ownedIds.has(p.id) : REWARD_RULES.get(p.id).tier === filter));
+    const visible = POKEMON.filter(p => filter === 'all' || (filter === 'owned' ? (shinyView ? shinyIds.has(p.id) : ownedIds.has(p.id)) : REWARD_RULES.get(p.id).tier === filter));
     visible.forEach(pokemon => {
-      const acquired = ownedIds.has(pokemon.id), rule = REWARD_RULES.get(pokemon.id);
+      const acquired = shinyView ? shinyIds.has(pokemon.id) : ownedIds.has(pokemon.id), rule = REWARD_RULES.get(pokemon.id);
       const card = document.createElement('div');
-      card.className = `pokedex-mon ${acquired ? 'owned' : 'locked'}`;
-      const image = document.createElement('img'); image.src = `assets/${pokemon.id}.png`; image.alt = acquired ? pokemon.name : '아직 만나지 못한 포켓몬'; image.loading = 'lazy'; image.decoding = 'async';
+      card.className = `pokedex-mon ${acquired ? 'owned' : 'locked'}${shinyView && acquired ? ' shiny-owned' : ''}`;
+      const image = document.createElement('img'); image.src = `assets/${shinyView ? 'shiny/' : ''}${pokemon.id}.png`; image.alt = acquired ? `${shinyView ? '이로치 ' : ''}${pokemon.name}` : '아직 만나지 못한 포켓몬'; image.loading = 'lazy'; image.decoding = 'async';
       const name = document.createElement('strong'); name.textContent = pokemon.name;
       const rarity = document.createElement('span'); rarity.className = 'rarity'; rarity.textContent = rule.tier;
-      const status = document.createElement('small'); status.textContent = acquired ? '✓ 연우의 친구' : `${rule.label} ${rule.target}개에 만나요`;
+      const status = document.createElement('small'); status.textContent = acquired ? (shinyView ? '✦ 이로치 친구' : shinyIds.has(pokemon.id) ? '✓ 친구 · ✦ 이로치도 획득' : '✓ 연우의 친구') : shinyView ? `${shinyDifficulty(pokemon) === 'medium' ? '보통 이상' : '어려움'}에서 기본형 획득 후 등장` : `${rule.label} ${rule.target}개에 만나요`;
       card.append(image, name, rarity, status); grid.append(card);
     });
     if (!visible.length) {
@@ -1151,14 +1169,16 @@ export function setupCollection({ getState, save, speech }) {
   function showCapture(pokemon = pending.shift(), preview = false) {
     if (!pokemon) return;
     previewing = preview;
-    $('#capture-image').src = `assets/${pokemon.id}.png`;
-    $('#capture-image').alt = pokemon.name;
+    $('#capture-image').src = `assets/${pokemon.shiny ? 'shiny/' : ''}${pokemon.id}.png`;
+    $('#capture-image').alt = `${pokemon.shiny ? '이로치 ' : ''}${pokemon.name}`;
     $('#capture-name').textContent = pokemon.name;
     const rule = REWARD_RULES.get(pokemon.id);
     const special = ['전설', '상위 전설', '환상'].includes(rule.tier);
     clearTimeout(captureTimer);
     currentCapture = { pokemon, preview, special };
     $('#capture-dialog').dataset.phase = 'encounter';
+    $('#capture-dialog').dataset.shiny = String(Boolean(pokemon.shiny));
+    $('#capture-shiny-badge').hidden = !pokemon.shiny;
     $('#capture-ball').style.setProperty('--ball-image', `url("assets/${special ? 'masterball' : 'pokeball'}.svg")`);
     $('#capture-ball').setAttribute('aria-label', special ? '마스터볼' : '몬스터볼');
     $('#capture-continue').disabled = false;
@@ -1167,23 +1187,26 @@ export function setupCollection({ getState, save, speech }) {
     $('#capture-dialog').dataset.grade = ['상위 전설', '환상'].includes(rule.tier) ? 'ultimate' : special ? 'legendary' : 'normal';
     $('#capture-label').textContent = special ? rule.tier === '환상' ? 'MYTHICAL ENCOUNTER' : 'LEGENDARY ENCOUNTER' : 'NEW FRIEND!';
     $('#capture-title').textContent = rule.tier === '환상' ? '환상의 포켓몬이 나타났다!' : special ? '전설의 포켓몬이 나타났다!' : '새 포켓몬을 만났어!';
+    if (pokemon.shiny) { $('#capture-label').textContent = 'SHINY ENCOUNTER!'; $('#capture-title').textContent = `색이 다른 ${pokemon.name} 등장!`; }
     $('#capture-rarity').textContent = rule.tier;
-    $('#capture-message').textContent = preview ? '전설 등장 연출 미리보기예요. 포켓몬이나 실적은 추가되지 않아요.' : `${rule.label} 퀘스트 ${rule.target}개 성공! ${pokemon.name}가 연우의 친구가 되었어요.`;
+    $('#capture-message').textContent = preview ? '포획 연출 미리보기예요. 포켓몬이나 실적은 추가되지 않아요.' : pokemon.shinyBonus ? `보통 이상 모험의 특별 보너스! 색이 다른 ${pokemon.name}가 연우의 친구가 되었어요.` : `${rule.label} 퀘스트 ${rule.target}개 성공! ${pokemon.name}가 연우의 친구가 되었어요.`;
     $('#capture-continue').textContent = special ? '마스터볼 던지기! ✦' : '몬스터볼 던지기! ✦';
     $('#capture-dialog').showModal();
-    if (getState().speechAuto !== false) speech.speak(preview ? `전설 등장 미리보기. ${pokemon.name}!` : special ? `전설의 기운이 느껴져! ${pokemon.name} 등장! 연우가 전설의 파트너를 만났어! 정말 멋진 모험이었어!` : `와! ${pokemon.name}를 만났어! 연우의 새로운 친구야. 정말 잘했어!`);
+    if (getState().speechAuto !== false) speech.speak(pokemon.shiny ? `반짝! 색이 다른 이로치 ${pokemon.name} 등장! ${preview ? '미리보기야.' : '연우가 특별한 친구를 만났어!'}` : preview ? `전설 등장 미리보기. ${pokemon.name}!` : special ? `전설의 기운이 느껴져! ${pokemon.name} 등장! 연우가 전설의 파트너를 만났어! 정말 멋진 모험이었어!` : `와! ${pokemon.name}를 만났어! 연우의 새로운 친구야. 정말 잘했어!`);
   }
   $('#pokedex-open').addEventListener('click', () => { render(); $('#pokedex-dialog').showModal(); });
   $('#pokedex-filter').addEventListener('change', render);
+  $('#pokedex-form').addEventListener('change', render);
   $('#legendary-preview').addEventListener('click', () => showCapture(POKEMON.find(p => p.id === 'mewtwo'), true));
+  $('#shiny-preview').addEventListener('click', () => showCapture({ ...POKEMON.find(p => p.id === 'mewtwo'), shiny: true }, true));
   function captureSuccess() {
     clearTimeout(captureTimer);
     if (!$('#capture-dialog').open || !currentCapture) return;
     const { pokemon, preview } = currentCapture;
     $('#capture-dialog').dataset.phase = 'caught';
     $('#capture-label').textContent = 'GOTCHA!';
-    $('#capture-title').textContent = '포획 성공! ✦';
-    $('#capture-message').textContent = preview ? '포획 연출 미리보기예요. 실제 도감에는 추가되지 않아요.' : `${pokemon.name}를 잡았다! 연우의 도감에 저장했어요.`;
+    $('#capture-title').textContent = pokemon.shiny ? '이로치 포획 성공! ✦' : '포획 성공! ✦';
+    $('#capture-message').textContent = preview ? '포획 연출 미리보기예요. 실제 도감에는 추가되지 않아요.' : `${pokemon.shiny ? '이로치 ' : ''}${pokemon.name}를 잡았다! 연우의 도감에 저장했어요.`;
     $('#capture-continue').disabled = false;
     $('#capture-continue').textContent = preview ? '미리보기 닫기' : '도감에 있는 친구 확인! ✦';
     $('#capture-skip').hidden = true;

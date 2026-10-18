@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { POKEMON, collectionProgress, recordQuest } from '../docs/collection.js';
+import { POKEMON, collectionProgress, recordQuest, shinyDifficulty, SHINY_CHANCE } from '../docs/collection.js';
 import { initialState, settle, validateState } from '../docs/model.js';
 
 test('151 ordered species have PNG artwork, basic to legendary and mythical', () => {
@@ -64,4 +64,28 @@ test('migration keeps previously collected legendary Pokemon without inventing h
   assert.equal(collectionProgress(state).owned.length, 151);
   assert.equal(state.collection.byDifficulty.hard, 0);
   assert.ok(validateState(state));
+});
+test('all 151 shiny assets exist; genuine Mewtwo and Mew artwork differs from normal', () => {
+  for (const p of POKEMON) assert.equal(readFileSync(new URL(`../docs/assets/shiny/${p.id}.png`, import.meta.url)).subarray(0, 8).toString('hex'), '89504e470d0a1a0a');
+  for (const id of ['mewtwo', 'mew']) assert.notDeepEqual(readFileSync(new URL(`../docs/assets/${id}.png`, import.meta.url)), readFileSync(new URL(`../docs/assets/shiny/${id}.png`, import.meta.url)));
+});
+test('shiny requires a higher difficulty and duplicate/review never rerolls', () => {
+  const state = initialState(); let rolls = 0;
+  for (let i = 0; i < 5; i++) recordQuest(state, `q${i}`, 'easy', () => { rolls++; return 0; });
+  assert.equal(state.collection.shiny.length, 0); assert.equal(rolls, 0);
+  const result = recordQuest(state, 'q0', 'medium', () => { rolls++; return 0; });
+  assert.equal(result.unlocked[0].shiny, true); assert.equal(state.collection.shiny.length, 1);
+  const count = rolls; recordQuest(state, 'q0', 'medium', () => { rolls++; return 0; }); assert.equal(rolls, count);
+  const restored = JSON.parse(JSON.stringify(state)); assert.equal(collectionProgress(restored).shiny.length, 1); assert.ok(validateState(restored));
+  assert.equal(shinyDifficulty(POKEMON.find(p => p.id === 'bulbasaur')), 'medium');
+  assert.equal(shinyDifficulty(POKEMON.find(p => p.id === 'mewtwo')), 'hard');
+  assert.ok(SHINY_CHANCE.hard > SHINY_CHANCE.medium);
+});
+test('20 advanced successes guarantee a shiny even when every random roll misses', () => {
+  const state = initialState();
+  for (let i = 0; i < 20; i++) recordQuest(state, `q${i}`, 'medium', () => 0.999);
+  assert.equal(state.collection.shiny.length, 1); assert.equal(state.collection.shinyBonusAwards, 1);
+  assert.ok(state.collection.shiny.every(id => shinyDifficulty(POKEMON.find(p => p.id === id)) === 'medium'));
+  for (let i = 0; i < 20; i++) recordQuest(state, `q${i}`, 'medium', () => 0);
+  assert.equal(state.collection.shiny.length, 1);
 });

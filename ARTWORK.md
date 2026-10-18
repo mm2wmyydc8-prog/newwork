@@ -13,3 +13,5 @@ Pokémon 및 해당 캐릭터의 권리는 각 권리자(Nintendo / Creatures / 
 마스터볼 모티프 장식은 SwiftUI 도형으로 그려집니다. 게임의 실제 자산 파일을 추출하거나 앱에서 게임 데이터를 사용하지 않습니다.
 
 1세대 151종의 한국어 이름과 전설·환상 구분은 PokeAPI 데이터 CSV `pokemon_species_names.csv`(언어 ID 3)와 `pokemon_species.csv`를 참조했습니다.
+
+이로치 151종은 같은 sprites 저장소의 `sprites/pokemon/other/official-artwork/shiny/{dex}.png`를 사용합니다. 색상 필터로 임의 변색하지 않고 제공된 이로치 아트워크를 `docs/assets/shiny/`에 포함했습니다.
