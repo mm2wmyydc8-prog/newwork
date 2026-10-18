@@ -75,6 +75,7 @@ export function setupHangulQuiz({ getState, confirmMission, notify, speech, coll
   $('#quiz-difficulty').addEventListener('change', () => {
     const level = $('#quiz-difficulty').value;
     getState().quizDifficulty = level; saveSettings();
+    collection.render();
     $('#difficulty-help').textContent = DIFFICULTIES[level].help;
     say(`${DIFFICULTIES[level].name} 모험. ${DIFFICULTIES[level].help}`);
   });
@@ -125,7 +126,7 @@ export function setupHangulQuiz({ getState, confirmMission, notify, speech, coll
         }
         if (result === 'correct') {
           if (quiz.difficulty === 'hard') $('#quiz-word').textContent = question.reading;
-          collection.recordCorrect(question.id);
+          collection.recordCorrect(question.id, quiz.difficulty);
           button.classList.add('correct');
           $('#quiz-feedback').textContent = `맞았어! ${(question.reading ?? question.word.replace('□', question.answer))}! 잘했어, 연우! ✦`;
           say($('#quiz-feedback').textContent);
@@ -150,8 +151,8 @@ export function setupHangulQuiz({ getState, confirmMission, notify, speech, coll
   }
   $('#hangul-start').addEventListener('click', () => {
     const state = getState();
-    const completed = state.collection?.day === state.day ? state.collection.questions : [];
-    quiz = createQuiz(Math.random, completed, $('#quiz-difficulty').value); $('#quiz-collection-note').textContent = '어느 난이도든 퀘스트 성공은 똑같이 1개!'; render(); $('#quiz-dialog').showModal();
+    const completed = collection.completedAtDifficulty($('#quiz-difficulty').value);
+    quiz = createQuiz(Math.random, completed, $('#quiz-difficulty').value); $('#quiz-collection-note').textContent = '쉬움은 기본 친구, 보통은 희귀·전설, 어려움은 상위 전설·환상!'; render(); $('#quiz-dialog').showModal();
   });
   $('#quiz-next').addEventListener('click', () => { if (nextQuestion(quiz)) render(); });
   $('#quiz-speak').disabled = !canSpeak;

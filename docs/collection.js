@@ -1057,42 +1057,89 @@ export const POKEMON = [
     "dex": 151
   }
 ];
-export function collectionProgress(state) {
-  const total = state.collection?.total ?? 0;
-  return { total, owned: POKEMON.filter(p => total >= p.threshold), next: POKEMON.find(p => total < p.threshold) };
+const RANK = { easy: 0, medium: 1, hard: 2 };
+export const REWARD_RULES = new Map();
+let basic = 0, rare = 0, legendary = 0;
+for (const pokemon of POKEMON) {
+  const rule = pokemon.id === 'mewtwo' ? { level: 'hard', target: 25, label: '어려움', tier: '상위 전설' }
+    : pokemon.id === 'mew' ? { level: 'hard', target: 40, label: '어려움', tier: '환상' }
+    : pokemon.rarity === '전설' ? { level: 'medium', target: 40 + (++legendary) * 10, label: '보통 이상', tier: '전설' }
+    : pokemon.rarity === '희귀' ? { level: 'medium', target: (++rare) * 5, label: '보통 이상', tier: '희귀' }
+    : { level: 'easy', target: (++basic) * 5, label: '모든 난이도', tier: pokemon.rarity };
+  REWARD_RULES.set(pokemon.id, rule);
 }
-export function recordQuest(state, questionId) {
+function ensureCollection(state) {
   if (!state.collection) state.collection = { total: 0, day: state.day, questions: [] };
   const data = state.collection;
-  if (data.day !== state.day) { data.day = state.day; data.questions = []; }
-  if (data.questions.includes(questionId)) return { counted: false, unlocked: [] };
-  const previous = data.total;
-  data.questions.push(questionId); data.total++;
-  return { counted: true, unlocked: POKEMON.filter(p => previous < p.threshold && data.total >= p.threshold) };
+  if (!data.byDifficulty) {
+    // Preserve every previously acquired Pokemon; historical difficulty is unknown.
+    data.owned = POKEMON.filter(p => data.total >= p.threshold).map(p => p.id);
+    data.byDifficulty = { easy: data.total, medium: 0, hard: 0 };
+    data.levels = {};
+  }
+  if (data.day !== state.day) { data.day = state.day; data.questions = []; data.levels = {}; }
+  return data;
+}
+function ruleProgress(data, rule) {
+  if (rule.level === 'easy') return data.total;
+  if (rule.level === 'medium') return data.byDifficulty.medium + data.byDifficulty.hard;
+  return data.byDifficulty.hard;
+}
+function eligible(data, pokemon) {
+  const rule = REWARD_RULES.get(pokemon.id);
+  return data.owned.includes(pokemon.id) || ruleProgress(data, rule) >= rule.target;
+}
+export function collectionProgress(state, difficulty = state.quizDifficulty ?? 'easy') {
+  const data = ensureCollection(state);
+  const owned = POKEMON.filter(p => eligible(data, p));
+  const targetLevel = RANK[difficulty] === undefined ? 'easy' : difficulty;
+  const nextPokemon = POKEMON.find(p => !eligible(data, p) && REWARD_RULES.get(p.id).level === targetLevel)
+    ?? POKEMON.find(p => !eligible(data, p));
+  const rule = nextPokemon ? REWARD_RULES.get(nextPokemon.id) : null;
+  const next = nextPokemon ? { ...nextPokemon, threshold: rule.target, progress: ruleProgress(data, rule), requirement: rule.label } : null;
+  return { total: data.total, owned, next, byDifficulty: data.byDifficulty };
+}
+export function completedAtDifficulty(state, difficulty) {
+  const data = ensureCollection(state);
+  return data.questions.filter(id => RANK[data.levels[id] ?? 'easy'] >= RANK[difficulty]);
+}
+export function recordQuest(state, questionId, difficulty = 'easy') {
+  const data = ensureCollection(state), level = RANK[difficulty] === undefined ? 'easy' : difficulty;
+  const previousOwned = new Set(POKEMON.filter(p => eligible(data, p)).map(p => p.id));
+  const already = data.questions.includes(questionId), oldLevel = data.levels[questionId] ?? 'easy';
+  if (already && RANK[level] <= RANK[oldLevel]) return { counted: false, upgraded: false, unlocked: [] };
+  if (already) data.byDifficulty[oldLevel] = Math.max(0, data.byDifficulty[oldLevel] - 1);
+  else { data.questions.push(questionId); data.total++; }
+  data.byDifficulty[level]++; data.levels[questionId] = level;
+  const unlocked = POKEMON.filter(p => !previousOwned.has(p.id) && eligible(data, p));
+  data.owned = [...new Set([...data.owned, ...unlocked.map(p => p.id)])];
+  return { counted: !already, upgraded: already, unlocked };
 }
 
 export function setupCollection({ getState, save, speech }) {
   const $ = selector => document.querySelector(selector);
   let pending = [];
+  let previewing = false;
   function render() {
-    const { total, owned, next } = collectionProgress(getState());
+    const { total, owned, next, byDifficulty } = collectionProgress(getState());
+    const ownedIds = new Set(owned.map(p => p.id));
     $('#collection-count').textContent = `${owned.length} / ${POKEMON.length}마리`;
     $('#trainer-summary').textContent = `친구 ${owned.length}마리 · 퀘스트 ${total}개 성공`;
-    $('#collection-total').textContent = `누적 퀘스트 ${total}개 성공`;
-    $('#collection-next').textContent = next ? `${next.name}까지 퀘스트 ${next.threshold - total}개!` : '전설과 환상까지, 연우의 도감 완성!';
-    $('#collection-progress').max = next?.threshold ?? POKEMON.at(-1).threshold;
-    $('#collection-progress').value = total;
+    $('#collection-total').textContent = `누적 ${total}개 · 보통 ${byDifficulty.medium} · 어려움 ${byDifficulty.hard}`;
+    $('#collection-next').textContent = next ? `${next.name}까지 ${next.requirement} ${Math.max(0, next.threshold - next.progress)}개!` : '전설과 환상까지, 연우의 도감 완성!';
+    $('#collection-progress').max = next?.threshold ?? 1;
+    $('#collection-progress').value = next?.progress ?? 1;
     const grid = $('#pokedex-grid'); grid.replaceChildren();
     const filter = $('#pokedex-filter').value;
-    const visible = POKEMON.filter(p => filter === 'all' || (filter === 'owned' ? total >= p.threshold : p.rarity === filter));
+    const visible = POKEMON.filter(p => filter === 'all' || (filter === 'owned' ? ownedIds.has(p.id) : REWARD_RULES.get(p.id).tier === filter));
     visible.forEach(pokemon => {
-      const acquired = total >= pokemon.threshold;
+      const acquired = ownedIds.has(pokemon.id), rule = REWARD_RULES.get(pokemon.id);
       const card = document.createElement('div');
       card.className = `pokedex-mon ${acquired ? 'owned' : 'locked'}`;
       const image = document.createElement('img'); image.src = `assets/${pokemon.id}.png`; image.alt = acquired ? pokemon.name : '아직 만나지 못한 포켓몬'; image.loading = 'lazy'; image.decoding = 'async';
       const name = document.createElement('strong'); name.textContent = pokemon.name;
-      const rarity = document.createElement('span'); rarity.className = 'rarity'; rarity.textContent = pokemon.rarity;
-      const status = document.createElement('small'); status.textContent = acquired ? '✓ 연우의 친구' : `누적 ${pokemon.threshold}개에 만나요`;
+      const rarity = document.createElement('span'); rarity.className = 'rarity'; rarity.textContent = rule.tier;
+      const status = document.createElement('small'); status.textContent = acquired ? '✓ 연우의 친구' : `${rule.label} ${rule.target}개에 만나요`;
       card.append(image, name, rarity, status); grid.append(card);
     });
     if (!visible.length) {
@@ -1100,31 +1147,38 @@ export function setupCollection({ getState, save, speech }) {
       empty.textContent = '아직 친구를 만나기 전이야. 퀘스트 5개부터 시작해 보자!'; grid.append(empty);
     }
   }
-  function showCapture() {
-    const pokemon = pending.shift();
+  function showCapture(pokemon = pending.shift(), preview = false) {
     if (!pokemon) return;
+    previewing = preview;
     $('#capture-image').src = `assets/${pokemon.id}.png`;
     $('#capture-image').alt = pokemon.name;
     $('#capture-name').textContent = pokemon.name;
-    $('#capture-rarity').textContent = pokemon.rarity;
-    $('#capture-message').textContent = `누적 퀘스트 ${pokemon.threshold}개 성공! ${pokemon.name}가 연우의 친구가 되었어요.`;
+    const rule = REWARD_RULES.get(pokemon.id);
+    const special = ['전설', '상위 전설', '환상'].includes(rule.tier);
+    $('#capture-dialog').dataset.grade = ['상위 전설', '환상'].includes(rule.tier) ? 'ultimate' : special ? 'legendary' : 'normal';
+    $('#capture-label').textContent = special ? rule.tier === '환상' ? 'MYTHICAL ENCOUNTER' : 'LEGENDARY ENCOUNTER' : 'NEW FRIEND!';
+    $('#capture-title').textContent = rule.tier === '환상' ? '환상의 포켓몬이 나타났다!' : special ? '전설의 포켓몬이 나타났다!' : '새 포켓몬을 만났어!';
+    $('#capture-rarity').textContent = rule.tier;
+    $('#capture-message').textContent = preview ? '전설 등장 연출 미리보기예요. 포켓몬이나 실적은 추가되지 않아요.' : `${rule.label} 퀘스트 ${rule.target}개 성공! ${pokemon.name}가 연우의 친구가 되었어요.`;
+    $('#capture-continue').textContent = preview ? '미리보기 닫기' : special ? '전설의 파트너로 함께하자! ✦' : '친구가 되어줘! ✦';
     $('#capture-dialog').showModal();
-    if (getState().speechAuto !== false) speech.speak(`와! ${pokemon.name}를 만났어! 연우의 새로운 친구야. 정말 잘했어!`);
+    if (getState().speechAuto !== false) speech.speak(preview ? `전설 등장 미리보기. ${pokemon.name}!` : special ? `전설의 기운이 느껴져! ${pokemon.name} 등장! 연우가 전설의 파트너를 만났어! 정말 멋진 모험이었어!` : `와! ${pokemon.name}를 만났어! 연우의 새로운 친구야. 정말 잘했어!`);
   }
   $('#pokedex-open').addEventListener('click', () => { render(); $('#pokedex-dialog').showModal(); });
   $('#pokedex-filter').addEventListener('change', render);
+  $('#legendary-preview').addEventListener('click', () => showCapture(POKEMON.find(p => p.id === 'mewtwo'), true));
   $('#capture-continue').addEventListener('click', () => {
     $('#capture-dialog').close();
-    if (pending.length) showCapture();
   });
-  $('#capture-dialog').addEventListener('close', speech.stop);
+  $('#capture-dialog').addEventListener('close', () => { speech.stop(); if (previewing) { previewing = false; return; } if (pending.length) showCapture(); });
   return {
     render,
-    recordCorrect(questionId) {
-      const result = recordQuest(getState(), questionId);
+    completedAtDifficulty(level) { return completedAtDifficulty(getState(), level); },
+    recordCorrect(questionId, level) {
+      const result = recordQuest(getState(), questionId, level);
       pending.push(...result.unlocked); save(); render();
       const progress = collectionProgress(getState());
-      $('#quiz-collection-note').textContent = result.counted ? `퀘스트 +1! 누적 ${progress.total}개 · ${progress.next ? `${progress.next.name}까지 ${progress.next.threshold - progress.total}개` : '도감 완성!'}` : '오늘 이 퀘스트는 이미 성공했어! 복습도 멋져.';
+      $('#quiz-collection-note').textContent = result.counted || result.upgraded ? `${result.upgraded ? '상위 난이도 도전 성공!' : '퀘스트 +1!'} · ${progress.next ? `${progress.next.name}까지 ${progress.next.requirement} ${Math.max(0, progress.next.threshold - progress.next.progress)}개` : '도감 완성!'}` : '오늘 이 난이도는 이미 성공했어! 복습도 멋져.';
     },
     finishRound() { if (pending.length) showCapture(); }
   };

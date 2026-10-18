@@ -62,6 +62,13 @@ export function validateState(value) {
   if (value.collection !== undefined && (!value.collection || !Number.isSafeInteger(value.collection.total) || value.collection.total < 0 ||
       typeof value.collection.day !== 'string' || !Array.isArray(value.collection.questions) ||
       !value.collection.questions.every(id => typeof id === 'string'))) return false;
+  if (value.collection?.byDifficulty) {
+    const c = value.collection;
+    if (!['easy', 'medium', 'hard'].every(level => Number.isSafeInteger(c.byDifficulty[level]) && c.byDifficulty[level] >= 0) ||
+        !Array.isArray(c.owned) || !c.owned.every(id => typeof id === 'string') ||
+        !c.levels || typeof c.levels !== 'object' || Array.isArray(c.levels) ||
+        !Object.values(c.levels).every(level => ['easy', 'medium', 'hard'].includes(level))) return false;
+  }
   return value.entries.every(x => typeof x.id === 'string' && typeof x.day === 'string' && Number.isInteger(x.minutes) &&
     Number.isFinite(x.date) && typeof x.reason === 'string') &&
     value.missions.every(x => typeof x.id === 'string' && typeof x.title === 'string' &&

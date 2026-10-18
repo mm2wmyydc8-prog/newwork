@@ -35,3 +35,33 @@ test('collection persists across days, reward deductions and serialization', () 
   assert.equal(collectionProgress(restored).total, 2);
   assert.equal(restored.entries.length, 0); // Capture progress never grants viewing time.
 });
+test('easy cannot unlock rare or legendary species; medium and hard have separate goals', () => {
+  const state = initialState();
+  for (let i = 0; i < 800; i++) recordQuest(state, `easy-${i}`, 'easy');
+  assert.ok(collectionProgress(state).owned.every(p => !['희귀', '전설', '환상'].includes(p.rarity)));
+  for (let i = 0; i < 50; i++) recordQuest(state, `medium-${i}`, 'medium');
+  assert.ok(collectionProgress(state).owned.some(p => p.id === 'articuno'));
+  assert.ok(!collectionProgress(state).owned.some(p => p.id === 'mewtwo'));
+  for (let i = 0; i < 25; i++) recordQuest(state, `hard-${i}`, 'hard');
+  assert.ok(collectionProgress(state).owned.some(p => p.id === 'mewtwo'));
+  assert.ok(!collectionProgress(state).owned.some(p => p.id === 'mew'));
+  for (let i = 25; i < 40; i++) recordQuest(state, `hard-${i}`, 'hard');
+  assert.ok(collectionProgress(state).owned.some(p => p.id === 'mew'));
+});
+test('harder repeat upgrades its difficulty without counting the quest twice', () => {
+  const state = initialState();
+  recordQuest(state, 'tree', 'easy');
+  assert.equal(recordQuest(state, 'tree', 'easy').counted, false);
+  assert.equal(recordQuest(state, 'tree', 'hard').upgraded, true);
+  assert.equal(collectionProgress(state).total, 1);
+  assert.deepEqual(state.collection.byDifficulty, { easy: 0, medium: 0, hard: 1 });
+  assert.equal(recordQuest(state, 'tree', 'medium').upgraded, false);
+  assert.ok(validateState(state));
+});
+test('migration keeps previously collected legendary Pokemon without inventing hard scores', () => {
+  const state = initialState();
+  state.collection = { total: 755, day: state.day, questions: ['tree'] };
+  assert.equal(collectionProgress(state).owned.length, 151);
+  assert.equal(state.collection.byDifficulty.hard, 0);
+  assert.ok(validateState(state));
+});
