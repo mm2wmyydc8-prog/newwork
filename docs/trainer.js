@@ -22,12 +22,17 @@ export function setupTrainer({ notify }) {
     draft.x = Number($('#face-x').value); draft.y = Number($('#face-y').value); draft.zoom = Number($('#face-zoom').value);
     paint('#trainer-preview .trainer-face', draft);
   }
-  $('#trainer-upload').addEventListener('change', async event => {
-    const file = event.target.files[0]; event.target.value = '';
+  function uploadStatus(text) {
+    document.querySelectorAll('[data-trainer-status]').forEach(node => { node.textContent = text; });
+  }
+  async function selectPhoto(event) {
+    const input = event.currentTarget;
+    const file = input.files?.[0];
     if (!file) return;
-    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 15 * 1024 * 1024) {
-      notify('15MB 이하의 JPG·PNG·WebP 사진을 골라주세요. HEIC 사진은 JPG로 저장해 주세요.'); return;
+    if ((file.type && !file.type.startsWith('image/')) || file.size > 15 * 1024 * 1024) {
+      uploadStatus('15MB 이하의 사진을 골라주세요.'); input.value = ''; return;
     }
+    uploadStatus('사진을 불러오는 중이에요…');
     const url = URL.createObjectURL(file);
     try {
       const image = new Image(); image.src = url; await image.decode();
@@ -41,9 +46,11 @@ export function setupTrainer({ notify }) {
       draft = { url: canvas.toDataURL('image/jpeg', 0.85), x: 0, y: 0, zoom: 1 };
       $('#face-x').value = 0; $('#face-y').value = 0; $('#face-zoom').value = 1;
       paint('#trainer-preview .trainer-face', draft); $('#trainer-dialog').showModal();
-    } catch { notify('사진을 읽지 못했어요. 다른 JPG나 PNG 사진을 골라주세요.'); }
-    finally { URL.revokeObjectURL(url); }
-  });
+      uploadStatus('사진을 불러왔어요. 얼굴 위치를 맞추고 저장해 주세요.');
+    } catch { uploadStatus('이 사진 형식은 현재 브라우저에서 열지 못했어요. 사진을 캡처한 이미지나 JPG·PNG를 골라주세요.'); }
+    finally { URL.revokeObjectURL(url); input.value = ''; }
+  }
+  document.querySelectorAll('[data-trainer-upload]').forEach(input => input.addEventListener('change', selectPhoto));
   ['#face-x', '#face-y', '#face-zoom'].forEach(selector => $(selector).addEventListener('input', preview));
   $('#trainer-save').addEventListener('click', () => {
     if (!draft) return;

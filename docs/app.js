@@ -3,7 +3,7 @@ import { MOVES, PSYCHIC_THRESHOLD, missionMove, celebrationMoves, earnedMissionM
 import { setupHangulQuiz } from './hangul.js?v=pokedex151';
 import { createKoreanSpeech } from './speech.js';
 import { setupCollection } from './collection.js?v=151';
-import { setupTrainer } from './trainer.js';
+import { setupTrainer } from './trainer.js?v=photo-picker-fix';
 
 const $ = selector => document.querySelector(selector);
 const key = 'yeonwoo-pocket-web-v1';
