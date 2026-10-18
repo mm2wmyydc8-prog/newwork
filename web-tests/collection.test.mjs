@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { POKEMON, collectionProgress, recordQuest, shinyDifficulty, SHINY_CHANCE } from '../docs/collection.js';
+import { POKEMON, collectionProgress, recordQuest, revealedPokemon, shinyDifficulty, SHINY_CHANCE } from '../docs/collection.js';
 import { initialState, settle, validateState } from '../docs/model.js';
 
 test('151 species plus two Mega forms have PNG artwork', () => {
@@ -104,4 +104,18 @@ test('Mega Mewtwo forms unlock at hard 50 and 60 without awarding them during le
   const legacy = initialState();
   legacy.collection = { total: 755, day: legacy.day, questions: [] };
   assert.ok(!collectionProgress(legacy).owned.some(p => p.form));
+});
+
+test('secret forms stay absent from catalog and next reward until each is earned', () => {
+  const state = initialState();
+  assert.equal(revealedPokemon(state).length, 151);
+  for (let i = 0; i < 60; i++) {
+    recordQuest(state, `secret-${i}`, 'hard', () => 0.999);
+    assert.ok(!collectionProgress(state, 'hard').next?.form);
+    assert.equal(revealedPokemon(state).filter(p => p.form).length, i < 49 ? 0 : i < 59 ? 1 : 2);
+  }
+  state.collection.shiny = [];
+  assert.equal(revealedPokemon(state, true).filter(p => p.form).length, 0);
+  state.collection.shiny.push('mewtwo-mega-x');
+  assert.deepEqual(revealedPokemon(state, true).filter(p => p.form).map(p => p.id), ['mewtwo-mega-x']);
 });

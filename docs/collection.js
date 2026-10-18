@@ -1095,12 +1095,16 @@ function eligible(data, pokemon) {
   const rule = REWARD_RULES.get(pokemon.id);
   return data.owned.includes(pokemon.id) || ruleProgress(data, rule) >= rule.target;
 }
+export function revealedPokemon(state, shinyView = false) {
+  const data = ensureCollection(state);
+  return POKEMON.filter(p => !p.form || (shinyView ? data.shiny.includes(p.id) : eligible(data, p)));
+}
 export function collectionProgress(state, difficulty = state.quizDifficulty ?? 'easy') {
   const data = ensureCollection(state);
   const owned = POKEMON.filter(p => eligible(data, p));
   const targetLevel = RANK[difficulty] === undefined ? 'easy' : difficulty;
-  const nextPokemon = POKEMON.find(p => !eligible(data, p) && REWARD_RULES.get(p.id).level === targetLevel)
-    ?? POKEMON.find(p => !eligible(data, p));
+  const nextPokemon = POKEMON.find(p => !p.form && !eligible(data, p) && REWARD_RULES.get(p.id).level === targetLevel)
+    ?? POKEMON.find(p => !p.form && !eligible(data, p));
   const rule = nextPokemon ? REWARD_RULES.get(nextPokemon.id) : null;
   const next = nextPokemon ? { ...nextPokemon, threshold: rule.target, progress: ruleProgress(data, rule), requirement: rule.label } : null;
   return { total: data.total, owned, next, byDifficulty: data.byDifficulty, shiny: data.shiny };
@@ -1141,10 +1145,11 @@ export function setupCollection({ getState, save, speech }) {
   let previewing = false;
   let captureTimer, currentCapture;
   function render() {
-    const { total, owned, next, byDifficulty, shiny } = collectionProgress(getState());
+    const state = getState();
+    const { total, owned, next, byDifficulty, shiny } = collectionProgress(state);
     const ownedIds = new Set(owned.map(p => p.id));
     const shinyIds = new Set(shiny), shinyView = $('#pokedex-form').value === 'shiny';
-    $('#collection-count').textContent = `${owned.length} / ${POKEMON.length}모습`;
+    $('#collection-count').textContent = `${owned.length} / ${revealedPokemon(state).length}모습`;
     $('#trainer-summary').textContent = `친구 ${owned.length}마리 · 퀘스트 ${total}개 성공`;
     $('#collection-total').textContent = `누적 ${total}개 · 보통 ${byDifficulty.medium} · 어려움 ${byDifficulty.hard}`;
     const advanced = byDifficulty.medium + byDifficulty.hard;
@@ -1154,7 +1159,7 @@ export function setupCollection({ getState, save, speech }) {
     $('#collection-progress').value = next?.progress ?? 1;
     const grid = $('#pokedex-grid'); grid.replaceChildren();
     const filter = $('#pokedex-filter').value;
-    const visible = POKEMON.filter(p => filter === 'all' || (filter === 'owned' ? (shinyView ? shinyIds.has(p.id) : ownedIds.has(p.id)) : REWARD_RULES.get(p.id).tier === filter));
+    const visible = revealedPokemon(state, shinyView).filter(p => filter === 'all' || (filter === 'owned' ? (shinyView ? shinyIds.has(p.id) : ownedIds.has(p.id)) : REWARD_RULES.get(p.id).tier === filter));
     visible.forEach(pokemon => {
       const acquired = shinyView ? shinyIds.has(pokemon.id) : ownedIds.has(pokemon.id), rule = REWARD_RULES.get(pokemon.id);
       const card = document.createElement('div');
