@@ -1,5 +1,6 @@
 import { initialState, validateState, settle, totalMinutes, remainingSeconds, start, pause, adjust, missionDone } from './model.js';
 import { MOVES, PSYCHIC_THRESHOLD, missionMove, celebrationMoves, earnedMissionMinutes } from './moves.js?v=daily60';
+import { setupHangulQuiz } from './hangul.js';
 
 const $ = selector => document.querySelector(selector);
 const key = 'yeonwoo-pocket-web-v1';
@@ -223,3 +224,4 @@ window.addEventListener('pagehide', persist);
 setInterval(tick, 500);
 settle(state); saveAndRender();
 if (!storageAvailable) toast('저장된 기록을 읽지 못했어요. 기존 기록을 덮어쓰지 않고 임시 체험으로 열었어요.');
+setupHangulQuiz({ getState: () => { settle(state); return state; }, confirmMission, notify: toast });

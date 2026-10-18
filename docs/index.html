@@ -13,7 +13,8 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="celebration.css?v=mission-moves">
-  <script type="module" src="app.js?v=daily60"></script>
+  <link rel="stylesheet" href="hangul.css">
+  <script type="module" src="app.js?v=hangul-quiz"></script>
 </head>
 <body>
   <main>
@@ -32,11 +33,20 @@
       </section>
       <section class="card bank-card"><img src="assets/masterball.svg" class="bank-ball" alt="마스터볼"><span class="eyebrow">연우의 마스터 시간볼</span><h2 id="total-time">30분</h2><p id="budget-detail">기본 30분 + 오늘 보상 0분</p><div class="bank-note">오늘 받은 총시간이에요.<br>이미 본 시간도 포함돼요.</div><div class="move-unlock"><span id="unlock-label"></span><progress id="unlock-progress" max="60" value="0" aria-label="사이코키네시스 해금까지 오늘 모은 미션 보상 시간"></progress><small>오늘 미션 보상 60분이면 해금! 시청·차감과 관계없어요</small></div></section>
     </div>
+    <section class="card hangul-card"><img src="assets/mew.png" alt="응원하는 뮤"><div class="hangul-copy"><span class="eyebrow">뮤와 함께 한 글자씩</span><h2>연우의 한글 모험</h2><p>받침 없는 낱말을 읽어보자!<br>그림 낱말 찾기 · 빈 글자 채우기 · 5문제</p><button id="hangul-start" class="primary">한글 모험 시작 ✦</button></div></section>
     <section class="card missions"><div class="section-heading"><div><span class="eyebrow">MISSION QUEST</span><h2>오늘의 미션</h2></div><button id="mission-add-shortcut" class="round" aria-label="부모님 확인 후 미션 추가">＋</button></div><div id="mission-list" class="mission-grid"></div><p class="footnote">미션을 누르고 부모님께 완료 확인을 받아요.<br>미션 보상은 오늘만 적용돼요.</p></section>
     <section class="history"><div class="section-heading"><h2>✦ 연우의 모험 기록</h2><span class="small">최근 기록</span></div><div id="history-list"></div></section>
     <footer>연우를 위한 작은 모험 · 웹 체험판<br>기록은 지금 쓰는 브라우저에만 저장돼요.<br><a href="https://github.com/mm2wmyydc8-prog/newwork/blob/main/ARTWORK.md">캐릭터 그림 출처</a></footer>
   </main>
   <div id="toast" role="status" aria-live="polite"></div>
+
+  <dialog id="quiz-dialog" class="quiz-dialog" aria-labelledby="quiz-title">
+    <div class="dialog-heading"><h2 id="quiz-title">연우의 한글 모험</h2><button type="button" data-close="quiz-dialog" class="round" aria-label="한글 모험 닫기">×</button></div>
+    <span id="quiz-progress" class="eyebrow">1 / 5 문제</span><progress id="quiz-progress-bar" class="quiz-progress-bar" max="5" value="0" aria-label="끝낸 문제 수"></progress>
+    <div id="quiz-question-area"><div id="quiz-picture" class="quiz-picture" aria-hidden="true"></div><div id="quiz-word" class="quiz-word"></div><p id="quiz-prompt"></p><button id="quiz-speak" class="quiet">🔊 문제 듣기</button><div id="quiz-answers" class="quiz-answers" role="group" aria-label="정답을 골라요"></div><p id="quiz-feedback" role="status" aria-live="polite"></p><button id="quiz-next" class="primary" hidden>다음 문제 →</button></div>
+    <div id="quiz-finish-area" hidden><img src="assets/mew.png" class="quiz-finish-mew" alt="응원하는 뮤"><h3>다섯 번의 도전 성공!<br>잘했어, 연우! ✦</h3><p id="quiz-reward-note"></p><button id="quiz-claim" class="primary">부모님께 완료 확인 받기</button></div>
+    <p class="footnote">중간에 쉬어도 괜찮아요. 다시 시작하면 새 5문제가 나와요.<br>문제 듣기는 기기의 한국어 음성 지원에 따라 달라요.</p>
+  </dialog>
 
   <dialog id="mission-confirm-dialog" aria-labelledby="mission-confirm-title" aria-describedby="mission-confirm-description">
     <div class="dialog-heading"><h2 id="mission-confirm-title">미션을 마쳤나요?</h2><button type="button" data-close="mission-confirm-dialog" class="round" aria-label="미션 완료 확인 닫기">×</button></div>

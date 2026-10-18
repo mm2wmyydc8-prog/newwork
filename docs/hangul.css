@@ -1,0 +1,19 @@
+.hangul-card{margin-top:20px;background:linear-gradient(135deg,#fff6df,#fff0f6);display:flex;align-items:center;gap:16px}
+.hangul-card>img{width:72px;height:84px;object-fit:contain;flex-shrink:0}
+.hangul-copy{flex:1;min-width:0}.hangul-copy h2{font-size:20px;margin:7px 0}.hangul-copy p{font-size:12px;line-height:1.7;color:var(--muted)}
+.hangul-copy button{margin-top:14px;font-size:13px}
+.quiz-dialog{text-align:center;background:linear-gradient(155deg,#fffaf0,#f7f0ff);width:min(calc(100% - 28px),480px)}
+.quiz-dialog .dialog-heading h2{font-size:21px}.quiz-dialog .eyebrow{color:var(--purple);margin-bottom:10px}
+.quiz-progress-bar{display:block;appearance:none;width:100%;height:8px;accent-color:var(--purple);margin-bottom:20px;border:0;border-radius:8px;overflow:hidden;background:#e6dcef}
+.quiz-progress-bar::-webkit-progress-bar{background:#e6dcef;border-radius:8px}.quiz-progress-bar::-webkit-progress-value{background:#9d77cd;border-radius:8px}.quiz-progress-bar::-moz-progress-bar{background:#9d77cd}
+.quiz-picture{font-size:62px;line-height:1.5}.quiz-word{font-size:44px;font-weight:850;letter-spacing:8px;margin:5px 0 14px;padding-left:8px}
+#quiz-prompt{font-size:17px;font-weight:750;line-height:1.6}#quiz-speak{font-size:12px;margin:12px 0;background:#eee6f8}
+.quiz-answers{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:8px}
+.quiz-answer{font-size:36px;font-weight:800;background:white;border:2px solid #dfd0ed;border-radius:20px;min-height:82px;color:var(--ink);padding:12px}
+.quiz-answer-word{font-size:clamp(19px,5vw,25px);padding:12px 4px;letter-spacing:-1px}
+.quiz-answer.try-again{border-style:dashed;border-color:#c6b4d7}.quiz-answer.correct{background:#e2f3dc;border-color:#7fac70;color:#315d25;opacity:1}
+#quiz-feedback{min-height:56px;font-size:14px;line-height:1.8;color:#69468b;margin-top:20px}
+#quiz-next{width:100%;margin-top:10px}.quiz-finish-mew{height:150px;width:150px;object-fit:contain;margin:12px 0}
+#quiz-finish-area h3{font-size:24px;line-height:1.5}#quiz-reward-note{font-size:13px;line-height:1.8;margin:16px 0;color:var(--muted)}
+#quiz-claim{width:100%}.quiz-dialog .footnote{font-size:11px!important}
+@media(min-width:650px){.hangul-card{padding:26px 32px}.hangul-card>img{width:100px;height:110px}.hangul-copy h2{font-size:24px}}
