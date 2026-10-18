@@ -3,6 +3,7 @@ import { MOVES, PSYCHIC_THRESHOLD, missionMove, celebrationMoves, earnedMissionM
 import { setupHangulQuiz } from './hangul.js?v=pokedex151';
 import { createKoreanSpeech } from './speech.js';
 import { setupCollection } from './collection.js?v=151';
+import { setupTrainer } from './trainer.js';
 
 const $ = selector => document.querySelector(selector);
 const key = 'yeonwoo-pocket-web-v1';
@@ -249,4 +250,5 @@ setInterval(tick, 500);
 settle(state); saveAndRender();
 if (!storageAvailable) toast('저장된 기록을 읽지 못했어요. 기존 기록을 덮어쓰지 않고 임시 체험으로 열었어요.');
 collection.render();
+setupTrainer({ notify: toast });
 setupHangulQuiz({ getState: () => { settle(state); return state; }, confirmMission, notify: toast, speech, collection });

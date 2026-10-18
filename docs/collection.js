@@ -1077,6 +1077,7 @@ export function setupCollection({ getState, save, speech }) {
   function render() {
     const { total, owned, next } = collectionProgress(getState());
     $('#collection-count').textContent = `${owned.length} / ${POKEMON.length}마리`;
+    $('#trainer-summary').textContent = `친구 ${owned.length}마리 · 퀘스트 ${total}개 성공`;
     $('#collection-total').textContent = `누적 퀘스트 ${total}개 성공`;
     $('#collection-next').textContent = next ? `${next.name}까지 퀘스트 ${next.threshold - total}개!` : '전설과 환상까지, 연우의 도감 완성!';
     $('#collection-progress').max = next?.threshold ?? POKEMON.at(-1).threshold;
