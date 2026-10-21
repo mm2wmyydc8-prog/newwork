@@ -73,21 +73,25 @@ test('shiny requires a higher difficulty and duplicate/review never rerolls', ()
   const state = initialState(); let rolls = 0;
   for (let i = 0; i < 5; i++) recordQuest(state, `q${i}`, 'easy', () => { rolls++; return 0; });
   assert.equal(state.collection.shiny.length, 0); assert.equal(rolls, 0);
+  state.collection.total = 25; state.collection.byDifficulty.easy = 25;
   const result = recordQuest(state, 'q0', 'medium', () => { rolls++; return 0; });
-  assert.equal(result.unlocked[0].shiny, true); assert.equal(state.collection.shiny.length, 1);
+  assert.equal(result.unlocked[0].shiny, true); assert.equal(state.collection.shiny.length, 2);
   const count = rolls; recordQuest(state, 'q0', 'medium', () => { rolls++; return 0; }); assert.equal(rolls, count);
-  const restored = JSON.parse(JSON.stringify(state)); assert.equal(collectionProgress(restored).shiny.length, 1); assert.ok(validateState(restored));
+  const restored = JSON.parse(JSON.stringify(state)); assert.equal(collectionProgress(restored).shiny.length, 2); assert.ok(validateState(restored));
   assert.equal(shinyDifficulty(POKEMON.find(p => p.id === 'bulbasaur')), 'medium');
   assert.equal(shinyDifficulty(POKEMON.find(p => p.id === 'mewtwo')), 'hard');
   assert.ok(SHINY_CHANCE.hard > SHINY_CHANCE.medium);
 });
-test('20 advanced successes guarantee a shiny even when every random roll misses', () => {
+test('advanced guarantee is deferred until 25 so Pikachu is the first shiny', () => {
   const state = initialState();
-  for (let i = 0; i < 20; i++) recordQuest(state, `q${i}`, 'medium', () => 0.999);
-  assert.equal(state.collection.shiny.length, 1); assert.equal(state.collection.shinyBonusAwards, 1);
-  assert.ok(state.collection.shiny.every(id => shinyDifficulty(POKEMON.find(p => p.id === id)) === 'medium'));
-  for (let i = 0; i < 20; i++) recordQuest(state, `q${i}`, 'medium', () => 0);
-  assert.equal(state.collection.shiny.length, 1);
+  for (let i = 0; i < 24; i++) recordQuest(state, `q${i}`, 'medium', () => 0);
+  assert.equal(state.collection.shiny.length, 0);
+  recordQuest(state, 'q24', 'medium', () => 0.999);
+  assert.equal(state.collection.shiny[0], 'pikachu');
+  assert.equal(state.collection.shinyBonusAwards, 1);
+  assert.equal(state.collection.shiny.length, 2);
+  recordQuest(state, 'q24', 'medium', () => 0);
+  assert.equal(state.collection.shiny.length, 2);
 });
 
 test('100 successes reveal the stone and forms; captures at 120/140 enable moves separately', () => {

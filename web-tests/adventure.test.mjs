@@ -1,10 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { initialState, validateState, settle } from '../docs/model.js';
-import { enableAdventure, explorationProgress, recordExploration, completeCapture, collectionProgress, pokemonRegion, hasMewtwonite, revealedPokemon } from '../docs/collection.js';
+import { visibleEncounters, REGIONS, enableAdventure, explorationProgress, recordExploration, completeCapture, collectionProgress, pokemonRegion, hasMewtwonite, revealedPokemon, shinyDiscovered } from '../docs/collection.js';
 
 test('each habitat requires five new successes then stages a local encounter without ownership', () => {
- for (const region of ['forest', 'sea', 'cave']) {
+ for (const region of Object.keys(REGIONS)) {
   const state = initialState();
   for (let i=0;i<4;i++) assert.equal(recordExploration(state, `q${i}`, 'easy', region, () => 0).encountered, false);
   assert.equal(state.collection.pendingEncounters.length, 0);
@@ -76,4 +76,40 @@ test('invalid saved paths and duplicate pending encounter keys are rejected', ()
  state.collection.explorationSteps.forest=0;
  state.collection.pendingEncounters=[{id:'bulbasaur',pendingId:'same',shiny:false},{id:'squirtle',pendingId:'same',shiny:false}];
  assert.equal(validateState(state),false);
+});
+
+test('shiny discovery stays secret until Pikachu introduction, with no random shiny before 25', () => {
+ const state=initialState();
+ for(let i=0;i<24;i++)recordExploration(state,`secret-${i}`,'medium','forest',()=>0);
+ assert.equal(shinyDiscovered(state),false);
+ assert.ok(!state.collection.pendingEncounters.some(p=>p.shiny));
+ recordExploration(state,'secret-25','medium','forest',()=>0);
+ assert.ok(state.collection.pendingEncounters.some(p=>p.shinyGift && p.id==='pikachu'));
+ assert.equal(shinyDiscovered(state),false);
+ state.collection.shinyIntroSeen=true;
+ assert.equal(shinyDiscovered(JSON.parse(JSON.stringify(state))),true);
+ assert.ok(validateState(state));
+});
+
+test('old three-region saves gain new paths without losing earlier progress or captures', () => {
+ const state=initialState(); enableAdventure(state);
+ state.collection.explorationSteps={forest:3,sea:2,cave:1};
+ assert.ok(validateState(state));
+ const restored=JSON.parse(JSON.stringify(state));
+ enableAdventure(restored);
+ assert.equal(restored.collection.explorationSteps.forest,3);
+ for(const region of ['powerplant','haunted','ice','volcano'])assert.equal(explorationProgress(restored,region),0);
+ assert.ok(validateState(restored));
+});
+
+test('older queued shinies remain saved but cannot appear before the Pikachu introduction', () => {
+ const state=initialState();enableAdventure(state);
+ state.collection.pendingEncounters.push({id:'bulbasaur',pendingId:'legacy-shiny',shiny:true});
+ assert.equal(visibleEncounters(state).length,0);
+ assert.equal(state.collection.pendingEncounters.length,1);
+ state.collection.total=25;
+ state.collection.pendingEncounters.push({id:'pikachu',pendingId:'gift',shiny:true,shinyGift:true});
+ assert.deepEqual(visibleEncounters(state).map(p=>p.id),['pikachu']);
+ state.collection.shinyIntroSeen=true;
+ assert.deepEqual(visibleEncounters(state).map(p=>p.id),['pikachu','bulbasaur']);
 });

@@ -1123,6 +1123,10 @@ export function completedAtDifficulty(state, difficulty) {
   const data = ensureCollection(state);
   return data.questions.filter(id => RANK[data.levels[id] ?? 'easy'] >= RANK[difficulty]);
 }
+export function shinyDiscovered(state) {
+  const data = ensureCollection(state);
+  return data.total >= 25 && (data.shinyIntroSeen === true || data.shiny.includes('pikachu'));
+}
 export const SHINY_CHANCE = { easy: 0, medium: 1 / 24, hard: 1 / 16 };
 export function shinyDifficulty(pokemon) { return !pokemon.form && REWARD_RULES.get(pokemon.id).level === 'easy' ? 'medium' : 'hard'; }
 export function recordQuest(state, questionId, difficulty = 'easy', random = Math.random) {
@@ -1145,7 +1149,7 @@ export function recordQuest(state, questionId, difficulty = 'easy', random = Mat
     }
   }
   // One shiny attempt per real medium/hard success; easy practice cannot roll one.
-  if (level !== 'easy') {
+  if (level !== 'easy' && data.total >= 25) {
     const pool = POKEMON.filter(p => eligible(data, p) && (p.id !== 'pikachu' || data.total >= 25) && !data.shiny.includes(p.id) && (!data.adventureMode || !data.pendingEncounters.some(e => e.id === p.id && e.shiny)) && RANK[shinyDifficulty(p)] <= RANK[level]);
     const successes = data.byDifficulty.medium + data.byDifficulty.hard;
     const guaranteed = Math.floor(successes / 20) > data.shinyBonusAwards;
@@ -1163,11 +1167,24 @@ export function recordQuest(state, questionId, difficulty = 'easy', random = Mat
 export const REGIONS = {
   forest: { name: '숲', icon: '🌳', scenery: '🌲 🌳 🌼 🌲 🌿', encounter: '풀숲이 바스락!' },
   sea: { name: '바다', icon: '🌊', scenery: '🐚 🌊 🪸 🌊 🐚', encounter: '물결이 출렁!' },
-  cave: { name: '동굴', icon: '🪨', scenery: '🪨 💎 🪨 ✨ 🪨', encounter: '동굴 안에서 부스럭!' }
+  cave: { name: '동굴', icon: '🪨', scenery: '🪨 💎 🪨 ✨ 🪨', encounter: '동굴 안에서 부스럭!' },
+  powerplant: { name: '발전소', icon: '⚡', scenery: '🏭 ⚡ 🔋 ⚡ 🏭', encounter: '전기가 찌릿찌릿!' },
+  haunted: { name: '폐가', icon: '👻', scenery: '🕸️ 🏚️ 🕯️ 🏚️ 🕸️', encounter: '낡은 집에서 살금살금!' },
+  ice: { name: '얼음지대', icon: '❄️', scenery: '❄️ 🧊 ⛄ 🧊 ❄️', encounter: '눈밭에서 사박사박!' },
+  volcano: { name: '화산지대', icon: '🌋', scenery: '🪨 🔥 🌋 🔥 🪨', encounter: '뜨거운 바위 뒤에서 부스럭!' }
 };
 const SEA_SPECIES = new Set('squirtle wartortle blastoise psyduck golduck poliwag poliwhirl poliwrath tentacool tentacruel slowpoke slowbro seel dewgong shellder cloyster krabby kingler horsea seadra goldeen seaking staryu starmie magikarp gyarados lapras vaporeon omanyte omastar kabuto kabutops dratini dragonair dragonite'.split(' '));
 const CAVE_SPECIES = new Set('sandshrew sandslash clefairy clefable zubat golbat diglett dugtrio geodude graveler golem onix drowzee hypno voltorb electrode cubone marowak koffing weezing rhyhorn rhydon gastly haunter gengar jigglypuff wigglytuff machop machoke machamp aerodactyl'.split(' '));
-export function pokemonRegion(pokemon) { return SEA_SPECIES.has(pokemon.id) ? 'sea' : CAVE_SPECIES.has(pokemon.id) ? 'cave' : 'forest'; }
+const SPECIAL_HABITATS = {
+  powerplant: new Set('pikachu raichu magnemite magneton voltorb electrode electabuzz jolteon porygon grimer muk zapdos'.split(' ')),
+  haunted: new Set('gastly haunter gengar drowzee hypno abra kadabra alakazam ditto koffing weezing mr-mime'.split(' ')),
+  ice: new Set('seel dewgong shellder cloyster jynx lapras articuno'.split(' ')),
+  volcano: new Set('charmander charmeleon charizard vulpix ninetales growlithe arcanine ponyta rapidash magmar flareon moltres'.split(' '))
+};
+export function pokemonRegion(pokemon) {
+  for (const [region, species] of Object.entries(SPECIAL_HABITATS)) if (species.has(pokemon.id)) return region;
+  return SEA_SPECIES.has(pokemon.id) ? 'sea' : CAVE_SPECIES.has(pokemon.id) ? 'cave' : 'forest';
+}
 export function enableAdventure(state) {
   const data = ensureCollection(state);
   if (!data.adventureMode) {
@@ -1175,7 +1192,8 @@ export function enableAdventure(state) {
     data.owned = POKEMON.filter(p => eligible(data, p)).map(p => p.id);
     data.adventureMode = true;
   }
-  data.explorationSteps ??= { forest: 0, sea: 0, cave: 0 };
+  data.explorationSteps ??= {};
+  for (const region of Object.keys(REGIONS)) data.explorationSteps[region] ??= 0;
   data.pendingEncounters ??= [];
   return data;
 }
@@ -1203,6 +1221,11 @@ export function recordExploration(state, questionId, level, region, random = Mat
     if (pokemon) { stageEncounter(data, { ...pokemon, shiny: false, region, exploration: true }); encountered = true; }
   }
   return { ...result, steps: data.explorationSteps[region], encountered };
+}
+export function visibleEncounters(state) {
+  const data = enableAdventure(state), discovered = shinyDiscovered(state);
+  return data.pendingEncounters.filter(p => !p.shiny || discovered || (p.shinyGift && data.total >= 25))
+    .sort((a, b) => Number(Boolean(b.shinyGift)) - Number(Boolean(a.shinyGift)));
 }
 export function completeCapture(state, pendingId) {
   const data = enableAdventure(state);
@@ -1255,16 +1278,22 @@ export function setupCollection({ getState, save, speech }) {
     const state = getState();
     const { total, owned, next, byDifficulty, shiny } = collectionProgress(state);
     const ownedIds = new Set(owned.map(p => p.id));
-    const shinyIds = new Set(shiny), shinyView = $('#pokedex-form').value === 'shiny';
+    const discovered = shinyDiscovered(state);
+    $('#collection-shiny').hidden = !discovered;
+    $('#pokedex-form-label').hidden = !discovered;
+    $('#pokedex-form').hidden = !discovered;
+    $('#shiny-preview').hidden = !discovered;
+    if (!discovered) $('#pokedex-form').value = 'normal';
+    const shinyIds = new Set(discovered ? shiny : []), shinyView = discovered && $('#pokedex-form').value === 'shiny';
     $('#collection-count').textContent = `${owned.length} / ${revealedPokemon(state).length}모습`;
     $('#collection-stone').hidden = !hasMewtwonite(state);
     $('#collection-stone').textContent = hasMewtwonite(state) ? '💎 뮤츠나이트 획득! · X·Y 포획 후 특별 기술 사용 가능' : '';
-    $('#pending-captures').hidden = !enableAdventure(state).pendingEncounters.length;
+    $('#pending-captures').hidden = !visibleEncounters(state).length;
     $('#trainer-summary').textContent = `친구 ${owned.length}마리 · 퀘스트 ${total}개 성공`;
     $('#collection-total').textContent = `누적 ${total}개 · 보통 ${byDifficulty.medium} · 어려움 ${byDifficulty.hard}`;
     const advanced = byDifficulty.medium + byDifficulty.hard;
-    $('#collection-shiny').textContent = `✦ 이로치 ${shiny.length}마리 · 보통 이상 ${20 - advanced % 20}개 더 성공하면 확정 만남`;
-    $('#collection-next').textContent = state.collection.adventureMode ? '숲·바다·동굴에서 새 문제 5개를 성공하면 야생 포켓몬을 만나요!' : next ? `${next.name}까지 ${next.requirement} ${Math.max(0, next.threshold - next.progress)}개!` : '전설과 환상까지, 연우의 도감 완성!';
+    $('#collection-shiny').textContent = discovered ? `✦ 이로치 ${shiny.length}마리 · 보통 이상 ${20 - advanced % 20}개 더 성공하면 확정 만남` : '';
+    $('#collection-next').textContent = state.collection.adventureMode ? '원하는 지역에서 새 문제 5개를 성공하면 야생 포켓몬을 만나요!' : next ? `${next.name}까지 ${next.requirement} ${Math.max(0, next.threshold - next.progress)}개!` : '전설과 환상까지, 연우의 도감 완성!';
     $('#collection-progress').max = next?.threshold ?? 1;
     $('#collection-progress').value = next?.progress ?? 1;
     const grid = $('#pokedex-grid'); grid.replaceChildren();
@@ -1287,6 +1316,10 @@ export function setupCollection({ getState, save, speech }) {
   }
   function showCapture(pokemon = pending.shift(), preview = false) {
     if (!pokemon) return;
+    if (pokemon.shiny && !pokemon.shinyGift && !shinyDiscovered(getState())) return;
+    if (pokemon.shinyGift && !preview && getState().collection.total >= 25) {
+      getState().collection.shinyIntroSeen = true; save(); render();
+    }
     resetBallDrag();
     previewing = preview;
     $('#capture-image').src = `assets/${pokemon.shiny ? 'shiny/' : ''}${pokemon.id}.png`;
@@ -1324,7 +1357,7 @@ export function setupCollection({ getState, save, speech }) {
   $('#pokedex-filter').addEventListener('change', render);
   $('#pokedex-form').addEventListener('change', render);
   $('#legendary-preview').addEventListener('click', () => showCapture(POKEMON.find(p => p.id === 'mewtwo'), true));
-  $('#shiny-preview').addEventListener('click', () => showCapture({ ...POKEMON.find(p => p.id === 'mewtwo'), shiny: true }, true));
+  $('#shiny-preview').addEventListener('click', () => { if (shinyDiscovered(getState())) showCapture({ ...POKEMON.find(p => p.id === 'mewtwo'), shiny: true }, true); });
   function captureSuccess() {
     clearTimeout(captureTimer);
     if (!$('#capture-dialog').open || !currentCapture) return;
@@ -1365,12 +1398,12 @@ export function setupCollection({ getState, save, speech }) {
   $('#capture-skip').addEventListener('click', captureSuccess);
   $('#capture-replay').addEventListener('click', throwBall);
   $('#capture-dialog').addEventListener('close', () => { resetBallDrag(); clearTimeout(captureTimer); speech.stop(); if (previewing) { previewing = false; return; } if (pending.length) showCapture(); });
-  $('#pending-captures').addEventListener('click', () => { pending = [...enableAdventure(getState()).pendingEncounters]; if (pending.length) showCapture(); });
+  $('#pending-captures').addEventListener('click', () => { pending = visibleEncounters(getState()); if (pending.length) showCapture(); });
   $('#stone-dialog').addEventListener('close', () => { speech.stop(); if (pending.length) showCapture(); });
   return {
     render,
     explorationProgress(region) { return explorationProgress(getState(), region); },
-    pendingCount() { return enableAdventure(getState()).pendingEncounters.length; },
+    pendingCount() { return visibleEncounters(getState()).length; },
     completedAtDifficulty(level) { return completedAtDifficulty(getState(), level); },
     recordCorrect(questionId, level, region = 'forest') {
       const result = recordExploration(getState(), questionId, level, region);
@@ -1382,7 +1415,7 @@ export function setupCollection({ getState, save, speech }) {
       return result;
     },
     finishRound() {
-      pending = [...enableAdventure(getState()).pendingEncounters];
+      pending = visibleEncounters(getState());
       const state = getState();
       if (hasMewtwonite(state) && !state.collection.stoneNoticeSeen) {
         state.collection.stoneNoticeSeen = true; save();

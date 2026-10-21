@@ -1,4 +1,4 @@
-import { REGIONS } from './collection.js?v=adventure-regions';
+import { REGIONS } from './collection.js?v=seven-regions-shiny';
 
 export const QUESTIONS = [
   { id: 'tree', picture: '🌳', word: '', reading: '나무', prompt: '그림에 맞는 낱말을 골라볼까?', answer: '나무', choices: ['나무', '나비', '누나'], hint: '나무! “나” 하고 천천히 읽어 봐.' },

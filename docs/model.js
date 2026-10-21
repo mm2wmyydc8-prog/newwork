@@ -70,12 +70,13 @@ export function validateState(value) {
         !Object.values(c.levels).every(level => ['easy', 'medium', 'hard'].includes(level))) return false;
   }
   if (value.collection?.adventureMode !== undefined && typeof value.collection.adventureMode !== 'boolean') return false;
-  if (value.collection?.explorationSteps !== undefined && (!value.collection.explorationSteps ||
-      !['forest', 'sea', 'cave'].every(region => Number.isInteger(value.collection.explorationSteps[region]) && value.collection.explorationSteps[region] >= 0 && value.collection.explorationSteps[region] < 5))) return false;
+  if (value.collection?.explorationSteps !== undefined && (!value.collection.explorationSteps || Array.isArray(value.collection.explorationSteps) ||
+      !Object.entries(value.collection.explorationSteps).every(([region, steps]) => ['forest', 'sea', 'cave', 'powerplant', 'haunted', 'ice', 'volcano'].includes(region) && Number.isInteger(steps) && steps >= 0 && steps < 5))) return false;
   if (value.collection?.pendingEncounters !== undefined && (!Array.isArray(value.collection.pendingEncounters) ||
       !value.collection.pendingEncounters.every(p => p && typeof p.id === 'string' && typeof p.pendingId === 'string' &&
-        typeof p.shiny === 'boolean' && (!p.exploration || ['forest', 'sea', 'cave'].includes(p.region))) ||
+        typeof p.shiny === 'boolean' && (!p.exploration || ['forest', 'sea', 'cave', 'powerplant', 'haunted', 'ice', 'volcano'].includes(p.region))) ||
       new Set(value.collection.pendingEncounters.map(p => p.pendingId)).size !== value.collection.pendingEncounters.length)) return false;
+  if (value.collection?.shinyIntroSeen !== undefined && typeof value.collection.shinyIntroSeen !== 'boolean') return false;
   if (value.collection?.pikachuGiftClaimed !== undefined && typeof value.collection.pikachuGiftClaimed !== 'boolean') return false;
   if (value.collection?.stoneNoticeSeen !== undefined && typeof value.collection.stoneNoticeSeen !== 'boolean') return false;
   if (value.collection?.shiny !== undefined && (!Array.isArray(value.collection.shiny) ||

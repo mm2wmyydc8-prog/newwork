@@ -65,3 +65,5 @@
 .capture-dialog[data-phase="encounter"] .capture-ball.dragging{cursor:grabbing;transition:none}
 .capture-ball:focus-visible{outline:3px solid #8452b6;outline-offset:5px;border-radius:50%}
 .capture-gesture-hint{font-size:13px;color:#775491;line-height:1.6;margin:12px 0}
+
+#collection-shiny[hidden],#pokedex-form-label[hidden],#pokedex-form[hidden],#shiny-preview[hidden]{display:none!important}
