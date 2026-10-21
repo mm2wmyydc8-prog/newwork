@@ -60,3 +60,8 @@
 .capture-dialog[data-shiny="true"] .eyebrow{color:#967631}.capture-dialog[data-shiny="true"] .capture-art>img{filter:drop-shadow(0 0 15px #d2b95466)}
 @keyframes shiny-spark{0%{opacity:0;transform:translate(-50%,-50%) scale(.1) rotate(-45deg)}55%{opacity:1;transform:translate(calc(-50% + var(--x)),calc(-50% + var(--y))) scale(1.1) rotate(25deg)}100%{opacity:.9;transform:translate(calc(-50% + var(--x)),calc(-50% + var(--y))) scale(.7) rotate(0)}}
 @media(prefers-reduced-motion:reduce){.capture-dialog[data-shiny="true"] .capture-art *{animation:none!important}}
+
+.capture-dialog[data-phase="encounter"] .capture-ball{touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab;transform:translateY(var(--drag-y,0px));transition:transform .15s ease-out}
+.capture-dialog[data-phase="encounter"] .capture-ball.dragging{cursor:grabbing;transition:none}
+.capture-ball:focus-visible{outline:3px solid #8452b6;outline-offset:5px;border-radius:50%}
+.capture-gesture-hint{font-size:13px;color:#775491;line-height:1.6;margin:12px 0}

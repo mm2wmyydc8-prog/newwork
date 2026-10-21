@@ -1159,6 +1159,37 @@ export function setupCollection({ getState, save, speech }) {
   let pending = [];
   let previewing = false;
   let captureTimer, currentCapture;
+  const ball = $('#capture-ball');
+  let drag = null;
+  function resetBallDrag() {
+    const previous = drag; drag = null;
+    ball.style.removeProperty('--drag-y'); ball.classList.remove('dragging');
+    if (previous && ball.hasPointerCapture(previous.id)) ball.releasePointerCapture(previous.id);
+  }
+  ball.addEventListener('pointerdown', event => {
+    if (!event.isPrimary || event.button !== 0 || drag || $('#capture-dialog').dataset.phase !== 'encounter') return;
+    event.preventDefault();
+    drag = { id: event.pointerId, y: event.clientY };
+    ball.setPointerCapture(event.pointerId); ball.classList.add('dragging');
+  });
+  ball.addEventListener('pointermove', event => {
+    if (!drag || drag.id !== event.pointerId) return;
+    event.preventDefault();
+    ball.style.setProperty('--drag-y', `${Math.max(-45, Math.min(0, event.clientY - drag.y))}px`);
+  });
+  ball.addEventListener('pointerup', event => {
+    if (!drag || drag.id !== event.pointerId) return;
+    const lifted = drag.y - event.clientY >= 18;
+    resetBallDrag();
+    if (lifted && $('#capture-dialog').dataset.phase === 'encounter') throwBall();
+  });
+  ball.addEventListener('pointercancel', resetBallDrag);
+  ball.addEventListener('lostpointercapture', resetBallDrag);
+  ball.addEventListener('keydown', event => {
+    if (['Enter', ' '].includes(event.key) && $('#capture-dialog').dataset.phase === 'encounter') {
+      event.preventDefault(); throwBall();
+    }
+  });
   function render() {
     const state = getState();
     const { total, owned, next, byDifficulty, shiny } = collectionProgress(state);
@@ -1194,6 +1225,7 @@ export function setupCollection({ getState, save, speech }) {
   }
   function showCapture(pokemon = pending.shift(), preview = false) {
     if (!pokemon) return;
+    resetBallDrag();
     previewing = preview;
     $('#capture-image').src = `assets/${pokemon.shiny ? 'shiny/' : ''}${pokemon.id}.png`;
     $('#capture-image').alt = `${pokemon.shiny ? '이로치 ' : ''}${pokemon.name}`;
@@ -1206,7 +1238,8 @@ export function setupCollection({ getState, save, speech }) {
     $('#capture-dialog').dataset.shiny = String(Boolean(pokemon.shiny));
     $('#capture-shiny-badge').hidden = !pokemon.shiny;
     $('#capture-ball').style.setProperty('--ball-image', `url("assets/${special ? 'masterball' : 'pokeball'}.svg")`);
-    $('#capture-ball').setAttribute('aria-label', special ? '마스터볼' : '몬스터볼');
+    $('#capture-ball').setAttribute('aria-label', `${special ? '마스터볼' : '몬스터볼'}을 위로 밀어 던지기`);
+    ball.tabIndex = 0;
     $('#capture-continue').disabled = false;
     $('#capture-skip').hidden = true;
     $('#capture-replay').hidden = true;
@@ -1216,6 +1249,7 @@ export function setupCollection({ getState, save, speech }) {
     if (pokemon.shiny) { $('#capture-label').textContent = 'SHINY ENCOUNTER!'; $('#capture-title').textContent = `색이 다른 ${pokemon.name} 등장!`; }
     $('#capture-rarity').textContent = rule.tier;
     $('#capture-message').textContent = preview ? '포획 연출 미리보기예요. 포켓몬이나 실적은 추가되지 않아요.' : pokemon.shinyGift ? '퀴즈 누적 25개 성공 선물! 평소와 색이 다른 포켓몬을 이로치라고 해! 모험을 계속하면 다른 이로치 친구도 만날 수 있어!' : pokemon.shinyBonus ? `보통 이상 모험의 특별 보너스! 색이 다른 ${pokemon.name}가 연우의 친구가 되었어요.` : `${rule.label} 퀘스트 ${rule.target}개 성공! ${pokemon.name}가 연우의 친구가 되었어요.`;
+    $('#capture-gesture-hint').hidden = false;
     $('#capture-continue').textContent = special ? '마스터볼 던지기! ✦' : '몬스터볼 던지기! ✦';
     $('#capture-dialog').showModal();
     if (getState().speechAuto !== false) speech.speak(pokemon.shinyGift ? '연우야! 퀴즈 25개 성공! 특별한 피카츄를 만났어! 평소와 색이 다른 포켓몬을 이로치라고 해! 반짝반짝 멋지지? 모험을 계속하면 다른 이로치 친구도 만날 수 있어!' : pokemon.shiny ? `반짝! 색이 다른 이로치 ${pokemon.name} 등장! ${preview ? '미리보기야.' : '연우가 특별한 친구를 만났어!'}` : preview ? `전설 등장 미리보기. ${pokemon.name}!`  : special ? `전설의 기운이 느껴져! ${pokemon.name} 등장! 연우가 전설의 파트너를 만났어! 정말 멋진 모험이었어!` : `와! ${pokemon.name}를 만났어! 연우의 새로운 친구야. 정말 잘했어!`);
@@ -1240,7 +1274,10 @@ export function setupCollection({ getState, save, speech }) {
     if (getState().speechAuto !== false) speech.speak(preview ? '포획 성공! 미리보기야.' : `신난다! ${pokemon.name} 포획 성공! 연우의 새로운 친구야!`);
   }
   function throwBall() {
-    if (!currentCapture || !$('#capture-dialog').open) return;
+    if (!currentCapture || !$('#capture-dialog').open || $('#capture-dialog').dataset.phase === 'throwing') return;
+    resetBallDrag();
+    ball.tabIndex = -1;
+    $('#capture-gesture-hint').hidden = true;
     clearTimeout(captureTimer); speech.stop();
     const dialog = $('#capture-dialog');
     dialog.dataset.phase = 'encounter'; void dialog.offsetWidth;
@@ -1260,7 +1297,7 @@ export function setupCollection({ getState, save, speech }) {
   });
   $('#capture-skip').addEventListener('click', captureSuccess);
   $('#capture-replay').addEventListener('click', throwBall);
-  $('#capture-dialog').addEventListener('close', () => { clearTimeout(captureTimer); speech.stop(); if (previewing) { previewing = false; return; } if (pending.length) showCapture(); });
+  $('#capture-dialog').addEventListener('close', () => { resetBallDrag(); clearTimeout(captureTimer); speech.stop(); if (previewing) { previewing = false; return; } if (pending.length) showCapture(); });
   $('#stone-dialog').addEventListener('close', () => { speech.stop(); if (pending.length) showCapture(); });
   return {
     render,
