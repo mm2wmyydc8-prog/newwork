@@ -45,3 +45,7 @@ select{width:100%;font:inherit;font-size:16px;color:var(--ink);border:1px solid 
 @keyframes scene-contact{0%,18%,100%{transform:translateX(-50%)}25%{transform:translateX(-57%) scale(.98)}43%{transform:translateX(-29%) scale(1.03)}52%{transform:translateX(-34%)}68%{transform:translateX(-50%)}}
 @keyframes scene-focus{0%,100%{transform:translateX(-50%)}28%,64%{transform:translateX(-50%) translateY(-5px);filter:drop-shadow(0 0 9px var(--move-color))}}
 @media(prefers-reduced-motion:reduce){.celebration.playing:is([data-motion]) .psychic-mewtwo{animation:none!important}}
+
+.partner-move-chip{min-height:43px}.partner-move-hidden{background:#ffffff40;border-style:dashed}.partner-moves button:hover{background:#eee2ff;border-color:#ad88d1}
+
+.mission-heading-actions{display:flex;align-items:center;gap:8px}.mission-heading-actions .quiet{font-size:11px;padding:8px;white-space:nowrap}

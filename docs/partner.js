@@ -1,6 +1,6 @@
 import { POKEMON, collectionProgress, canUseMegaMoves, shinyDiscovered } from './collection.js?v=partner-habitats';
 import { PARTNER_MOVESETS } from './partner-moves.js?v=partner-habitats';
-import { PSYCHIC_THRESHOLD } from './moves.js?v=partner-habitats';
+import { PSYCHIC_THRESHOLD, earnedMissionMinutes } from './moves.js?v=partner-habitats';
 
 function decorate(pokemon, shiny = false) {
   return { ...pokemon, shiny, moves: PARTNER_MOVESETS[pokemon.id], image: `assets/${shiny ? 'shiny/' : ''}${pokemon.id}.png` };
@@ -27,4 +27,16 @@ export function missionPartnerSlot(state, mission) {
 export function partnerCelebrationSlots(state, mission, before, after) {
   const slot = missionPartnerSlot(state, mission);
   return before < PSYCHIC_THRESHOLD && after >= PSYCHIC_THRESHOLD && slot !== 3 ? [slot, 3] : [slot];
+}
+
+// Only today's confirmed quests reveal move names. Manual time grants never unlock them.
+export function revealedPartnerSlots(state) {
+  const slots = new Set();
+  for (const entry of state.entries) {
+    if (entry.day !== state.day || !entry.missionId || entry.minutes <= 0) continue;
+    const mission = state.missions.find(m => m.id === entry.missionId);
+    if (mission) slots.add(missionPartnerSlot(state, mission));
+  }
+  if (earnedMissionMinutes(state) >= PSYCHIC_THRESHOLD) slots.add(3);
+  return slots;
 }

@@ -1,7 +1,7 @@
 import { createMoveScene } from './move-scene.js?v=techniques-2';
 import { createMoveSound } from './move-sound.js?v=techniques-2';
 import { classifyMove } from './move-effects.js?v=move-motions';
-import { availablePartners, getPartner, selectPartner, missionPartnerSlot, partnerCelebrationSlots } from './partner.js?v=partner-habitats';
+import { availablePartners, getPartner, selectPartner, missionPartnerSlot, partnerCelebrationSlots, revealedPartnerSlots } from './partner.js?v=earned-techniques';
 import { initialState, validateState, settle, totalMinutes, remainingSeconds, start, pause, adjust, missionDone, resetTodayQuests } from './model.js?v=partner-habitats';
 import { PSYCHIC_THRESHOLD, missionMove, earnedMissionMinutes } from './moves.js?v=partner-habitats';
 import { setupHangulQuiz } from './hangul.js?v=partner-habitats';
@@ -73,7 +73,7 @@ function readable(minutes) {
   if (minutes < 60) return `${minutes}분`;
   return `${Math.floor(minutes / 60)}시간${minutes % 60 ? ` ${minutes % 60}분` : ''}`;
 }
-function questTitle(mission) { return mission.id === 'hangul' && mission.title === '한글 공부' ? '뮤의 퀴즈 퀘스트' : mission.title; }
+function questTitle(mission) { return mission.title; }
 function showDialog(id) { if (!$(id).open) $(id).showModal(); }
 function replayCelebration() {
   const dialog = $('#celebration-dialog');
@@ -88,21 +88,21 @@ function replayCelebration() {
   dialog.scrollTop = 0;
 }
 function renderCelebration() {
-  const { mission, minutes, moves, index, partner } = celebration;
-  const move = partner.moves[moves[index]], special = index > 0;
+  const { mission, minutes, moves, index, partner, preview } = celebration;
+  const move = partner.moves[moves[index]], special = !preview && index > 0;
   const id = move.effect, effect = classifyMove(move);
   $('#celebration-dialog').dataset.motion = effect.motion;
   $('#celebration-dialog').style.setProperty('--move-color', effect.color);
   $('#celebration-dialog').dataset.move = id;
-  $('#celebration-dialog .eyebrow').textContent = 'MISSION CLEAR!';
-  $('#celebration-title').textContent = special ? '특별 기술 발동!' : '연우, 미션 성공!';
+  $('#celebration-dialog .eyebrow').textContent = preview ? 'QUEST REWARD' : 'MISSION CLEAR!';
+  $('#celebration-title').textContent = preview ? '연우가 얻은 기술!' : special ? '특별 기술 발동!' : '연우, 미션 성공!';
   $('#move-name').textContent = `${partner.name}의 ${move.name}!`;
   $('.psychic-mewtwo').src = partner.image;
   $('#celebration-speak').textContent = `🔊 ${partner.name} 응원 듣기`;
   $('.mewtwo-quote').textContent = '“연우야, 멋진 도전이었어!”';
-  $('#celebration-mission').textContent = special ? `오늘 미션 보상 ${PSYCHIC_THRESHOLD}분 달성!` : `${questTitle(mission)} 성공!`;
-  $('#celebration-reward').textContent = special ? '특별 연출 ✦' : `+${minutes}분`;
-  $('#celebration-message').textContent = `${partner.name}의 ${move.name}! ` + (special ? '오늘 60분 달성! 추가 시간 보상은 없어요.' : '보상은 시간볼에 넣었어요!');
+  $('#celebration-mission').textContent = preview ? '할 일을 완료해서 열린 기술이에요.' : special ? `오늘 미션 보상 ${PSYCHIC_THRESHOLD}분 달성!` : `${questTitle(mission)} 성공!`;
+  $('#celebration-reward').textContent = preview ? '완료 보상 ✦' : special ? '특별 연출 ✦' : `+${minutes}분`;
+  $('#celebration-message').textContent = `${partner.name}의 ${move.name}! ` + (preview ? '시간 보상은 다시 추가되지 않아요.' : special ? '오늘 60분 달성! 추가 시간 보상은 없어요.' : '보상은 시간볼에 넣었어요!');
   $('#celebration-continue').textContent = index + 1 < moves.length ? `특별 기술 보기 · ${partner.moves[3].name} ✦` : '좋아! 모험 계속하기 ✦';
 }
 function celebrate(mission, minutes, before, after) {
@@ -145,7 +145,7 @@ function confirmMission(id) {
   $('#mission-confirm-name').textContent = `${questTitle(mission)} · +${mission.minutes}분`;
   $('#mission-confirm-reward').textContent = `확인하고 ${mission.minutes}분 받기`;
   showDialog('#mission-confirm-dialog');
-  autoSpeak(`${questTitle(mission)}. 퀘스트를 마쳤나요? 부모님이 확인하면 ${mission.minutes}분을 받을 수 있어요.`);
+  autoSpeak(`${questTitle(mission)}. 할 일을 마쳤나요? 부모님이 확인하면 ${mission.minutes}분을 받을 수 있어요.`);
 }
 $('#mission-confirm-reward').addEventListener('click', () => {
   const id = confirmingMissionId;
@@ -180,7 +180,7 @@ function render() {
     row.setAttribute('aria-label', `${mission.title}, ${done ? '오늘 완료됨' : `보상 ${mission.minutes}분, 완료 확인하기`}`);
     row.addEventListener('click', () => confirmMission(mission.id));
     const badge = el('div', 'badge'), image = el('img'); image.src = 'assets/masterball.svg'; image.alt = ''; badge.append(image);
-    const copy = el('div', 'mission-copy'); copy.append(el('div', 'mission-title', questTitle(mission)), el('div', 'mission-subtitle', done ? '오늘 퀘스트 성공! ✦' : `${getPartner(state).moves[missionPartnerSlot(state, mission)].name} · 눌러서 완료 확인 ›`));
+    const copy = el('div', 'mission-copy'); copy.append(el('div', 'mission-title', questTitle(mission)), el('div', 'mission-subtitle', done ? '오늘 할 일 완료! ✦' : '완료하면 파트너가 기술을 써요 · 눌러서 완료 확인 ›'));
     row.append(badge, copy, el('span', 'reward-pill', done ? '✓ 완료' : `+${mission.minutes}분`));
     const item = el('div', 'mission-item');
     const listen = el('button', 'mission-listen', '🔊 미션 듣기');
@@ -296,13 +296,14 @@ function openLearningReset() {
 function openQuestReset() {
   resetMode = 'quests'; settle(state);
   const entries = state.entries.filter(entry => entry.day === state.day && entry.missionId != null);
-  $('#reset-learning-title').textContent = '오늘 퀘스트 초기화';
+  $('#reset-learning-title').textContent = '오늘 할 일 초기화';
   $('#reset-learning-summary').textContent = `오늘 미션 완료 ${entries.length}건과 미션 보상 ${entries.reduce((sum, entry) => sum + entry.minutes, 0)}분을 되돌립니다.`;
-  $('#reset-description').textContent = '오늘 퀘스트를 다시 완료할 수 있게 하고, 해당 미션 보상 시간과 특별 기술 진행을 되돌립니다. 기본 시간·수동 시간 조정·이미 시청한 시간·도감·사진·미션 설정은 유지합니다.';
-  $('#reset-learning-confirm').textContent = '오늘 퀘스트 초기화';
+  $('#reset-description').textContent = '오늘 할 일을 다시 완료할 수 있게 하고, 해당 보상 시간과 기술 공개 상태를 되돌립니다. 기본 시간·수동 시간 조정·이미 시청한 시간·도감·사진·미션 설정은 유지합니다.';
+  $('#reset-learning-confirm').textContent = '오늘 할 일 초기화';
   $('#reset-learning-dialog').showModal();
 }
 $('#reset-quests-open').addEventListener('click', openQuestReset);
+$('#reset-quests-shortcut').addEventListener('click', openQuestReset);
 $('#reset-learning-open').addEventListener('click', openLearningReset);
 $('#reset-learning-confirm').addEventListener('click', () => {
   if (!storageAvailable) { toast('브라우저 저장 공간에 접근할 수 없어 초기화하지 않았어요.'); return; }
@@ -337,9 +338,23 @@ function renderPartner() {
   $('#hero-partner-name').textContent = partner.name;
   $('#partner-image').src = partner.image; $('#partner-image').alt = partner.name;
   $('#partner-moves').replaceChildren();
-  partner.moves.forEach(move => {
-    const chip = el('span', 'partner-move-chip', move.name);
-    $('#partner-moves').append(chip);
+  const revealed = revealedPartnerSlots(state);
+  partner.moves.forEach((move, slot) => {
+    if (!revealed.has(slot)) {
+      const blank = el('span', 'partner-move-chip partner-move-hidden');
+      blank.setAttribute('aria-label', '아직 열리지 않은 기술');
+      $('#partner-moves').append(blank);
+      return;
+    }
+    const button = el('button', 'partner-move-chip', move.name);
+    button.type = 'button';
+    button.addEventListener('click', () => {
+      settle(state);
+      if (!revealedPartnerSlots(state).has(slot)) { saveAndRender(); return; }
+      celebration = { mission: null, minutes: 0, moves: [slot], index: 0, partner: getPartner(state), preview: true };
+      renderCelebration(); showDialog('#celebration-dialog'); replayCelebration(); autoSpeak($('#move-name').textContent);
+    });
+    $('#partner-moves').append(button);
   });
 }
 $('#partner-select').addEventListener('change', event => {

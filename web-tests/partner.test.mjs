@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { initialState, validateState } from '../docs/model.js';
 import { POKEMON, enableAdventure } from '../docs/collection.js';
 import { PARTNER_MOVESETS } from '../docs/partner-moves.js';
-import { availablePartners, getPartner, selectPartner, missionPartnerSlot, partnerCelebrationSlots } from '../docs/partner.js';
+import { availablePartners, getPartner, selectPartner, missionPartnerSlot, partnerCelebrationSlots, revealedPartnerSlots } from '../docs/partner.js';
 
 test('all 151 species and both Mega forms have four named move slots and supported effects', () => {
  const effects=new Set(['normal','wind','poison','rock','leaf','shadowball','fire','water','electric','psychic','ice','aurasphere','confusion']);
@@ -47,4 +47,17 @@ test('mission assignments cover four slots; 60 minutes adds a fourth-slot celebr
  assert.equal(missionPartnerSlot(state,{id:'hangul',move:'psychic'}),3);
  assert.deepEqual(partnerCelebrationSlots(state,state.missions[1],30,60),[1,3]);
  assert.deepEqual(partnerCelebrationSlots(state,state.missions[3],50,60),[3]);
+});
+
+test('move names stay hidden until confirmed quests; daily reset hides them again', () => {
+ const state=initialState();
+ assert.deepEqual([...revealedPartnerSlots(state)],[]);
+ state.entries.push({day:state.day,minutes:30,missionId:null});
+ assert.deepEqual([...revealedPartnerSlots(state)],[]);
+ state.entries.push({day:state.day,minutes:30,missionId:'hangul'});
+ assert.deepEqual([...revealedPartnerSlots(state)],[0]);
+ state.entries.push({day:state.day,minutes:30,missionId:'bookclub'});
+ assert.deepEqual([...revealedPartnerSlots(state)],[0,1,3]);
+ state.day='2099-01-01';
+ assert.deepEqual([...revealedPartnerSlots(state)],[]);
 });
