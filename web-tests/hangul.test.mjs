@@ -49,7 +49,7 @@ test('three levels keep quest identity but present different tasks', () => {
   const hard = createQuiz(() => 0.4, [], 'hard');
   assert.deepEqual(easy.questions.map(q => q.id), hard.questions.map(q => q.id));
   assert.deepEqual(easy.questions, hard.questions);
-  medium.questions.forEach(q => { assert.ok(q.word.endsWith('□')); assert.equal(q.word.replace('□', q.answer), q.reading); });
+  medium.questions.forEach(q => { assert.equal(q.word, q.reading); assert.equal(q.answer, q.picture); assert.equal(new Set(q.choices).size, 3); assert.equal(q.choices.filter(c => c === q.picture).length, 1); });
   hard.questions.forEach(q => { assert.equal(q.answer, q.reading); assert.deepEqual([...q.choices].sort(), [...q.reading].sort()); });
 });
 test('hard requires ordered, distinct tiles including repeated syllables', () => {

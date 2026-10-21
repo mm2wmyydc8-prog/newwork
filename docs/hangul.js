@@ -23,7 +23,7 @@ function shuffled(items, random) {
 }
 export const DIFFICULTIES = {
   easy: { name: '쉬움', help: '그림과 소리를 듣고, 글자를 순서대로 눌러 낱말을 만들어요.' },
-  medium: { name: '보통', help: '익숙한 낱말에서 비어 있는 글자 하나를 채워요.' },
+  medium: { name: '보통', help: '짧은 낱말을 스스로 읽고, 알맞은 그림을 골라요. 막히면 뮤에게 소리 도움을 요청해요.' },
   hard: { name: '어려움', help: '글자를 순서대로 눌러 낱말을 직접 만들어요.' }
 };
 export function createQuiz(random = Math.random, completed = [], difficulty = 'easy') {
@@ -35,12 +35,11 @@ export function createQuiz(random = Math.random, completed = [], difficulty = 'e
       const reading = q.reading ?? q.word.replace('□', q.answer);
       if (level === 'hard' || level === 'easy') return { ...q, reading, word: '□'.repeat(reading.length), answer: reading,
         prompt: '글자를 순서대로 눌러 낱말을 만들어볼까?', choices: shuffled([...reading], random) };
-      const answer = reading.at(-1);
-      const alternatives = shuffled(['가', '나', '다', '라', '마', '바', '사', '자', '아', '이', '오', '우', '비', '토', '스'].filter(x => x !== answer), random).slice(0, 2);
-      return { ...q, reading, answer, word: reading.slice(0, -1) + '□',
-        prompt: '빈 곳에 들어갈 글자를 골라봐!',
-        hint: `다시 들어보자. ${reading}. 빈 곳의 글자는 ‘${answer}’야.`,
-        choices: shuffled([answer, ...alternatives], random) };
+      const alternatives = shuffled(QUESTIONS.filter(other => other.id !== q.id), random).slice(0, 2);
+      return { ...q, reading, answer: q.picture, word: reading,
+        prompt: '글을 읽고, 알맞은 그림을 골라봐!',
+        hint: `뮤랑 읽어보자. ${[...reading].join('~ ')}. ${reading}!`,
+        choices: shuffled([q.picture, ...alternatives.map(other => other.picture)], random) };
     }) };
 }
 export function chooseAnswer(quiz, answer) {
@@ -108,6 +107,7 @@ export function setupHangulQuiz({ getState, confirmMission, notify, speech, coll
   function stopSpeaking() { speech.stop(); }
   function say(text) { if (getState().speechAuto !== false) speech.speak(text); }
   function questionText(question) {
+    if (quiz.difficulty === 'medium') return '글을 스스로 읽고, 알맞은 그림을 골라봐. 어려우면 뮤에게 소리 도움을 요청해도 괜찮아.';
     return `${quiz.difficulty === 'easy' ? question.answer : question.reading}. ${question.prompt} 글자가 궁금하면 작은 스피커를 눌러 들어 봐.`;
   }
   function render() {
@@ -129,7 +129,9 @@ export function setupHangulQuiz({ getState, confirmMission, notify, speech, coll
     const question = quiz.questions[quiz.index];
     if (quiz.recovery) { renderPractice(question); return; }
     lockInput();
+    $('#quiz-picture').hidden = quiz.difficulty === 'medium';
     $('#quiz-picture').textContent = question.picture;
+    $('#quiz-speak').textContent = quiz.difficulty === 'medium' ? '🔊 뮤에게 읽기 도움 받기' : '🔊 낱말·문제 듣기';
     $('#quiz-word').textContent = question.word;
     $('#quiz-word').hidden = !question.word;
     $('#quiz-prompt').textContent = question.prompt;
@@ -141,6 +143,7 @@ export function setupHangulQuiz({ getState, confirmMission, notify, speech, coll
       const cell = document.createElement('div'); cell.className = 'quiz-choice';
       const button = document.createElement('button');
       button.type = 'button'; button.className = answer.length > 1 ? 'quiz-answer quiz-answer-word' : 'quiz-answer'; button.textContent = answer;
+      if (quiz.difficulty === 'medium') button.classList.add('quiz-picture-answer');
       button.addEventListener('click', () => {
         if (quiz.answered || inputLocked) return;
         lockInput();
@@ -179,12 +182,14 @@ export function setupHangulQuiz({ getState, confirmMission, notify, speech, coll
       listen.type = 'button'; listen.className = 'quiz-choice-listen'; listen.textContent = '🔊 듣기';
       listen.setAttribute('aria-label', `${answer} 소리 듣기`); listen.disabled = !canSpeak;
       listen.addEventListener('click', () => speech.speak(answer));
-      cell.append(button, listen); $('#quiz-answers').append(cell);
+      if (quiz.difficulty === 'medium') cell.append(button);
+      else cell.append(button, listen); $('#quiz-answers').append(cell);
     }
     say(questionText(question));
   }
   function renderPractice(question) {
     const easy = quiz.recovery === 'easy-practice';
+    $('#quiz-picture').hidden = false;
     const mew = document.createElement('img'); mew.src = 'assets/mew.png'; mew.alt = '함께 연습하는 뮤'; mew.width = 96; mew.height = 96;
     $('#quiz-picture').replaceChildren(mew);
     $('#quiz-word').hidden = false;
@@ -229,7 +234,8 @@ export function setupHangulQuiz({ getState, confirmMission, notify, speech, coll
     if (!canSpeak || quiz.index >= quiz.questions.length) return;
     stopSpeaking();
     const question = quiz.questions[quiz.index];
-    const text = questionText(question);
+    if (quiz.difficulty === 'medium' && !quiz.answered) quiz.assisted = true;
+    const text = quiz.difficulty === 'medium' ? `뮤랑 읽어보자. ${question.reading}. ${[...question.reading].join(', ')}. ${question.reading}.` : questionText(question);
     speech.speak(text);
   });
   $('#quiz-claim').addEventListener('click', () => {

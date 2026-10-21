@@ -1,6 +1,6 @@
 import { initialState, validateState, settle, totalMinutes, remainingSeconds, start, pause, adjust, missionDone } from './model.js?v=shiny-forms';
 import { MOVES, PSYCHIC_THRESHOLD, missionMove, celebrationMoves, earnedMissionMinutes } from './moves.js?v=daily60';
-import { setupHangulQuiz } from './hangul.js?v=easy-tiles';
+import { setupHangulQuiz } from './hangul.js?v=medium-reading';
 import { createKoreanSpeech } from './speech.js';
 import { setupCollection } from './collection.js?v=swipe-throw';
 import { setupTrainer } from './trainer.js?v=photo-picker-fix';
