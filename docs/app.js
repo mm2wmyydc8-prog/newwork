@@ -1,7 +1,7 @@
-import { createMoveScene } from './move-scene.js?v=sludge-substitute';
+import { createMoveScene } from './move-scene.js?v=move-batch';
 import { createMoveSound } from './move-sound.js?v=techniques-2';
-import { classifyMove } from './move-effects.js?v=sludge-bomb';
-import { availablePartners, getPartner, selectPartner, missionPartnerSlot, partnerCelebrationSlots, revealedPartnerSlots } from './partner.js?v=test-all-captured';
+import { classifyMove } from './move-effects.js?v=move-batch';
+import { availablePartners, getPartner, selectPartner, missionPartnerSlot, partnerCelebrationSlots, revealedPartnerSlots } from './partner.js?v=move-batch';
 import { initialState, validateState, settle, totalMinutes, remainingSeconds, start, pause, adjust, missionDone, resetTodayQuests } from './model.js?v=test-all-captured';
 import { PSYCHIC_THRESHOLD, missionMove, earnedMissionMinutes } from './moves.js?v=partner-habitats';
 import { setupHangulQuiz } from './hangul.js?v=partner-habitats';
@@ -103,7 +103,7 @@ function renderCelebration() {
   $('#celebration-mission').textContent = preview ? '할 일을 완료해서 열린 기술이에요.' : special ? `오늘 미션 보상 ${PSYCHIC_THRESHOLD}분 달성!` : `${questTitle(mission)} 성공!`;
   $('#celebration-reward').textContent = preview ? '완료 보상 ✦' : special ? '특별 연출 ✦' : `+${minutes}분`;
   $('#celebration-message').textContent = `${partner.name}의 ${move.name}! ` + (preview ? '시간 보상은 다시 추가되지 않아요.' : special ? '오늘 60분 달성! 추가 시간 보상은 없어요.' : '보상은 시간볼에 넣었어요!');
-  $('#celebration-continue').textContent = index + 1 < moves.length ? `특별 기술 보기 · ${partner.moves[3].name} ✦` : '좋아! 모험 계속하기 ✦';
+  $('#celebration-continue').textContent = index + 1 < moves.length ? `특별 기술 보기 · ${partner.moves.at(-1).name} ✦` : '좋아! 모험 계속하기 ✦';
 }
 function celebrate(mission, minutes, before, after) {
   celebration = { mission, minutes, moves: partnerCelebrationSlots(state, mission, before, after), index: 0, partner: getPartner(state) };
@@ -169,7 +169,7 @@ function render() {
   $('#total-time').textContent = readable(total);
   $('#budget-detail').textContent = `기본 ${state.baseMinutes}분 ${bonus >= 0 ? '+' : '−'} 오늘 보상·차감 ${Math.abs(bonus)}분`;
   const earned = earnedMissionMinutes(state);
-  $('#unlock-label').textContent = earned >= PSYCHIC_THRESHOLD ? `✦ 오늘 60분 달성! ${getPartner(state).moves[3].name}!` : `오늘 모은 미션 보상 ${earned} / ${PSYCHIC_THRESHOLD}분`;
+  $('#unlock-label').textContent = earned >= PSYCHIC_THRESHOLD ? `✦ 오늘 60분 달성! ${getPartner(state).moves.at(-1).name}!` : `오늘 모은 미션 보상 ${earned} / ${PSYCHIC_THRESHOLD}분`;
   $('#unlock-progress').value = Math.min(earned, PSYCHIC_THRESHOLD);
   $('#mission-list').replaceChildren();
   $('#parent-missions').replaceChildren();
@@ -219,7 +219,7 @@ function openEditor(mission = null) {
   $('#editor-title').textContent = mission ? '미션 수정' : '새 미션 추가';
   $('#mission-name').value = mission?.title ?? '';
   $('#mission-minutes').value = mission?.minutes ?? 30;
-  [...$('#mission-move').options].forEach((option, slot) => { option.textContent = `${slot + 1}번째 · ${getPartner(state).moves[slot].name}`; });
+  [...$('#mission-move').options].forEach((option, slot) => { option.textContent = `${slot + 1}번째 · ${getPartner(state).moves[slot % getPartner(state).moves.length].name}`; });
   $('#mission-move').value = mission ? missionMove(mission) : 'confusion';
   $('#delete-mission').hidden = !mission;
   showDialog('#editor-dialog');

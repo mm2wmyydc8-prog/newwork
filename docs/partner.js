@@ -1,5 +1,5 @@
 import { POKEMON, collectionProgress, canUseMegaMoves, shinyDiscovered } from './collection.js?v=test-all-captured';
-import { PARTNER_MOVESETS } from './partner-moves.js?v=partner-habitats';
+import { PARTNER_MOVESETS } from './partner-moves.js?v=move-batch';
 import { PSYCHIC_THRESHOLD, earnedMissionMinutes } from './moves.js?v=partner-habitats';
 
 function decorate(pokemon, shiny = false) {
@@ -21,12 +21,12 @@ export function selectPartner(state, id, shiny = false) {
 }
 export function missionPartnerSlot(state, mission) {
   const slots = { confusion: 0, shadowball: 1, aurasphere: 2, psychic: 3 };
-  if (Object.hasOwn(slots, mission.move)) return slots[mission.move];
-  return { hangul: 0, bookclub: 1, reading: 2 }[mission.id] ?? Math.max(0, state.missions.findIndex(m => m.id === mission.id)) % 4;
+  if (Object.hasOwn(slots, mission.move)) return slots[mission.move] % getPartner(state).moves.length;
+  return ({ hangul: 0, bookclub: 1, reading: 2 }[mission.id] ?? Math.max(0, state.missions.findIndex(m => m.id === mission.id)) % 4) % getPartner(state).moves.length;
 }
 export function partnerCelebrationSlots(state, mission, before, after) {
-  const slot = missionPartnerSlot(state, mission);
-  return before < PSYCHIC_THRESHOLD && after >= PSYCHIC_THRESHOLD && slot !== 3 ? [slot, 3] : [slot];
+  const slot = missionPartnerSlot(state, mission), last = getPartner(state).moves.length - 1;
+  return before < PSYCHIC_THRESHOLD && after >= PSYCHIC_THRESHOLD && slot !== last ? [slot, last] : [slot];
 }
 
 // Only today's confirmed quests reveal move names. Manual time grants never unlock them.
@@ -37,6 +37,6 @@ export function revealedPartnerSlots(state) {
     const mission = state.missions.find(m => m.id === entry.missionId);
     if (mission) slots.add(missionPartnerSlot(state, mission));
   }
-  if (earnedMissionMinutes(state) >= PSYCHIC_THRESHOLD) slots.add(3);
+  if (earnedMissionMinutes(state) >= PSYCHIC_THRESHOLD) slots.add(getPartner(state).moves.length - 1);
   return slots;
 }

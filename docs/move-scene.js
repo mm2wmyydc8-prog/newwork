@@ -1,5 +1,6 @@
+import { choreographMove, drawSpecialMove, SPECIAL_MOVES } from './move-choreography.js?v=move-batch';
 // Original 2D move drawings. Animation families follow the action, not just the type.
-import { classifyMove } from './move-effects.js?v=sludge-bomb';
+import { classifyMove } from './move-effects.js?v=move-batch';
 const TAU = Math.PI * 2;
 const clamp = n => Math.max(0, Math.min(1, n));
 const ease = n => 1 - (1 - clamp(n)) ** 3;
@@ -7,6 +8,7 @@ const SUPPORT = new Set(['shield', 'heal', 'transform', 'status']);
 
 export function createMoveScene(canvas, { reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches } = {}) {
   const c = canvas.getContext('2d');
+  const sprite = canvas.parentElement?.querySelector('.psychic-mewtwo');
   const W = 700, H = 380, sx = 205, sy = 177, tx = 523, ty = 184;
   let frame = 0, generation = 0;
   canvas.width = W; canvas.height = H;
@@ -138,7 +140,14 @@ export function createMoveScene(canvas, { reduced = () => matchMedia('(prefers-r
   }
 
   function render(move, t, quiet) {
-    const { motion, color } = classifyMove(move), supportive = SUPPORT.has(motion);
+    const { motion, color } = classifyMove(move), supportive = SUPPORT.has(motion) || ['teleport','rest','sleep-talk','barrier'].includes(move.id);
+    const actor = choreographMove(move.id,t,quiet);
+    if (sprite && SPECIAL_MOVES.has(move.id)) {
+      const scale = canvas.clientWidth / W;
+      sprite.style.setProperty('animation','none','important');
+      sprite.style.transform = `translateX(-50%) translate(${actor.x*scale}px,${actor.y*scale}px) rotate(${actor.rotation}deg) scale(${actor.scaleX},${actor.scaleY})`;
+      sprite.style.opacity=actor.opacity;
+    }
     const travel = ease((t - .58) / .68), hit = clamp((t - 1.36) / .78);
     const alive = t > .5 && t < 2.35, fade = 1 - clamp((t - 1.95) / .4);
     c.clearRect(0, 0, W, H);
@@ -146,12 +155,14 @@ export function createMoveScene(canvas, { reduced = () => matchMedia('(prefers-r
     if (!supportive) ellipse(tx, ty + 87, 68, 10, '#a6b9e0', 2, .2);
     const shake = !quiet && t > 1.36 && t < 1.62 ? Math.sin(t * 75) * 4 : 0;
     const targetY = motion === 'psychic' && alive ? ty - Math.sin(clamp((t - .6) / 1.6) * Math.PI) * 26 : ty;
-    if (!supportive) substitute(tx + shake, targetY, t > 1.36 && t < 1.5 ? .65 : 1, quiet ? 0 : shake * .006);
+    if (!supportive) { c.save();c.translate(tx+shake+actor.targetX,targetY+actor.targetY);c.rotate(actor.targetRotation*Math.PI/180);c.scale(1,actor.targetScaleY);substitute(0,0,actor.targetOpacity,quiet?0:shake*.006);c.restore(); }
     // Brief anticipation; no generic rings or floating balls over every attack.
     if (t < .58 && t > .14) glow(sx, sy, 25 + t * 22, color, Math.sin((t - .14) / .44 * Math.PI) * .55);
     c.save(); c.globalAlpha = fade;
     if (alive) {
-      if (motion === 'fang') {
+      if (drawSpecialMove({c,move,t,quiet,sx,sy,tx,ty,disc,stroke,ellipse,glow,star,flame,debris,sludge,fist,substitute})) {
+        // Named choreography owns its release, status and impact effects.
+      } else if (motion === 'fang') {
         const close = ease((t - 1.05) / .31), gap = 75 - close * 57;
         const appear = ease((t - .5) / .22);
         c.save(); c.translate(tx, ty); c.scale(appear, appear); c.translate(-tx, -ty);
@@ -295,13 +306,13 @@ export function createMoveScene(canvas, { reduced = () => matchMedia('(prefers-r
       }
     }
     c.restore();
-    if (hit > 0 && hit < 1 && !supportive && move.id !== 'sludge-bomb') {
+    if (hit > 0 && hit < 1 && !supportive && move.id !== 'sludge-bomb' && !SPECIAL_MOVES.has(move.id)) {
       // One sharp contact flash followed by a short outward burst.
       star(tx, ty, 58 * (1-hit), '#fff7de', .85 * (1-hit), .25);
       if (motion !== 'fang') debris(tx, ty, hit, color, 12);
     }
   }
-  function stop() { generation++; cancelAnimationFrame(frame); c.clearRect(0,0,W,H); }
+  function stop() { generation++; cancelAnimationFrame(frame); c.clearRect(0,0,W,H); if(sprite){for(const name of ['animation','transform','opacity'])sprite.style.removeProperty(name);} }
   function play(move) {
     stop(); const token=generation, quiet=reduced();
     if(quiet){render(move,1.5,true);return;}

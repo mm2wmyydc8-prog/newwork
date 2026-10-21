@@ -5,15 +5,15 @@ import { POKEMON, enableAdventure } from '../docs/collection.js';
 import { PARTNER_MOVESETS } from '../docs/partner-moves.js';
 import { availablePartners, getPartner, selectPartner, missionPartnerSlot, partnerCelebrationSlots, revealedPartnerSlots } from '../docs/partner.js';
 
-test('all 151 species and both Mega forms have four named move slots and supported effects', () => {
+test('species have four named moves except single-move Abra and Ditto', () => {
  const effects=new Set(['normal','wind','poison','rock','leaf','shadowball','fire','water','electric','psychic','ice','aurasphere','confusion']);
  for(const pokemon of POKEMON) {
   const moves=PARTNER_MOVESETS[pokemon.id];
-  assert.equal(moves.length,4,pokemon.id);
-  assert.equal(new Set(moves.map(m=>m.id)).size,4,pokemon.id);
+  assert.equal(moves.length,['abra','ditto'].includes(pokemon.id)?1:4,pokemon.id);
+  assert.equal(new Set(moves.map(m=>m.id)).size,moves.length,pokemon.id);
   assert.ok(moves.every(m=>m.name && effects.has(m.effect)));
  }
- assert.equal(PARTNER_MOVESETS.ditto.filter(m=>m.copied).length,3);
+ assert.deepEqual(PARTNER_MOVESETS.ditto.map(m=>m.id),['transform']);
  assert.equal(PARTNER_MOVESETS.charizard[0].name,'화염방사');
  assert.equal(PARTNER_MOVESETS.pikachu[3].name,'10만볼트');
 });
