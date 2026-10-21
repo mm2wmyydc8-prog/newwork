@@ -53,6 +53,11 @@ export function adjust(state, minutes, reason, now = Date.now(), missionId = nul
 export function missionDone(state, id) {
   return state.entries.some(x => x.day === state.day && x.missionId === id);
 }
+export function resetTodayQuests(state, now = Date.now()) {
+  settle(state, now);
+  state.entries = state.entries.filter(entry => entry.day !== state.day || entry.missionId == null);
+  settle(state, now);
+}
 export function validateState(value) {
   if (!value || value.version !== 1 || !/^\d{4}-\d{2}-\d{2}$/.test(value.day) ||
       !Number.isInteger(value.baseMinutes) || value.baseMinutes < 0 || value.baseMinutes > 180 ||

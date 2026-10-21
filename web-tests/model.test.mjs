@@ -53,3 +53,25 @@ test('renaming/deleting a mission retains earned rewards', () => {
   s.missions[0].minutes = 10; s.missions.splice(0, 1);
   assert.equal(totalMinutes(s), 60); assert.equal(s.entries[0].minutes, 30);
 });
+
+test('reset today quests removes only today mission rewards while preserving collection and other timer records', async () => {
+ const {resetTodayQuests}=await import('../docs/model.js');
+ const now=new Date(2026,9,21,12).getTime();
+ const state=initialState(now);
+ adjust(state,10,'manual',now);
+ adjust(state,30,'study',now,'hangul');
+ adjust(state,30,'club',now,'bookclub');
+ state.entries.push({id:'yesterday',day:'2026-10-20',date:now-86400000,minutes:20,reason:'old',missionId:'reading'});
+ state.usedSeconds=100;
+ state.collection={total:7,day:state.day,questions:[]};
+ const collection=JSON.stringify(state.collection),missions=JSON.stringify(state.missions);
+ resetTodayQuests(state,now);
+ assert.equal(missionDone(state,'hangul'),false);
+ assert.equal(missionDone(state,'bookclub'),false);
+ assert.equal(totalMinutes(state),40);
+ assert.equal(state.usedSeconds,100);
+ assert.ok(state.entries.some(e=>e.id==='yesterday'));
+ assert.equal(JSON.stringify(state.collection),collection);
+ assert.equal(JSON.stringify(state.missions),missions);
+ assert.ok(validateState(state));
+});

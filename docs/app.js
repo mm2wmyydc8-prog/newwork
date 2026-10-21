@@ -1,4 +1,4 @@
-import { initialState, validateState, settle, totalMinutes, remainingSeconds, start, pause, adjust, missionDone } from './model.js?v=throw-then-result';
+import { initialState, validateState, settle, totalMinutes, remainingSeconds, start, pause, adjust, missionDone, resetTodayQuests } from './model.js?v=quest-reset';
 import { MOVES, PSYCHIC_THRESHOLD, missionMove, celebrationMoves, earnedMissionMinutes } from './moves.js?v=daily60';
 import { setupHangulQuiz } from './hangul.js?v=throw-then-result';
 import { createKoreanSpeech } from './speech.js';
@@ -253,16 +253,32 @@ collection.render();
 setupTrainer({ notify: toast });
 setupHangulQuiz({ getState: () => { settle(state); return state; }, confirmMission, notify: toast, speech, collection, saveSettings: persist });
 
+let resetMode = 'learning';
 function openLearningReset() {
+  resetMode = 'learning';
+  $('#reset-learning-title').textContent = '학습·도감 테스트 기록 초기화';
+  $('#reset-description').textContent = '퀴즈 성공 기록, 잡은 포켓몬, 아이템, 탐험 진행, 포획 대기 기록을 지웁니다. 미션 설정·TV 시간·얼굴 사진은 유지합니다. 지운 학습 기록은 복구할 수 없어요.';
+  $('#reset-learning-confirm').textContent = '학습·도감 초기화';
   const data = state.collection ?? {};
   $('#reset-learning-summary').textContent = `누적 퀴즈 ${data.total ?? 0}개 · 포켓몬 ${data.owned?.length ?? 0}마리 · 포획 대기 ${data.pendingEncounters?.length ?? 0}개 기록을 초기화합니다.`;
   $('#reset-learning-dialog').showModal();
 }
+function openQuestReset() {
+  resetMode = 'quests'; settle(state);
+  const entries = state.entries.filter(entry => entry.day === state.day && entry.missionId != null);
+  $('#reset-learning-title').textContent = '오늘 퀘스트 초기화';
+  $('#reset-learning-summary').textContent = `오늘 미션 완료 ${entries.length}건과 미션 보상 ${entries.reduce((sum, entry) => sum + entry.minutes, 0)}분을 되돌립니다.`;
+  $('#reset-description').textContent = '오늘 퀘스트를 다시 완료할 수 있게 하고, 해당 미션 보상 시간과 특별 기술 진행을 되돌립니다. 기본 시간·수동 시간 조정·이미 시청한 시간·도감·사진·미션 설정은 유지합니다.';
+  $('#reset-learning-confirm').textContent = '오늘 퀘스트 초기화';
+  $('#reset-learning-dialog').showModal();
+}
+$('#reset-quests-open').addEventListener('click', openQuestReset);
 $('#reset-learning-open').addEventListener('click', openLearningReset);
 $('#reset-learning-confirm').addEventListener('click', () => {
   if (!storageAvailable) { toast('브라우저 저장 공간에 접근할 수 없어 초기화하지 않았어요.'); return; }
   const cleared = { ...state };
-  delete cleared.collection;
+  if (resetMode === 'quests') resetTodayQuests(cleared);
+  else delete cleared.collection;
   try {
     localStorage.setItem(key, JSON.stringify(cleared));
     state = cleared;
@@ -270,8 +286,10 @@ $('#reset-learning-confirm').addEventListener('click', () => {
   } catch { toast('기록을 초기화하지 못했어요. 기존 기록은 유지됩니다.'); }
 });
 const entryUrl = new URL(window.location.href);
-if (entryUrl.searchParams.get('reset') === 'learning') {
+const requestedReset = entryUrl.searchParams.get('reset');
+if (['learning', 'quests'].includes(requestedReset)) {
   entryUrl.searchParams.delete('reset');
   window.history.replaceState(null, '', entryUrl.pathname + entryUrl.search + entryUrl.hash);
-  openLearningReset();
+  if (requestedReset === 'quests') openQuestReset();
+  else openLearningReset();
 }
