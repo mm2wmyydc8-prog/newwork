@@ -47,8 +47,8 @@ test('three levels keep quest identity but present different tasks', () => {
   const easy = createQuiz(() => 0.4, [], 'easy');
   const medium = createQuiz(() => 0.4, [], 'medium');
   const hard = createQuiz(() => 0.4, [], 'hard');
-  assert.deepEqual(easy.questions.map(q => q.id), hard.questions.map(q => q.id));
-  assert.deepEqual(easy.questions, hard.questions);
+  easy.questions.forEach(q => { assert.equal(q.answer, q.reading); assert.deepEqual([...q.choices].sort(), [...q.reading].sort()); });
+  assert.deepEqual(medium.questions.map(q => q.id), hard.questions.map(q => q.id));
   medium.questions.forEach(q => { assert.equal(q.word, q.reading); assert.equal(q.answer, q.picture); assert.equal(new Set(q.choices).size, 3); assert.equal(q.choices.filter(c => c === q.picture).length, 1); });
   hard.questions.forEach(q => { assert.equal(q.answer, q.reading); assert.deepEqual([...q.choices].sort(), [...q.reading].sort()); });
 });
@@ -143,4 +143,19 @@ test('today completed words never return even at a different difficulty or at th
  assert.equal(createQuiz(()=>0.4,allButTwo,'hard').questions.length,2);
  assert.equal(createQuiz(()=>0.4,QUESTIONS.map(q=>q.id),'easy').questions.length,0);
  assert.equal(createQuiz(()=>0.4,[],'easy').questions.length,5);
+});
+
+test('easy balances two two-syllable, two three-syllable, and one four-syllable word', () => {
+ for(const roll of [0,0.2,0.4,0.8,0.999]) {
+  const quiz=createQuiz(()=>roll,[],'easy');
+  assert.deepEqual(quiz.questions.map(q=>q.reading.length),[2,2,3,3,4]);
+  assert.equal(new Set(quiz.questions.map(q=>q.id)).size,5);
+ }
+});
+test('easy fills missing word lengths with fresh words instead of repeating same-day words', () => {
+ const fourLetterIds=QUESTIONS.filter(q=>(q.reading??q.word.replace('□',q.answer)).length===4).map(q=>q.id);
+ const quiz=createQuiz(()=>0.4,fourLetterIds,'easy');
+ assert.equal(quiz.questions.length,5);
+ assert.ok(quiz.questions.every(q=>!fourLetterIds.includes(q.id)));
+ assert.deepEqual(quiz.questions.slice(0,4).map(q=>q.reading.length),[2,2,3,3]);
 });

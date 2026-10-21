@@ -82,15 +82,25 @@ function shuffled(items, random) {
   return result;
 }
 export const DIFFICULTIES = {
-  easy: { name: '쉬움', help: '그림과 소리를 듣고, 글자를 순서대로 눌러 낱말을 만들어요.' },
+  easy: { name: '쉬움', help: '소리를 듣고 낱말을 만들어요. 두 글자 2개·세 글자 2개·네 글자 1개를 섞어요. 오늘 푼 낱말은 다시 나오지 않아요.' },
   medium: { name: '보통', help: '짧은 낱말을 스스로 읽고, 알맞은 그림을 골라요. 막히면 뮤에게 소리 도움을 요청해요.' },
   hard: { name: '어려움', help: '글자를 순서대로 눌러 낱말을 직접 만들어요.' }
 };
 export function createQuiz(random = Math.random, completed = [], difficulty = 'easy') {
   const level = DIFFICULTIES[difficulty] ? difficulty : 'easy';
   const fresh = shuffled(QUESTIONS.filter(q => !completed.includes(q.id)), random);
+  let selectedQuestions = fresh.slice(0, 5);
+  if (level === 'easy') {
+    const chosen = [];
+    for (const length of [2, 2, 3, 3, 4]) {
+      const question = fresh.find(q => !chosen.includes(q) && [...(q.reading ?? q.word.replace('□', q.answer))].length === length);
+      if (question) chosen.push(question);
+    }
+    // Never repeat a completed word just to fill a length quota.
+    selectedQuestions = [...chosen, ...fresh.filter(q => !chosen.includes(q))].slice(0, 5);
+  }
   return { index: 0, answered: false, selected: [], difficulty: level,
-    questions: fresh.slice(0, 5).map(q => {
+    questions: selectedQuestions.map(q => {
       const reading = q.reading ?? q.word.replace('□', q.answer);
       if (level === 'hard' || level === 'easy') return { ...q, reading, word: '□'.repeat(reading.length), answer: reading,
         prompt: '글자를 순서대로 눌러 낱말을 만들어볼까?', choices: shuffled([...reading], random) };
