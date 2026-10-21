@@ -48,7 +48,7 @@ test('three levels keep quest identity but present different tasks', () => {
   const medium = createQuiz(() => 0.4, [], 'medium');
   const hard = createQuiz(() => 0.4, [], 'hard');
   assert.deepEqual(easy.questions.map(q => q.id), hard.questions.map(q => q.id));
-  easy.questions.forEach(q => { assert.equal(q.word, ''); assert.equal(q.answer, q.reading); assert.ok(q.answer.length >= 2); assert.equal(q.choices.filter(c => c === q.answer).length, 1); assert.equal(new Set(q.choices).size, 3); });
+  assert.deepEqual(easy.questions, hard.questions);
   medium.questions.forEach(q => { assert.ok(q.word.endsWith('□')); assert.equal(q.word.replace('□', q.answer), q.reading); });
   hard.questions.forEach(q => { assert.equal(q.answer, q.reading); assert.deepEqual([...q.choices].sort(), [...q.reading].sort()); });
 });
@@ -97,4 +97,23 @@ test('three errors suspend reward; a second failed attempt enters easy practice'
  assert.equal(quizCreditReady(quiz), true);
  nextQuestion(quiz);
  assert.equal(quiz.failedAttempts, 0);
+});
+
+test('easy now uses the previous hard tile mechanic, including repeated letters and retry', () => {
+ const quiz = createQuiz(() => 0.4, [], 'easy');
+ quiz.questions[0] = { id: 'banana', reading: '바나나', answer: '바나나', choices: ['나', '바', '나'] };
+ assert.equal(chooseQuizTile(quiz, 0), 'wrong');
+ noteQuizMistake(quiz);
+ assert.equal(chooseQuizTile(quiz, 1), 'partial');
+ assert.equal(chooseQuizTile(quiz, 0), 'partial');
+ assert.equal(chooseQuizTile(quiz, 2), 'correct');
+ assert.equal(quizCreditReady(quiz), false);
+ retryQuizQuestion(quiz);
+ const q = quiz.questions[0];
+ for (const letter of q.reading) {
+   const i = q.choices.findIndex((x, index) => x === letter && !quiz.selected.includes(index));
+   chooseQuizTile(quiz, i);
+ }
+ assert.equal(quizCreditReady(quiz), true);
+ assert.equal(quiz.difficulty, 'easy');
 });

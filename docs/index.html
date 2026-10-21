@@ -16,7 +16,7 @@
   <link rel="stylesheet" href="hangul.css?v=difficulty">
   <link rel="stylesheet" href="collection.css?v=swipe-throw">
   <link rel="stylesheet" href="trainer.css?v=upper-body">
-  <script type="module" src="app.js?v=easy-words"></script>
+  <script type="module" src="app.js?v=easy-tiles"></script>
 </head>
 <body>
   <main>
@@ -27,7 +27,7 @@
     </section>
     <button id="welcome-speak" class="welcome-speak">🔊 연우야, 여기를 눌러 봐! · 사용 방법 듣기</button>
     <section class="card collection-card"><div class="section-heading"><div><span class="eyebrow">YEONWOO'S POKÉDEX</span><h2>연우의 포켓몬 도감</h2></div><button id="pokedex-open" class="secondary">도감 보기</button></div><p><strong id="collection-count">0 / 151모습</strong> · <span id="collection-total">누적 퀘스트 0개 성공</span></p><progress id="collection-progress" value="0" max="5" aria-label="다음 포켓몬까지 퀘스트 진행"></progress><p id="collection-stone" class="notice" hidden></p><p id="collection-shiny" class="collection-shiny"></p><p id="collection-next">이상해씨까지 퀘스트 5개!</p><p class="collection-footnote">쉬움: 기본 · 보통 이상: 희귀·전설 · 어려움: 상위 전설·환상<br>같은 낱말도 더 높은 난이도로 성공하면 도전 실적이 올라가요.</p></section>
-    <section class="card hangul-card"><img src="assets/mew.png" alt="응원하는 뮤"><div class="hangul-copy"><span class="eyebrow">뮤와 함께 떠나는 퀘스트</span><h2>연우의 포켓몬 모험</h2><p>뮤의 퀘스트를 풀고 포켓몬을 만나자!<br>문제·힌트 자동 읽기 · 보기마다 🔊 듣기</p><label for="quiz-difficulty" class="difficulty-label">모험 난이도</label><select id="quiz-difficulty"><option value="easy">쉬움 · 그림·소리로 낱말 찾기</option><option value="medium">보통 · 빈 글자 채우기</option><option value="hard">어려움 · 낱말 순서대로 만들기</option></select><p id="difficulty-help" class="difficulty-help"></p><button id="hangul-start" class="primary">🔊 모험 떠나기 ✦</button></div></section>
+    <section class="card hangul-card"><img src="assets/mew.png" alt="응원하는 뮤"><div class="hangul-copy"><span class="eyebrow">뮤와 함께 떠나는 퀘스트</span><h2>연우의 포켓몬 모험</h2><p>뮤의 퀘스트를 풀고 포켓몬을 만나자!<br>문제·힌트 자동 읽기 · 보기마다 🔊 듣기</p><label for="quiz-difficulty" class="difficulty-label">모험 난이도</label><select id="quiz-difficulty"><option value="easy">쉬움 · 낱말 순서대로 만들기</option><option value="medium">보통 · 빈 글자 채우기</option><option value="hard">어려움 · 낱말 순서대로 만들기</option></select><p id="difficulty-help" class="difficulty-help"></p><button id="hangul-start" class="primary">🔊 모험 떠나기 ✦</button></div></section>
     <div class="dashboard">
       <section class="card timer-card" aria-labelledby="timer-title">
         <span class="eyebrow" id="timer-title">⏱ 연우의 남은 시간</span>
