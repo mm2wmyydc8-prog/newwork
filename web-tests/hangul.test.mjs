@@ -117,3 +117,19 @@ test('easy now uses the previous hard tile mechanic, including repeated letters 
  assert.equal(quizCreditReady(quiz), true);
  assert.equal(quiz.difficulty, 'easy');
 });
+
+test('60 distinct pictured words allow twelve adventures without same-day repeats', () => {
+ assert.equal(QUESTIONS.length,60);
+ assert.equal(new Set(QUESTIONS.map(q=>q.picture)).size,60);
+ const completed=[];
+ for(let round=0;round<12;round++) {
+  const quiz=createQuiz(()=>0.4,completed,'medium');
+  assert.ok(quiz.questions.every(q=>!completed.includes(q.id)));
+  for(const q of quiz.questions) {
+   assert.equal(q.choices.length,3);
+   assert.equal(new Set(q.choices).size,3);
+   completed.push(q.id);
+  }
+ }
+ assert.equal(new Set(completed).size,60);
+});

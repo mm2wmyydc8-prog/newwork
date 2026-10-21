@@ -15,6 +15,64 @@ export const QUESTIONS = [
   { id: 'grape', picture: '🍇', word: '', reading: '포도', prompt: '그림에 맞는 낱말을 골라볼까?', answer: '포도', choices: ['파도', '포도', '포기'], hint: '포도! “포” 하고 바람을 내어 보자.' }
 ];
 
+// Keep the original IDs so existing learning progress remains valid.
+const EXTRA_WORDS = [
+  ["apple", "🍎", "사과"],
+  ["train", "🚂", "기차"],
+  ["duck", "🦆", "오리"],
+  ["rabbit", "🐰", "토끼"],
+  ["elephant", "🐘", "코끼리"],
+  ["fox", "🦊", "여우"],
+  ["pig", "🐷", "돼지"],
+  ["whale", "🐳", "고래"],
+  ["chef", "👩‍🍳", "요리사"],
+  ["spider", "🕷️", "거미"],
+  ["hippo", "🦛", "하마"],
+  ["goose", "🪿", "거위"],
+  ["frog", "🐸", "개구리"],
+  ["badger", "🦡", "오소리"],
+  ["deer", "🦌", "노루"],
+  ["donkey", "🫏", "나귀"],
+  ["llama", "🦙", "라마"],
+  ["sweet-potato", "🍠", "고구마"],
+  ["cookie", "🍪", "쿠키"],
+  ["pizza", "🍕", "피자"],
+  ["cheese", "🧀", "치즈"],
+  ["coffee", "☕", "커피"],
+  ["juice", "🧃", "주스"],
+  ["cake", "🍰", "케이크"],
+  ["cherry", "🍒", "체리"],
+  ["kiwi", "🥝", "키위"],
+  ["avocado", "🥑", "아보카도"],
+  ["cabbage", "🥬", "배추"],
+  ["sunflower", "🌻", "해바라기"],
+  ["earth", "🌍", "지구"],
+  ["lake", "🏞️", "호수"],
+  ["city", "🏙️", "도시"],
+  ["baseball", "⚾", "야구"],
+  ["yoyo", "🪀", "요요"],
+  ["clock", "🕒", "시계"],
+  ["chair", "🪑", "의자"],
+  ["tissue", "🧻", "휴지"],
+  ["soap", "🧼", "비누"],
+  ["scissors", "✂️", "가위"],
+  ["map", "🗺️", "지도"],
+  ["radio", "📻", "라디오"],
+  ["camera", "📷", "카메라"],
+  ["microphone", "🎤", "마이크"],
+  ["piano", "🎹", "피아노"],
+  ["axe", "🪓", "도끼"],
+  ["ladder", "🪜", "사다리"],
+  ["pants", "👖", "바지"],
+  ["mosquito", "🦟", "모기"],
+];
+QUESTIONS.push(...EXTRA_WORDS.map(([id, picture, reading], index, words) => ({
+  id, picture, reading, word: '', answer: reading,
+  prompt: '그림에 맞는 낱말을 골라볼까?',
+  choices: [reading, words[(index + 1) % words.length][2], words[(index + 2) % words.length][2]],
+  hint: `뮤랑 읽어보자. ${[...reading].join('-')}. ${reading}!`
+})));
+
 function shuffled(items, random) {
   const result = [...items];
   for (let i = result.length - 1; i > 0; i--) {
@@ -166,6 +224,7 @@ export function setupHangulQuiz({ getState, confirmMission, notify, speech, coll
     $('#quiz-feedback').textContent = '천천히 골라 봐. 틀려도 괜찮아!';
     $('#quiz-next').hidden = true;
     $('#quiz-answers').replaceChildren();
+    $('#quiz-answers').dataset.longWord = String(question.choices.length >= 4);
     $('#quiz-answers').style.gridTemplateColumns = `repeat(${question.choices.length}, 1fr)`;
     for (const [tileIndex, answer] of question.choices.entries()) {
       const cell = document.createElement('div'); cell.className = 'quiz-choice';
@@ -231,6 +290,7 @@ export function setupHangulQuiz({ getState, confirmMission, notify, speech, coll
     $('#quiz-collection-note').textContent = '연습 중에는 포획 실적이 올라가지 않아. 포켓몬과 확정 보상 기회는 그대로야!';
     $('#quiz-next').hidden = true;
     $('#quiz-answers').replaceChildren();
+    $('#quiz-answers').dataset.longWord = 'false';
     $('#quiz-answers').style.gridTemplateColumns = '1fr';
     const retry = document.createElement('button');
     retry.type = 'button'; retry.className = 'primary'; retry.textContent = '연습했어! 다시 도전';

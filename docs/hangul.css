@@ -35,3 +35,5 @@
 @media(min-width:650px){.adventure-regions{grid-template-columns:repeat(4,minmax(0,1fr))}}
 
 .adventure-regions span{padding:12px 4px}.adventure-regions strong{font-size:11px;white-space:nowrap}
+
+#quiz-answers[data-long-word="true"] .quiz-answer{font-size:28px;padding:12px 2px;min-height:72px}
