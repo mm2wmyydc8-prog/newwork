@@ -159,3 +159,14 @@ test('easy fills missing word lengths with fresh words instead of repeating same
  assert.ok(quiz.questions.every(q=>!fourLetterIds.includes(q.id)));
  assert.deepEqual(quiz.questions.slice(0,4).map(q=>q.reading.length),[2,2,3,3]);
 });
+
+test('round mistake total survives question changes and practice retries', () => {
+ const quiz=createQuiz(()=>0.4);
+ noteQuizMistake(quiz);retryQuizQuestion(quiz);
+ chooseAnswer(quiz,quiz.questions[0].answer);nextQuestion(quiz);
+ noteQuizMistake(quiz);retryQuizQuestion(quiz);
+ chooseAnswer(quiz,quiz.questions[1].answer);nextQuestion(quiz);
+ noteQuizMistake(quiz);retryQuizQuestion(quiz);
+ assert.equal(quiz.totalMistakes,3);
+ assert.equal(quiz.mistakes,0);
+});

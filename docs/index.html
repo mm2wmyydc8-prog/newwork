@@ -16,7 +16,7 @@
   <link rel="stylesheet" href="hangul.css?v=words-60">
   <link rel="stylesheet" href="collection.css?v=seven-regions-shiny">
   <link rel="stylesheet" href="trainer.css?v=upper-body">
-  <script type="module" src="app.js?v=easy-length-mix"></script>
+  <script type="module" src="app.js?v=capture-failure"></script>
 </head>
 <body>
   <main>
@@ -56,7 +56,7 @@
     <span id="quiz-progress" class="eyebrow">1 / 5 문제</span><progress id="quiz-progress-bar" class="quiz-progress-bar" max="5" value="0" aria-label="끝낸 문제 수"></progress>
     <div id="quiz-question-area"><div id="quiz-picture" class="quiz-picture" aria-hidden="true"></div><div id="quiz-word" class="quiz-word"></div><p id="quiz-prompt"></p><button id="quiz-speak" class="quiet">🔊 낱말·문제 듣기</button><div id="quiz-answers" class="quiz-answers" role="group" aria-label="정답을 골라요"></div><p id="quiz-feedback" role="status" aria-live="polite"></p><p id="quiz-collection-note" role="status" aria-live="polite"></p><button id="quiz-next" class="primary" hidden>다음 퀘스트 →</button></div>
     <div id="quiz-finish-area" hidden><img src="assets/mew.png" class="quiz-finish-mew" alt="응원하는 뮤"><h3>다섯 번의 도전 성공!<br>잘했어, 연우! ✦</h3><p id="quiz-reward-note"></p><button id="quiz-claim" class="primary">부모님께 완료 확인 받기</button></div>
-    <p class="footnote">오답 3번이면 뮤와 연습한 뒤 다시 도전해요. 연습에는 보상이 없고, 스스로 맞히면 실적이 올라가요.<br>중간에 쉬어도 괜찮아요. 다시 시작하면 새 5문제가 나와요.<br>혼자 읽기 확인은 음성을 듣기 전에 해주세요.<br>음성은 기기의 한국어 TTS 지원에 따라 달라요.</p>
+    <p class="footnote">한 번의 모험에서 오답이 3번 쌓이면 마지막 포획은 실패해요. 뮤와 연습하고 다음 모험에서 다시 도전할 수 있어요. 연습 중 오답은 세지 않아요.<br>중간에 쉬어도 괜찮아요. 다시 시작하면 새 5문제가 나와요.<br>혼자 읽기 확인은 음성을 듣기 전에 해주세요.<br>음성은 기기의 한국어 TTS 지원에 따라 달라요.</p>
   </dialog>
 
   <dialog id="mission-confirm-dialog" aria-labelledby="mission-confirm-title" aria-describedby="mission-confirm-description">

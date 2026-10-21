@@ -76,6 +76,7 @@ export function validateState(value) {
       !value.collection.pendingEncounters.every(p => p && typeof p.id === 'string' && typeof p.pendingId === 'string' &&
         typeof p.shiny === 'boolean' && (!p.exploration || ['forest', 'sea', 'cave', 'powerplant', 'haunted', 'ice', 'volcano'].includes(p.region))) ||
       new Set(value.collection.pendingEncounters.map(p => p.pendingId)).size !== value.collection.pendingEncounters.length)) return false;
+  if (value.collection?.captureRetryRequired !== undefined && typeof value.collection.captureRetryRequired !== 'boolean') return false;
   if (value.collection?.shinyIntroSeen !== undefined && typeof value.collection.shinyIntroSeen !== 'boolean') return false;
   if (value.collection?.pikachuGiftClaimed !== undefined && typeof value.collection.pikachuGiftClaimed !== 'boolean') return false;
   if (value.collection?.stoneNoticeSeen !== undefined && typeof value.collection.stoneNoticeSeen !== 'boolean') return false;

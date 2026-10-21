@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { initialState, validateState, settle } from '../docs/model.js';
-import { visibleEncounters, REGIONS, enableAdventure, explorationProgress, recordExploration, completeCapture, collectionProgress, pokemonRegion, hasMewtwonite, revealedPokemon, shinyDiscovered } from '../docs/collection.js';
+import { finishCaptureAttempt, visibleEncounters, REGIONS, enableAdventure, explorationProgress, recordExploration, completeCapture, collectionProgress, pokemonRegion, hasMewtwonite, revealedPokemon, shinyDiscovered } from '../docs/collection.js';
 
 test('each habitat requires five new successes then stages a local encounter without ownership', () => {
  for (const region of Object.keys(REGIONS)) {
@@ -112,4 +112,20 @@ test('older queued shinies remain saved but cannot appear before the Pikachu int
  assert.deepEqual(visibleEncounters(state).map(p=>p.id),['pikachu']);
  state.collection.shinyIntroSeen=true;
  assert.deepEqual(visibleEncounters(state).map(p=>p.id),['pikachu','bulbasaur']);
+});
+
+test('three errors defer captures across reloads; a later successful round restores the same opportunities', () => {
+ const state=initialState();
+ for(let i=0;i<5;i++)recordExploration(state,`fail-${i}`,'easy','forest',()=>0);
+ const id=state.collection.pendingEncounters[0].pendingId;
+ assert.equal(finishCaptureAttempt(state,3),false);
+ assert.equal(visibleEncounters(state).length,0);
+ assert.equal(collectionProgress(state).owned.length,0);
+ const restored=JSON.parse(JSON.stringify(state));assert.ok(validateState(restored));
+ assert.equal(visibleEncounters(restored).length,0);
+ assert.equal(restored.collection.pendingEncounters[0].pendingId,id);
+ assert.equal(finishCaptureAttempt(restored,2),true);
+ assert.equal(visibleEncounters(restored)[0].pendingId,id);
+ assert.equal(completeCapture(restored,id),true);
+ assert.equal(collectionProgress(restored).owned.length,1);
 });

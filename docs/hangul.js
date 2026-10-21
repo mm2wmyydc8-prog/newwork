@@ -1,4 +1,4 @@
-import { REGIONS } from './collection.js?v=daily-words-60';
+import { REGIONS } from './collection.js?v=capture-failure';
 
 export const QUESTIONS = [
   { id: 'tree', picture: '🌳', word: '', reading: '나무', prompt: '그림에 맞는 낱말을 골라볼까?', answer: '나무', choices: ['나무', '나비', '누나'], hint: '나무! “나” 하고 천천히 읽어 봐.' },
@@ -135,6 +135,7 @@ export function chooseQuizTile(quiz, tileIndex) {
 
 // Recovery never grants collection credit; only an unassisted answer can do so.
 export function noteQuizMistake(quiz) {
+  quiz.totalMistakes = (quiz.totalMistakes ?? 0) + 1;
   quiz.mistakes = (quiz.mistakes ?? 0) + 1;
   quiz.assisted = true;
   if (quiz.mistakes >= 3) {
@@ -216,10 +217,15 @@ export function setupHangulQuiz({ getState, confirmMission, notify, speech, coll
       $('#quiz-reward-note').textContent = mission() ? '부모님이 확인하면 모험 보상을 받을 수 있어요. 오늘 시간 보상을 이미 받았어도 포켓몬 퀘스트는 계속할 수 있어요.' : '연결할 한글 미션이 없어요. 부모님 메뉴에서 이름에 ‘한글’이 들어가는 미션을 추가해 주세요.';
       $('#quiz-claim').disabled = !mission();
       $('#quiz-claim').focus();
+      const captureFailed = (quiz.totalMistakes ?? 0) >= 3;
       const waiting = collection.pendingCount();
-      $('#quiz-finish-area h3').textContent = waiting ? '탐험 성공! 야생 포켓몬을 발견했어!' : `${quiz.questions.length}문제 성공! 잘했어, 연우!`;
-      say(waiting ? `${REGIONS[region].name} 탐험 성공! 누가 나타났을까?` : `${quiz.questions.length}문제 성공! 오늘도 멋져!`);
-      collection.finishRound();
+      $('#quiz-finish-area h3').textContent = captureFailed ? '포획 실패! 다음 모험에서 다시 만나자!' : waiting ? '탐험 성공! 야생 포켓몬을 발견했어!' : `${quiz.questions.length}문제 성공! 잘했어, 연우!`;
+      if (captureFailed) {
+        $('#quiz-progress').textContent = '탐험 완료 · 포획 실패';
+        $('#quiz-reward-note').textContent = '이번 모험에서 3번 이상 틀려 포켓몬을 놓쳤어. 뮤와 연습하고 다음 모험에서 다시 도전하자! 포획 기회와 이미 번 시간은 사라지지 않아.';
+      }
+      say(captureFailed ? '이번에는 포획 실패! 뮤랑 연습하고 다음 모험에서 다시 만나자! 포획 기회는 기다리고 있어!' : waiting ? `${REGIONS[region].name} 탐험 성공! 누가 나타났을까?` : `${quiz.questions.length}문제 성공! 오늘도 멋져!`);
+      collection.finishRound({ mistakes: quiz.totalMistakes ?? 0 });
       return;
     }
     const question = quiz.questions[quiz.index];
@@ -270,6 +276,7 @@ export function setupHangulQuiz({ getState, confirmMission, notify, speech, coll
           $('#quiz-feedback').focus({ preventScroll: true });
         } else {
           const recovery = noteQuizMistake(quiz);
+          if (quiz.totalMistakes >= 3) collection.markCaptureFailure();
           if (recovery !== 'hint') { render(); return; }
           const hint = ['easy', 'hard'].includes(quiz.difficulty) ? `천천히 해보자. 다음 글자는 ‘${question.reading[quiz.selected.length]}’야.` : question.hint;
           $('#quiz-feedback').textContent = hint;

@@ -1224,8 +1224,14 @@ export function recordExploration(state, questionId, level, region, random = Mat
 }
 export function visibleEncounters(state) {
   const data = enableAdventure(state), discovered = shinyDiscovered(state);
+  if (data.captureRetryRequired) return [];
   return data.pendingEncounters.filter(p => !p.shiny || discovered || (p.shinyGift && data.total >= 25))
     .sort((a, b) => Number(Boolean(b.shinyGift)) - Number(Boolean(a.shinyGift)));
+}
+export function finishCaptureAttempt(state, mistakes = 0) {
+  const data = enableAdventure(state);
+  data.captureRetryRequired = mistakes >= 3;
+  return !data.captureRetryRequired;
 }
 export function completeCapture(state, pendingId) {
   const data = enableAdventure(state);
@@ -1402,6 +1408,7 @@ export function setupCollection({ getState, save, speech }) {
   $('#stone-dialog').addEventListener('close', () => { speech.stop(); if (pending.length) showCapture(); });
   return {
     render,
+    markCaptureFailure() { finishCaptureAttempt(getState(), 3); save(); render(); },
     explorationProgress(region) { return explorationProgress(getState(), region); },
     pendingCount() { return visibleEncounters(getState()).length; },
     completedToday() { return [...ensureCollection(getState()).questions]; },
@@ -1415,7 +1422,9 @@ export function setupCollection({ getState, save, speech }) {
         : '오늘 이미 성공한 문제야! 복습 중에는 새 발자국이 쌓이지 않아.';
       return result;
     },
-    finishRound() {
+    finishRound({ mistakes = 0 } = {}) {
+      const passed = finishCaptureAttempt(getState(), mistakes); save(); render();
+      if (!passed) { pending = []; return; }
       pending = visibleEncounters(getState());
       const state = getState();
       if (hasMewtwonite(state) && !state.collection.stoneNoticeSeen) {
