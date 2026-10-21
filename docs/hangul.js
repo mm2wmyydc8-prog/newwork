@@ -101,7 +101,18 @@ export function setupHangulQuiz({ getState, confirmMission, notify, speech, coll
     $('#adventure-footsteps').textContent = Array.from({ length: 5 }, (_, i) => i < walkSteps ? '👣' : '○').join(' ');
   }
   let inputLocked = false;
-  let unlockTimer;
+  let unlockTimer, advanceTimer;
+  function advanceQuestion() {
+    clearTimeout(advanceTimer);
+    if ($('#quiz-dialog').open && quiz && nextQuestion(quiz)) render();
+  }
+  function scheduleNextQuestion() {
+    clearTimeout(advanceTimer);
+    const currentQuiz = quiz, currentIndex = quiz.index;
+    advanceTimer = setTimeout(() => {
+      if (quiz === currentQuiz && quiz.index === currentIndex) advanceQuestion();
+    }, 1400);
+  }
   function lockInput() {
     inputLocked = true; clearTimeout(unlockTimer);
     unlockTimer = setTimeout(() => { inputLocked = false; }, 650);
@@ -182,11 +193,12 @@ export function setupHangulQuiz({ getState, confirmMission, notify, speech, coll
           if (outcome.counted || outcome.upgraded) { walkSteps = outcome.encountered ? 5 : outcome.steps; renderAdventure(true); }
           button.classList.add('correct');
           $('#quiz-feedback').textContent = `맞았어! ${(question.reading ?? question.word.replace('□', question.answer))}! 잘했어, 연우! ✦`;
-          say($('#quiz-feedback').textContent);
-          $('#quiz-next').hidden = false;
-          $('#quiz-next').textContent = quiz.index === 4 ? '다 풀었어요! ✦' : '다음 퀘스트 →';
+          say('맞았어!');
+          $('#quiz-next').hidden = true;
+          scheduleNextQuestion();
           $('#quiz-answers').querySelectorAll('.quiz-answer').forEach(node => { node.disabled = true; });
-          $('#quiz-next').focus();
+          $('#quiz-feedback').tabIndex = -1;
+          $('#quiz-feedback').focus({ preventScroll: true });
         } else {
           const recovery = noteQuizMistake(quiz);
           if (recovery !== 'hint') { render(); return; }
@@ -242,13 +254,14 @@ export function setupHangulQuiz({ getState, confirmMission, notify, speech, coll
     say(`${$('#quiz-prompt').textContent} ${easy ? question.reading[0] : question.reading + '. ' + question.hint}`);
   }
   $('#hangul-start').addEventListener('click', () => {
+    clearTimeout(advanceTimer);
     const state = getState();
     region = document.querySelector('input[name="adventure-region"]:checked')?.value ?? 'forest';
     walkSteps = collection.explorationProgress(region);
     const completed = collection.completedAtDifficulty($('#quiz-difficulty').value);
     quiz = createQuiz(Math.random, completed, $('#quiz-difficulty').value); $('#quiz-collection-note').textContent = `${REGIONS[region].name}에서 새로운 문제 5개를 성공하고 야생 포켓몬을 만나자!`; render(); $('#quiz-dialog').showModal();
   });
-  $('#quiz-next').addEventListener('click', () => { if (nextQuestion(quiz)) render(); });
+  $('#quiz-next').addEventListener('click', advanceQuestion);
   $('#quiz-speak').disabled = !canSpeak;
   $('#quiz-speak').addEventListener('click', () => {
     if (!canSpeak || quiz.index >= quiz.questions.length) return;
@@ -264,5 +277,5 @@ export function setupHangulQuiz({ getState, confirmMission, notify, speech, coll
     if (!linked) { notify('부모님 메뉴에서 한글 미션을 추가해 주세요.'); return; }
     $('#quiz-dialog').close(); confirmMission(linked.id);
   });
-  $('#quiz-dialog').addEventListener('close', () => { clearTimeout(unlockTimer); stopSpeaking(); });
+  $('#quiz-dialog').addEventListener('close', () => { clearTimeout(unlockTimer); clearTimeout(advanceTimer); stopSpeaking(); });
 }
