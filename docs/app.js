@@ -1,8 +1,9 @@
-import { initialState, validateState, settle, totalMinutes, remainingSeconds, start, pause, adjust, missionDone, resetTodayQuests } from './model.js?v=quest-reset';
-import { MOVES, PSYCHIC_THRESHOLD, missionMove, celebrationMoves, earnedMissionMinutes } from './moves.js?v=daily60';
-import { setupHangulQuiz } from './hangul.js?v=throw-then-result';
+import { availablePartners, getPartner, selectPartner, missionPartnerSlot, partnerCelebrationSlots } from './partner.js?v=partner-habitats';
+import { initialState, validateState, settle, totalMinutes, remainingSeconds, start, pause, adjust, missionDone, resetTodayQuests } from './model.js?v=partner-habitats';
+import { PSYCHIC_THRESHOLD, missionMove, earnedMissionMinutes } from './moves.js?v=partner-habitats';
+import { setupHangulQuiz } from './hangul.js?v=partner-habitats';
 import { createKoreanSpeech } from './speech.js';
-import { setupCollection } from './collection.js?v=throw-then-result';
+import { setupCollection } from './collection.js?v=partner-habitats';
 import { setupTrainer } from './trainer.js?v=photo-picker-fix';
 
 const $ = selector => document.querySelector(selector);
@@ -27,7 +28,7 @@ function toast(text) {
   toastTimeout = setTimeout(() => $('#toast').classList.remove('visible'), 3500);
 }
 const speech = createKoreanSpeech({ getRate: () => state.speechRate ?? 0.8, onError: toast });
-const collection = setupCollection({ getState: () => { settle(state); return state; }, save: persist, speech });
+const collection = setupCollection({ getState: () => { settle(state); return state; }, save: persist, speech, onCapture: renderPartner });
 const autoSpeak = text => { if (state.speechAuto !== false) speech.speak(text); };
 $('#speech-auto').checked = state.speechAuto !== false;
 $('#speech-auto').addEventListener('change', () => { state.speechAuto = $('#speech-auto').checked; persist(); if (!state.speechAuto) speech.stop(); });
@@ -66,19 +67,24 @@ function replayCelebration() {
   dialog.scrollTop = 0;
 }
 function renderCelebration() {
-  const { mission, minutes, moves, index } = celebration;
-  const id = moves[index], move = MOVES[id], special = id === 'psychic';
+  const { mission, minutes, moves, index, partner, preview } = celebration;
+  const move = partner.moves[moves[index]], special = !preview && index > 0;
+  const id = move.effect;
   $('#celebration-dialog').dataset.move = id;
-  $('#celebration-title').textContent = special ? '특별 기술 해금!' : '연우, 미션 성공!';
-  $('#move-name').textContent = `뮤츠의 ${move.name}!`;
-  $('.mewtwo-quote').textContent = `“${move.quote}”`;
-  $('#celebration-mission').textContent = special ? `오늘 미션 보상 ${PSYCHIC_THRESHOLD}분 달성!` : `${questTitle(mission)} 성공!`;
-  $('#celebration-reward').textContent = special ? '기술 해금 ✦' : `+${minutes}분`;
-  $('#celebration-message').textContent = move.description + (special ? ' (추가 시간 보상은 없어요.)' : ' 보상은 시간볼에 넣었어요!');
-  $('#celebration-continue').textContent = index + 1 < moves.length ? '특별 기술 보기 · 사이코키네시스 ✦' : '좋아! 모험 계속하기 ✦';
+  $('#celebration-dialog .eyebrow').textContent = preview ? 'PARTNER MOVES' : 'MISSION CLEAR!';
+  $('#celebration-title').textContent = preview ? '파트너 기술 구경하기!' : special ? '특별 기술 발동!' : '연우, 미션 성공!';
+  $('#move-name').textContent = `${partner.name}의 ${move.name}!`;
+  $('.psychic-mewtwo').src = partner.image;
+  $('#move-symbol').textContent = move.name === '불대문자' ? '大' : ({fire:'🔥',water:'💧',electric:'⚡',leaf:'🍃',ice:'❄️',rock:'🪨',normal:'💥',wind:'💨',poison:'🟣',psychic:'✦',shadowball:'●',aurasphere:'◉',confusion:'✧'}[move.effect] ?? '✦');
+  $('#celebration-speak').textContent = `🔊 ${partner.name} 응원 듣기`;
+  $('.mewtwo-quote').textContent = '“연우야, 멋진 도전이었어!”';
+  $('#celebration-mission').textContent = preview ? '기술 연출만 보는 중이에요.' : special ? `오늘 미션 보상 ${PSYCHIC_THRESHOLD}분 달성!` : `${questTitle(mission)} 성공!`;
+  $('#celebration-reward').textContent = preview ? '미리보기 ✦' : special ? '특별 연출 ✦' : `+${minutes}분`;
+  $('#celebration-message').textContent = `${partner.name}의 ${move.name}! ` + (preview ? '시간이나 수집 보상은 추가되지 않아요.' : special ? '오늘 60분 달성! 추가 시간 보상은 없어요.' : '보상은 시간볼에 넣었어요!');
+  $('#celebration-continue').textContent = index + 1 < moves.length ? `특별 기술 보기 · ${partner.moves[3].name} ✦` : '좋아! 모험 계속하기 ✦';
 }
 function celebrate(mission, minutes, before, after) {
-  celebration = { mission, minutes, moves: celebrationMoves(mission, before, after), index: 0 };
+  celebration = { mission, minutes, moves: partnerCelebrationSlots(state, mission, before, after), index: 0, partner: getPartner(state), preview: false };
   renderCelebration();
   showDialog('#celebration-dialog');
   replayCelebration();
@@ -136,11 +142,12 @@ function renderClock() {
 }
 function render() {
   renderClock();
+  renderPartner();
   const total = totalMinutes(state), bonus = total - state.baseMinutes;
   $('#total-time').textContent = readable(total);
   $('#budget-detail').textContent = `기본 ${state.baseMinutes}분 ${bonus >= 0 ? '+' : '−'} 오늘 보상·차감 ${Math.abs(bonus)}분`;
   const earned = earnedMissionMinutes(state);
-  $('#unlock-label').textContent = earned >= PSYCHIC_THRESHOLD ? '✦ 오늘 60분 달성! 사이코키네시스 해금!' : `오늘 모은 미션 보상 ${earned} / ${PSYCHIC_THRESHOLD}분`;
+  $('#unlock-label').textContent = earned >= PSYCHIC_THRESHOLD ? `✦ 오늘 60분 달성! ${getPartner(state).moves[3].name}!` : `오늘 모은 미션 보상 ${earned} / ${PSYCHIC_THRESHOLD}분`;
   $('#unlock-progress').value = Math.min(earned, PSYCHIC_THRESHOLD);
   $('#mission-list').replaceChildren();
   $('#parent-missions').replaceChildren();
@@ -151,7 +158,7 @@ function render() {
     row.setAttribute('aria-label', `${mission.title}, ${done ? '오늘 완료됨' : `보상 ${mission.minutes}분, 완료 확인하기`}`);
     row.addEventListener('click', () => confirmMission(mission.id));
     const badge = el('div', 'badge'), image = el('img'); image.src = 'assets/masterball.svg'; image.alt = ''; badge.append(image);
-    const copy = el('div', 'mission-copy'); copy.append(el('div', 'mission-title', questTitle(mission)), el('div', 'mission-subtitle', done ? '오늘 퀘스트 성공! ✦' : `${MOVES[missionMove(mission)].name} · 눌러서 완료 확인 ›`));
+    const copy = el('div', 'mission-copy'); copy.append(el('div', 'mission-title', questTitle(mission)), el('div', 'mission-subtitle', done ? '오늘 퀘스트 성공! ✦' : `${getPartner(state).moves[missionPartnerSlot(state, mission)].name} · 눌러서 완료 확인 ›`));
     row.append(badge, copy, el('span', 'reward-pill', done ? '✓ 완료' : `+${mission.minutes}분`));
     const item = el('div', 'mission-item');
     const listen = el('button', 'mission-listen', '🔊 미션 듣기');
@@ -190,6 +197,7 @@ function openEditor(mission = null) {
   $('#editor-title').textContent = mission ? '미션 수정' : '새 미션 추가';
   $('#mission-name').value = mission?.title ?? '';
   $('#mission-minutes').value = mission?.minutes ?? 30;
+  [...$('#mission-move').options].forEach((option, slot) => { option.textContent = `${slot + 1}번째 · ${getPartner(state).moves[slot].name}`; });
   $('#mission-move').value = mission ? missionMove(mission) : 'confusion';
   $('#delete-mission').hidden = !mission;
   showDialog('#editor-dialog');
@@ -278,7 +286,7 @@ $('#reset-learning-confirm').addEventListener('click', () => {
   if (!storageAvailable) { toast('브라우저 저장 공간에 접근할 수 없어 초기화하지 않았어요.'); return; }
   const cleared = { ...state };
   if (resetMode === 'quests') resetTodayQuests(cleared);
-  else delete cleared.collection;
+  else { delete cleared.collection; delete cleared.partner; }
   try {
     localStorage.setItem(key, JSON.stringify(cleared));
     state = cleared;
@@ -293,3 +301,30 @@ if (['learning', 'quests'].includes(requestedReset)) {
   if (requestedReset === 'quests') openQuestReset();
   else openLearningReset();
 }
+
+function renderPartner() {
+  const partner = getPartner(state), select = $('#partner-select');
+  select.replaceChildren();
+  for (const option of availablePartners(state)) {
+    const node = document.createElement('option'); node.value = option.id + (option.shiny ? ':shiny' : '');
+    node.textContent = `${option.shiny ? '✦ 이로치 ' : ''}${option.name}`;
+    select.append(node);
+  }
+  select.value = partner.id + (partner.shiny ? ':shiny' : '');
+  $('#hero-partner-image').src = partner.image; $('#hero-partner-image').alt = partner.name;
+  $('#hero-partner-name').textContent = partner.name;
+  $('#partner-image').src = partner.image; $('#partner-image').alt = partner.name;
+  $('#partner-moves').replaceChildren();
+  partner.moves.forEach((move, slot) => {
+    const button = document.createElement('button'); button.type = 'button'; button.className = 'secondary';
+    button.textContent = move.name; button.addEventListener('click', () => {
+      celebration = { mission: { id: 'preview', title: '기술 미리보기' }, minutes: 0, moves: [slot], index: 0, partner: getPartner(state), preview: true };
+      renderCelebration(); showDialog('#celebration-dialog'); replayCelebration(); autoSpeak($('#move-name').textContent);
+    });
+    $('#partner-moves').append(button);
+  });
+}
+$('#partner-select').addEventListener('change', event => {
+  const [id, form] = event.target.value.split(':');
+  if (selectPartner(state, id, form === 'shiny')) { saveAndRender(); toast(`${getPartner(state).name}와 함께 모험하자!`); }
+});

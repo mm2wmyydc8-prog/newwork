@@ -1,4 +1,4 @@
-import { REGIONS } from './collection.js?v=throw-then-result';
+import { REGIONS } from './collection.js?v=partner-habitats';
 
 export const QUESTIONS = [
   { id: 'tree', picture: '🌳', word: '', reading: '나무', prompt: '그림에 맞는 낱말을 골라볼까?', answer: '나무', choices: ['나무', '나비', '누나'], hint: '나무! “나” 하고 천천히 읽어 봐.' },
@@ -220,7 +220,7 @@ export function setupHangulQuiz({ getState, confirmMission, notify, speech, coll
       const waiting = collection.pendingCount({ includeRetry: true });
       $('#quiz-finish-area h3').textContent = waiting ? '탐험 성공! 야생 포켓몬을 발견했어!' : `${quiz.questions.length}문제 성공! 잘했어, 연우!`;
       say(waiting ? `${REGIONS[region].name} 탐험 성공! 누가 나타났을까?` : `${quiz.questions.length}문제 성공! 오늘도 멋져!`);
-      collection.finishRound({ mistakes: quiz.totalMistakes ?? 0 });
+      collection.finishRound({ mistakes: quiz.totalMistakes ?? 0, region });
       return;
     }
     const question = quiz.questions[quiz.index];

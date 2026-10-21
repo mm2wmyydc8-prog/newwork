@@ -10,11 +10,11 @@ export function earnedMissionMinutes(state) {
     .reduce((sum, entry) => sum + entry.minutes, 0);
 }
 export function missionMove(mission) {
-  if (['confusion', 'shadowball', 'aurasphere'].includes(mission.move)) return mission.move;
+  if (['confusion', 'shadowball', 'aurasphere', 'psychic'].includes(mission.move)) return mission.move;
   return { hangul: 'confusion', bookclub: 'shadowball', reading: 'aurasphere' }[mission.id] ?? 'confusion';
 }
 export function celebrationMoves(mission, before, after) {
   const result = [missionMove(mission)];
-  if (before < PSYCHIC_THRESHOLD && after >= PSYCHIC_THRESHOLD) result.push('psychic');
+  if (before < PSYCHIC_THRESHOLD && after >= PSYCHIC_THRESHOLD && !result.includes('psychic')) result.push('psychic');
   return result;
 }
