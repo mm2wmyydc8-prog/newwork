@@ -198,7 +198,7 @@ export function setupHangulQuiz({ getState, confirmMission, notify, speech, coll
     say(`${DIFFICULTIES[level].name} 모험. ${DIFFICULTIES[level].help}`);
   });
   function stopSpeaking() { speech.stop(); }
-  function say(text) { if (getState().speechAuto !== false) speech.speak(text); }
+  function say(text, options) { if (getState().speechAuto !== false) speech.speak(text, options); }
   function questionText(question) {
     if (quiz.difficulty === 'medium') return '글을 스스로 읽고, 알맞은 그림을 골라봐. 어려우면 뮤에게 소리 도움을 요청해도 괜찮아.';
     return `${quiz.difficulty === 'easy' ? question.answer : question.reading}. ${question.prompt} 글자가 궁금하면 작은 스피커를 눌러 들어 봐.`;
@@ -251,7 +251,7 @@ export function setupHangulQuiz({ getState, confirmMission, notify, speech, coll
           button.disabled = true;
           $('#quiz-word').textContent = [...question.reading].map((letter, index) => index < quiz.selected.length ? letter : '□').join('');
           $('#quiz-feedback').textContent = '좋아! 다음 글자도 이어보자.';
-          say($('#quiz-feedback').textContent);
+          say($('#quiz-feedback').textContent, { interrupt: false });
           return;
         }
         if (result === 'correct') {

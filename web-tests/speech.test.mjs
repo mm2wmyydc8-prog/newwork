@@ -2,45 +2,57 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createKoreanSpeech } from '../docs/speech.js';
 
-test('speech selects Korean voice, applies speed, and cancels previous reading', () => {
-  const spoken = []; let canceled = 0;
-  const korean = { lang: 'ko-KR', name: 'Korean' };
-  const scope = { SpeechSynthesisUtterance: class { constructor(text) { this.text = text; } },
-    speechSynthesis: { cancel() { canceled++; }, getVoices: () => [{ lang: 'en-US' }, korean], speak(value) { spoken.push(value); } } };
-  const reader = createKoreanSpeech({ scope, getRate: () => 0.65 });
-  assert.equal(reader.speak('나무'), true);
-  assert.equal(spoken[0].lang, 'ko-KR'); assert.equal(spoken[0].rate, 0.65);
-  assert.equal(spoken[0].voice, korean);
-  reader.speak('바다'); assert.equal(canceled, 2); assert.equal(spoken[1].text, '바다');
-  reader.stop(); assert.equal(canceled, 3);
+function engine() {
+ const spoken=[],events=[],timers=new Map();let id=0,fenced=false;
+ const scope={SpeechSynthesisUtterance:class {constructor(text){this.text=text;}},
+  setTimeout(fn){timers.set(++id,fn);return id;},clearTimeout(id){timers.delete(id);},
+  speechSynthesis:{speaking:false,paused:false,pending:false,
+   getVoices:()=>[{lang:'en-US'},{lang:'ko-KR',name:'Korean'}],
+   cancel(){events.push('cancel');fenced=true;this.speaking=false;},
+   resume(){events.push('resume');this.paused=false;},
+   speak(u){assert.equal(fenced,false,'speak must not run in the same turn as cancel');events.push('speak');spoken.push(u);this.speaking=true;}
+  }};
+ return {scope,spoken,events,flush(){const work=[...timers.values()];timers.clear();fenced=false;work.forEach(fn=>fn());},timers};
+}
+test('Korean voice and speed; idle reads do not cancel and replacements wait for cancellation',()=>{
+ const e=engine(),r=createKoreanSpeech({scope:e.scope,getRate:()=>.65});
+ assert.equal(r.speak('나무'),true);assert.deepEqual(e.events,['speak']);
+ assert.equal(e.spoken[0].lang,'ko-KR');assert.equal(e.spoken[0].rate,.65);assert.equal(e.spoken[0].voice.name,'Korean');
+ r.speak('바다');assert.equal(e.spoken.length,1);assert.equal(e.timers.size,1);
+ e.flush();assert.equal(e.spoken[1].text,'바다');r.stop();assert.equal(e.timers.size,0);
 });
-test('missing voice list uses Korean language; unsupported browser reports limitation', () => {
-  let utterance, error;
-  const scope = { SpeechSynthesisUtterance: class {}, speechSynthesis: { cancel() {}, getVoices: () => [], speak(value) { utterance = value; } } };
-  createKoreanSpeech({ scope, getRate: () => 99 }).speak('모자');
-  assert.equal(utterance.lang, 'ko-KR'); assert.equal(utterance.rate, 0.8);
-  const unsupported = createKoreanSpeech({ scope: {}, onError: message => { error = message; } });
-  assert.equal(unsupported.speak('안녕'), false); assert.match(error, /지원하지/);
+test('tile feedback preserves active narration and does not queue stale praise',()=>{
+ const e=engine(),r=createKoreanSpeech({scope:e.scope});r.speak('가위를 순서대로 만들어 보자');
+ for(let i=0;i<5;i++)assert.equal(r.speak('좋아! 다음 글자도 이어보자.',{interrupt:false}),false);
+ assert.deepEqual(e.events,['speak']);assert.equal(e.timers.size,0);
+ e.scope.speechSynthesis.speaking=false;e.spoken[0].onend();
+ assert.equal(r.speak('다음 글자도 이어보자.',{interrupt:false}),true);assert.equal(e.spoken.length,2);
 });
-
-test('paused speech engine resumes before speaking and launch errors are reported without crashing', () => {
- const calls=[];let error;
- const scope={SpeechSynthesisUtterance:class {},speechSynthesis:{paused:true,cancel(){calls.push('cancel')},getVoices(){return []},resume(){calls.push('resume');this.paused=false},speak(){calls.push('speak')}}};
- const reader=createKoreanSpeech({scope,onError:message=>{error=message}});
- assert.equal(reader.speak('나무'),true);
- assert.deepEqual(calls,['cancel','resume','speak']);
- scope.speechSynthesis.speak=()=>{throw new Error('device busy')};
- assert.equal(reader.speak('바다'),false);
- assert.match(error,/음성 다시 켜기/);
+test('rapid manual readings replace only the latest pending speech; close cancels pending starts',()=>{
+ const e=engine(),r=createKoreanSpeech({scope:e.scope});r.speak('문제');r.speak('가');r.speak('위');
+ e.flush();assert.deepEqual(e.spoken.map(u=>u.text),['문제','위']);
+ r.speak('읽으면 안 되는 문제');r.stop();e.flush();assert.equal(e.spoken.length,2);
+ r.speak('새 문제');e.flush();assert.equal(e.spoken.at(-1).text,'새 문제');
 });
-
-test('speech start/end/error status helps distinguish engine playback from muted output', () => {
- let utterance;const statuses=[];
- const scope={SpeechSynthesisUtterance:class {},speechSynthesis:{cancel(){},getVoices(){return[]},speak(u){utterance=u}}};
- const reader=createKoreanSpeech({scope,onStatus:text=>statuses.push(text)});
- reader.speak('음성 확인');
- assert.match(statuses.at(-1),/준비/);
- utterance.onstart();assert.match(statuses.at(-1),/재생 중/);
- utterance.onend();assert.match(statuses.at(-1),/마쳤/);
- reader.speak('다시');utterance.onerror({error:'not-allowed'});assert.match(statuses.at(-1),/듣기 버튼/);
+test('stop followed by render narration yields; stale events cannot clear the new read',()=>{
+ const e=engine(),r=createKoreanSpeech({scope:e.scope});r.speak('옛 문제');const oldEnd=e.spoken[0].onend;
+ r.stop();r.speak('새 문제');assert.equal(e.spoken.length,1);e.flush();oldEnd();
+ assert.equal(r.speak('중간 칭찬',{interrupt:false}),false);assert.equal(e.spoken.at(-1).text,'새 문제');
+});
+test('paused engine resumes and synchronous engine failure reports without crashing',()=>{
+ const e=engine();e.scope.speechSynthesis.paused=true;const r=createKoreanSpeech({scope:e.scope});r.speak('나무');assert.deepEqual(e.events,['resume','speak']);
+ let error;const bad=engine();bad.scope.speechSynthesis.speak=()=>{throw Error('busy');};
+ assert.equal(createKoreanSpeech({scope:bad.scope,onError:t=>error=t}).speak('바다'),false);assert.match(error,/음성 다시 켜기/);
+});
+test('missing Korean voice and invalid rate use language fallback; unsupported browser reports',()=>{
+ const e=engine();e.scope.speechSynthesis.getVoices=()=>[];createKoreanSpeech({scope:e.scope,getRate:()=>99}).speak('모자');
+ assert.equal(e.spoken[0].lang,'ko-KR');assert.equal(e.spoken[0].rate,.8);
+ let error;assert.equal(createKoreanSpeech({scope:{},onError:t=>error=t}).speak('안녕'),false);assert.match(error,/지원하지/);
+});
+test('status reports start, end, blocked speech; a terminal error allows future feedback',()=>{
+ const e=engine(),statuses=[],r=createKoreanSpeech({scope:e.scope,onStatus:t=>statuses.push(t)});
+ r.speak('확인');assert.match(statuses.at(-1),/준비/);e.spoken[0].onstart();assert.match(statuses.at(-1),/재생 중/);
+ e.scope.speechSynthesis.speaking=false;e.spoken[0].onend();assert.match(statuses.at(-1),/마쳤/);
+ r.speak('다시');e.spoken[1].onerror({error:'not-allowed'});assert.match(statuses.at(-1),/듣기 버튼/);
+ e.scope.speechSynthesis.speaking=false;assert.equal(r.speak('새로',{interrupt:false}),true);
 });
