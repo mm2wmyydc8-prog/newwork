@@ -1,5 +1,5 @@
-import { createMoveScene } from './move-scene.js?v=cinematic-1';
-import { createMoveSound } from './move-sound.js?v=cinematic-1';
+import { createMoveScene } from './move-scene.js?v=techniques-2';
+import { createMoveSound } from './move-sound.js?v=techniques-2';
 import { classifyMove } from './move-effects.js?v=move-motions';
 import { availablePartners, getPartner, selectPartner, missionPartnerSlot, partnerCelebrationSlots } from './partner.js?v=partner-habitats';
 import { initialState, validateState, settle, totalMinutes, remainingSeconds, start, pause, adjust, missionDone, resetTodayQuests } from './model.js?v=partner-habitats';
@@ -88,25 +88,25 @@ function replayCelebration() {
   dialog.scrollTop = 0;
 }
 function renderCelebration() {
-  const { mission, minutes, moves, index, partner, preview } = celebration;
-  const move = partner.moves[moves[index]], special = !preview && index > 0;
+  const { mission, minutes, moves, index, partner } = celebration;
+  const move = partner.moves[moves[index]], special = index > 0;
   const id = move.effect, effect = classifyMove(move);
   $('#celebration-dialog').dataset.motion = effect.motion;
   $('#celebration-dialog').style.setProperty('--move-color', effect.color);
   $('#celebration-dialog').dataset.move = id;
-  $('#celebration-dialog .eyebrow').textContent = preview ? 'PARTNER MOVES' : 'MISSION CLEAR!';
-  $('#celebration-title').textContent = preview ? '파트너 기술 구경하기!' : special ? '특별 기술 발동!' : '연우, 미션 성공!';
+  $('#celebration-dialog .eyebrow').textContent = 'MISSION CLEAR!';
+  $('#celebration-title').textContent = special ? '특별 기술 발동!' : '연우, 미션 성공!';
   $('#move-name').textContent = `${partner.name}의 ${move.name}!`;
   $('.psychic-mewtwo').src = partner.image;
   $('#celebration-speak').textContent = `🔊 ${partner.name} 응원 듣기`;
   $('.mewtwo-quote').textContent = '“연우야, 멋진 도전이었어!”';
-  $('#celebration-mission').textContent = preview ? '기술 연출만 보는 중이에요.' : special ? `오늘 미션 보상 ${PSYCHIC_THRESHOLD}분 달성!` : `${questTitle(mission)} 성공!`;
-  $('#celebration-reward').textContent = preview ? '미리보기 ✦' : special ? '특별 연출 ✦' : `+${minutes}분`;
-  $('#celebration-message').textContent = `${partner.name}의 ${move.name}! ` + (preview ? '시간이나 수집 보상은 추가되지 않아요.' : special ? '오늘 60분 달성! 추가 시간 보상은 없어요.' : '보상은 시간볼에 넣었어요!');
+  $('#celebration-mission').textContent = special ? `오늘 미션 보상 ${PSYCHIC_THRESHOLD}분 달성!` : `${questTitle(mission)} 성공!`;
+  $('#celebration-reward').textContent = special ? '특별 연출 ✦' : `+${minutes}분`;
+  $('#celebration-message').textContent = `${partner.name}의 ${move.name}! ` + (special ? '오늘 60분 달성! 추가 시간 보상은 없어요.' : '보상은 시간볼에 넣었어요!');
   $('#celebration-continue').textContent = index + 1 < moves.length ? `특별 기술 보기 · ${partner.moves[3].name} ✦` : '좋아! 모험 계속하기 ✦';
 }
 function celebrate(mission, minutes, before, after) {
-  celebration = { mission, minutes, moves: partnerCelebrationSlots(state, mission, before, after), index: 0, partner: getPartner(state), preview: false };
+  celebration = { mission, minutes, moves: partnerCelebrationSlots(state, mission, before, after), index: 0, partner: getPartner(state) };
   renderCelebration();
   showDialog('#celebration-dialog');
   replayCelebration();
@@ -337,13 +337,9 @@ function renderPartner() {
   $('#hero-partner-name').textContent = partner.name;
   $('#partner-image').src = partner.image; $('#partner-image').alt = partner.name;
   $('#partner-moves').replaceChildren();
-  partner.moves.forEach((move, slot) => {
-    const button = document.createElement('button'); button.type = 'button'; button.className = 'secondary';
-    button.textContent = move.name; button.addEventListener('click', () => {
-      celebration = { mission: { id: 'preview', title: '기술 미리보기' }, minutes: 0, moves: [slot], index: 0, partner: getPartner(state), preview: true };
-      renderCelebration(); showDialog('#celebration-dialog'); replayCelebration(); autoSpeak($('#move-name').textContent);
-    });
-    $('#partner-moves').append(button);
+  partner.moves.forEach(move => {
+    const chip = el('span', 'partner-move-chip', move.name);
+    $('#partner-moves').append(chip);
   });
 }
 $('#partner-select').addEventListener('change', event => {

@@ -1,85 +1,253 @@
-// Original procedural effects, drawn locally without game footage or external assets.
+// Original 2D move drawings. Animation families follow the action, not just the type.
 import { classifyMove } from './move-effects.js?v=move-motions';
 const TAU = Math.PI * 2;
 const clamp = n => Math.max(0, Math.min(1, n));
+const ease = n => 1 - (1 - clamp(n)) ** 3;
+const SUPPORT = new Set(['shield', 'heal', 'transform', 'status']);
+
 export function createMoveScene(canvas, { reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches } = {}) {
   const c = canvas.getContext('2d');
+  const W = 700, H = 380, sx = 205, sy = 177, tx = 523, ty = 184;
   let frame = 0, generation = 0;
-  const W = 700, H = 380, sx = 200, sy = 185, tx = 535, ty = 185;
   canvas.width = W; canvas.height = H;
-  function disc(x,y,r,color,alpha=1) { c.globalAlpha=alpha;c.fillStyle=color;c.beginPath();c.arc(x,y,Math.max(.1,r),0,TAU);c.fill();c.globalAlpha=1; }
-  function line(points,color,width=3,alpha=1) {c.globalAlpha=alpha;c.strokeStyle=color;c.lineWidth=width;c.lineJoin='round';c.beginPath();points.forEach(([x,y],i)=>i?c.lineTo(x,y):c.moveTo(x,y));c.stroke();c.globalAlpha=1;}
-  function ring(x,y,r,color,alpha=1,width=3){c.globalAlpha=alpha;c.strokeStyle=color;c.lineWidth=width;c.beginPath();c.ellipse(x,y,r,r*.65,0,0,TAU);c.stroke();c.globalAlpha=1;}
-  function shard(x,y,size,color,angle=0){c.save();c.translate(x,y);c.rotate(angle);c.fillStyle=color;c.beginPath();c.moveTo(0,-size);c.lineTo(size*.48,0);c.lineTo(0,size);c.lineTo(-size*.48,0);c.closePath();c.fill();c.restore();}
-  function render(move, seconds, quiet) {
-    const {motion,color}=classifyMove(move), t=seconds, launch=clamp((t-.65)/.85), hit=clamp((t-1.5)/1.15);
-    c.clearRect(0,0,W,H);
-    // Arena marks and a neutral energy target make the point of impact visible.
-    ring(sx,310,100,'#a6b9e0',.22,2);ring(tx,310,78,'#a6b9e0',.22,2);
-    for(let i=0;i<12;i++)disc((i*79)%W,38+(i*43)%270,1,'#c1d4ff',.28);
-    const shake=!quiet && t>1.5 && t<1.85 ? Math.sin(t*95)*7*(1-hit):0;
-    c.save();c.translate(shake,0);
-    const supportive=['shield','heal','transform','status'].includes(motion);
-    const targetAlpha=t>1.5? .5+Math.sin(t*22)*.2:.5;
-    if (!supportive) {shard(tx,ty,37,'#96aec5',0);shard(tx-8,ty-8,21,'#cce4ef',0);ring(tx,ty,52,color,targetAlpha,2);}
-    // Gathering motes converge toward the partner before the release.
-    if(t<.8)for(let i=0;i<20;i++) {const a=i*2.4+t*2,r=(1-clamp(t/.8))*90+12;disc(sx+Math.cos(a)*r,sy+Math.sin(a)*r,2+i%3,color,.75);}
-    if(t>.4&&t<1.2)ring(sx,sy,18+Math.sin(t*5)*6,color,.8,4);
-    const active=t>=.65&&t<=2.6;
-    if(active){
-      if(motion==='flame') {
-        // A connected hot core with many curling tongues, rather than a triangle.
-        for(let i=0;i<36;i++){const p=((i/36+t*1.5)%1)*launch,x=sx+(tx-sx)*p,y=sy+Math.sin(i*2.4+t*18)*(5+p*21);const r=5+p*15;
-          c.save();c.translate(x,y);c.rotate(Math.sin(i+t*8)*.35);
-          for(const [scale,fill] of [[1.25,'#d93627'],[1,'#ff8c21'],[.55,'#fff3a1']]){c.save();c.scale(scale,scale);c.fillStyle=fill;c.beginPath();c.moveTo(-r,0);c.bezierCurveTo(-r,-r,r*.3,-r*1.4,r*2.7,-r*.6);c.quadraticCurveTo(r*.9,-r*.1,r*2,0);c.quadraticCurveTo(r*.3,r*1.3,-r,0);c.fill();c.restore();}c.restore();}
-        for(let i=0;i<12;i++)disc(sx+(tx-sx)*launch+(i*17)%40,sy+Math.sin(i*7+t*8)*38,1+i%2,'#ffd775',.8);
-        if(move.id==='fire-blast'&&t>1.45){const r=68;for(let a=0;a<5;a++){const angle=-Math.PI/2+a*TAU/5;line([[tx,ty],[tx+Math.cos(angle)*r,ty+Math.sin(angle)*r]],'#ff722d',16);line([[tx,ty],[tx+Math.cos(angle)*r,ty+Math.sin(angle)*r]],'#fff1a0',5);}}
-      } else if(motion==='bolt') {
-        for(let b=0;b<4;b++){const points=[[sx,sy]];for(let i=1;i<=11;i++)points.push([sx+(tx-sx)*launch*i/11,sy+Math.sin(i*17+b*9+Math.floor(t*18))* (12+b*9)]);
-          line(points,'#e7a320',11,.45);line(points,'#ffe44f',5);line(points,'#fffbd0',2);}
-        for(let i=0;i<6;i++){const a=i*TAU/6+t;line([[tx,ty],[tx+Math.cos(a)*48,ty+Math.sin(a)*48],[tx+Math.cos(a+.2)*75,ty+Math.sin(a+.2)*75]],'#ffe96b',3,launch);}
-      } else if(motion==='fang') {
-        const spread=13+Math.abs(Math.sin((t-.65)*8))*55;
-        line([[tx-82,ty-spread-12],[tx-48,ty-spread-22],[tx+48,ty-spread-22],[tx+82,ty-spread-12]],color,8,.85);
-        line([[tx-82,ty+spread+12],[tx-48,ty+spread+22],[tx+48,ty+spread+22],[tx+82,ty+spread+12]],color,8,.85);
-        for(let row=0;row<2;row++)for(let i=0;i<4;i++){const x=tx-63+i*40,y=ty+(row?spread:-spread);c.save();c.translate(x,y);if(row)c.rotate(Math.PI);c.fillStyle='#573a72';c.beginPath();c.moveTo(-18,-16);c.quadraticCurveTo(0,18,5,42);c.quadraticCurveTo(22,0,18,-16);c.fill();c.fillStyle='#fff5e3';c.beginPath();c.moveTo(-13,-14);c.quadraticCurveTo(-4,15,5,32);c.quadraticCurveTo(17,-1,13,-14);c.fill();disc(5,27,6,color,.9);c.restore();}
-        for(let i=0;i<16;i++){const a=i*2.4;disc(tx+Math.cos(a)*hit*95,ty+Math.sin(a)*hit*65+hit*35,3+i%4,color,1-hit);}
-      } else if(motion==='psychic') {
-        for(let i=0;i<5;i++){const p=(t*.7+i/5)%1;ring(tx,ty,18+p*100,color,1-p,3);}
-        for(let i=0;i<7;i++){const a=i*TAU/7+t*.8;shard(tx+Math.cos(a)*83,ty+Math.sin(a)*54,9,color,a);}
-        const points=[];for(let i=0;i<45;i++)points.push([sx+(tx-sx)*i/44,sy+Math.sin(i*.5-t*12)*14]);line(points,color,5,.7);
-        disc(tx,ty,24,'#eed6ff',.25+Math.sin(t*14)*.1);
-      } else if(motion==='liquid'||motion==='beam') {
-        for(let i=0;i<4;i++){const points=[];for(let j=0;j<28;j++)points.push([sx+(tx-sx)*launch*j/27,sy+Math.sin(j*.55-t*17+i)*8+i*4]);line(points,color,10,.7);line(points,'#effbff',2,.75);}
-        for(let i=0;i<23;i++){const a=i*2.4;disc(tx+Math.cos(a)*hit*100,ty+Math.sin(a)*hit*80,3+i%5,color,launch*(1-hit));}
-      } else if(motion==='ball') {
-        const x=sx+(tx-sx)*launch;disc(x,sy,28,color,.25);disc(x,sy,21,color);disc(x-6,sy-7,10,'#fff4ff',.85);
-        for(let i=0;i<15;i++)disc(x-i*5,sy+Math.sin(i+t*14)*9,5-i*.2,color,.6);
-      } else if(motion==='slash'||motion==='needle'||motion==='wind') {
-        for(let i=0;i<5;i++){const p=(t*1.5+i*.15)%1,x=sx+(tx-sx)*p;
-          if(motion==='slash'){line([[tx-50+i*22,ty-70],[tx-20+i*22,ty],[tx+20+i*22,ty+65]],color,7,1-p);line([[tx-48+i*22,ty-70],[tx-18+i*22,ty],[tx+22+i*22,ty+65]],'#fff',2,1-p);}
-          else if(motion==='needle')shard(x,sy+(i-2)*17,24,color,Math.PI/2);
-          else {const points=[];for(let j=0;j<28;j++)points.push([x+Math.cos(j*.16)*45,sy+Math.sin(j*.16)*23+(i-2)*15]);line(points,color,4,.75);}}
-      } else if(['leaf','ice','rock'].includes(motion)) {
-        for(let i=0;i<14;i++){const p=(t*.8+i/14)%1,x=sx+(tx-sx)*p,y=sy+Math.sin(i*3+p*5)*43;
-          if(motion==='leaf'){c.save();c.translate(x,y);c.rotate(t*5+i);c.fillStyle=color;c.beginPath();c.ellipse(0,0,16,6,0,0,TAU);c.fill();line([[-14,0],[14,0]],'#e5f8ad',1);c.restore();}
-          else shard(x,y,motion==='ice'?18:11+(i%3)*5,color,t*2+i);}
-      } else if(['shield','heal','transform','status'].includes(motion)) {
-        const x=sx+10;for(let i=0;i<4;i++)ring(x,sy,35+i*16+Math.sin(t*4)*5,color,.7-i*.12,3);
-        for(let i=0;i<18;i++){const a=i*2.4+t;shard(x+Math.cos(a)*65,sy+70-((t*60+i*13)%150),6,color,a);}
-      } else {
-        const x=sx+(tx-sx)*launch;for(let i=0;i<7;i++)line([[x-70,sy+(i-3)*9],[x-20,sy+(i-3)*7]],color,3,.8);
-        if(t>1.35){c.save();c.translate(tx,ty);c.rotate(motion==='kick'?-.6:.2);c.fillStyle=color;c.strokeStyle='#fff3d7';c.lineWidth=3;c.beginPath();c.roundRect(-32,-24,motion==='kick'?82:58,48,12);c.fill();c.stroke();for(let i=0;i<3;i++)line([[-22+i*13,-19],[-22+i*13,-2]],'#fff3d7',2);c.restore();}
-      }
+
+  function disc(x, y, r, color, alpha = 1) {
+    c.save(); c.globalAlpha = alpha; c.fillStyle = color;
+    c.beginPath(); c.arc(x, y, Math.max(.1, r), 0, TAU); c.fill(); c.restore();
+  }
+  function stroke(points, color, width = 3, alpha = 1) {
+    c.save(); c.globalAlpha = alpha; c.strokeStyle = color; c.lineWidth = width;
+    c.lineCap = 'round'; c.lineJoin = 'round'; c.beginPath();
+    points.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); c.stroke(); c.restore();
+  }
+  function ellipse(x, y, rx, ry, color, width = 3, alpha = 1) {
+    c.save(); c.globalAlpha = alpha; c.strokeStyle = color; c.lineWidth = width;
+    c.beginPath(); c.ellipse(x, y, Math.max(.1, rx), Math.max(.1, ry), 0, 0, TAU); c.stroke(); c.restore();
+  }
+  function glow(x, y, r, color, alpha = 1) {
+    const g = c.createRadialGradient(x, y, 0, x, y, r);
+    g.addColorStop(0, '#fff8e8'); g.addColorStop(.2, color); g.addColorStop(1, 'transparent');
+    disc(x, y, r, g, alpha);
+  }
+  function star(x, y, r, color, alpha = 1, angle = 0) {
+    c.save(); c.translate(x, y); c.rotate(angle); c.globalAlpha = alpha; c.fillStyle = color;
+    c.beginPath();
+    for (let i = 0; i < 16; i++) {
+      const a = i * TAU / 16, size = i % 2 ? r * .17 : r * (i % 4 ? .55 : 1);
+      const px = Math.cos(a) * size, py = Math.sin(a) * size;
+      if (i) c.lineTo(px, py); else c.moveTo(px, py);
     }
-    // Shared impact: expanding ring, sharp starburst and outward debris.
-    if(hit>0&&hit<1&&!['shield','heal','transform','status'].includes(motion)){
-      ring(tx,ty,15+hit*105,color,1-hit,6*(1-hit)+1);
-      for(let i=0;i<18;i++){const a=i*2.399,r=18+hit*(65+i%4*14);line([[tx+Math.cos(a)*r*.7,ty+Math.sin(a)*r*.7],[tx+Math.cos(a)*r,ty+Math.sin(a)*r]],i%3?'#fff4ce':color,3,1-hit);}
+    c.closePath(); c.fill(); c.restore();
+  }
+  function flame(x, y, size, angle, alpha = 1) {
+    c.save(); c.translate(x, y); c.rotate(angle); c.globalAlpha = alpha;
+    for (const [scale, color] of [[1, '#ee4922'], [.76, '#ffad29'], [.38, '#fff5ae']]) {
+      c.save(); c.scale(size * scale, size * scale); c.fillStyle = color; c.beginPath();
+      c.moveTo(-.7, .25); c.bezierCurveTo(-1, -.65, .2, -.65, 1.6, -1.8);
+      c.quadraticCurveTo(.8, -.2, 1.35, .05); c.quadraticCurveTo(.5, 1.25, -.7, .25);
+      c.fill(); c.restore();
     }
     c.restore();
   }
-  function stop(){generation++;cancelAnimationFrame(frame);c.clearRect(0,0,W,H);}
-  function play(move){stop();const token=generation,quiet=reduced();if(quiet){render(move,1.65,true);return;}const start=performance.now();function tick(now){if(token!==generation)return;const t=(now-start)/1000;render(move,t,false);if(t<3.15)frame=requestAnimationFrame(tick);}frame=requestAnimationFrame(tick);}
+  function debris(x, y, p, color, count = 16) {
+    for (let i = 0; i < count; i++) {
+      const a = i * 2.399, r = (24 + i % 5 * 17) * p;
+      disc(x + Math.cos(a) * r, y + Math.sin(a) * r + p * p * 22, 2 + i % 3, color, 1 - p);
+    }
+  }
+  // One continuous gum-and-teeth silhouette per jaw, with curved attached fangs.
+  function jaw(x, y, color, lower) {
+    c.save(); c.translate(x, y); if (lower) c.scale(1, -1);
+    const g = c.createLinearGradient(0, -36, 0, 48);
+    g.addColorStop(0, '#fff0ff'); g.addColorStop(.22, color); g.addColorStop(.6, color); g.addColorStop(1, '#fff4db');
+    c.fillStyle = g; c.strokeStyle = color; c.lineWidth = 6; c.lineJoin = 'round';
+    c.shadowColor = color; c.shadowBlur = 15;
+    c.beginPath(); c.moveTo(-108, 25);
+    c.bezierCurveTo(-125, -28, -85, -40, -42, -34);
+    c.quadraticCurveTo(0, -43, 42, -34); c.bezierCurveTo(85, -40, 125, -28, 108, 25);
+    for (let i = 0; i < 7; i++) {
+      const x = 105 - i * 30, depth = i === 0 || i === 6 ? 49 : 33 + (i % 2) * 7;
+      c.quadraticCurveTo(x - 1, depth - 5, x - 11, depth);
+      c.quadraticCurveTo(x - 23, 14, x - 25, -3);
+      c.quadraticCurveTo(x - 27, -9, x - 30, 1);
+    }
+    c.closePath(); c.stroke(); c.fill();
+    c.shadowBlur = 0;
+    c.beginPath(); c.moveTo(-89, -19); c.quadraticCurveTo(0, -33, 89, -19);
+    c.strokeStyle = '#fff0ff'; c.lineWidth = 4; c.globalAlpha = .7; c.stroke(); c.restore();
+  }
+  function crystal(x, y, alpha, color = '#93afc6') {
+    c.save(); c.globalAlpha = alpha; c.translate(x, y);
+    c.fillStyle = color; c.strokeStyle = '#d8edff'; c.lineWidth = 2;
+    c.beginPath(); c.moveTo(0, -39); c.lineTo(25, -12); c.lineTo(19, 24); c.lineTo(0, 40); c.lineTo(-23, 14); c.lineTo(-25, -14); c.closePath(); c.fill(); c.stroke();
+    stroke([[0, -39], [-6, -6], [0, 40]], '#eaf7ff', 2, .6);
+    stroke([[-25, -14], [-6, -6], [25, -12]], '#eaf7ff', 2, .6); c.restore();
+  }
+  function fist(x, y, color, kick) {
+    c.save(); c.translate(x, y); c.rotate(kick ? -.55 : -.15);
+    c.fillStyle = color; c.strokeStyle = '#fff4d6'; c.lineWidth = 3; c.lineJoin = 'round';
+    c.beginPath();
+    if (kick) {
+      c.moveTo(-65, -19); c.lineTo(3, -19); c.quadraticCurveTo(11, -18, 13, -4);
+      c.lineTo(40, 3); c.quadraticCurveTo(57, 8, 49, 22); c.lineTo(-3, 22); c.lineTo(-21, 6); c.lineTo(-65, 6);
+    } else {
+      c.moveTo(-55, 17); c.lineTo(-28, 17); c.quadraticCurveTo(-19, 32, 1, 28);
+      c.lineTo(28, 22); c.quadraticCurveTo(39, 18, 37, 5); c.lineTo(32, -23);
+      c.quadraticCurveTo(29, -33, 18, -30); c.lineTo(-16, -27); c.quadraticCurveTo(-29, -25, -29, -8); c.lineTo(-55, -8);
+    }
+    c.closePath(); c.fill(); c.stroke();
+    if (!kick) for (let i = 0; i < 3; i++) stroke([[-11 + i * 13, -25], [-8 + i * 13, -7]], '#fff4d6', 2);
+    c.restore();
+  }
+
+  function render(move, t, quiet) {
+    const { motion, color } = classifyMove(move), supportive = SUPPORT.has(motion);
+    const travel = ease((t - .58) / .68), hit = clamp((t - 1.36) / .78);
+    const alive = t > .5 && t < 2.35, fade = 1 - clamp((t - 1.95) / .4);
+    c.clearRect(0, 0, W, H);
+    ellipse(sx, 310, 100, 15, '#a6b9e0', 2, .2);
+    if (!supportive) ellipse(tx, 310, 78, 12, '#a6b9e0', 2, .2);
+    const shake = !quiet && t > 1.36 && t < 1.62 ? Math.sin(t * 75) * 4 : 0;
+    const targetY = motion === 'psychic' && alive ? ty - Math.sin(clamp((t - .6) / 1.6) * Math.PI) * 26 : ty;
+    if (!supportive) crystal(tx + shake, targetY, t > 1.36 && t < 1.55 ? .35 : .68);
+    // Brief anticipation; no generic rings or floating balls over every attack.
+    if (t < .58 && t > .14) glow(sx, sy, 25 + t * 22, color, Math.sin((t - .14) / .44 * Math.PI) * .55);
+    c.save(); c.globalAlpha = fade;
+    if (alive) {
+      if (motion === 'fang') {
+        const close = ease((t - 1.05) / .31), gap = 75 - close * 57;
+        const appear = ease((t - .5) / .22);
+        c.save(); c.translate(tx, ty); c.scale(appear, appear); c.translate(-tx, -ty);
+        jaw(tx, ty - gap, color, false); jaw(tx + 5, ty + gap, color, true);
+        if (hit > 0) {
+          glow(tx, ty, 82 * (1 - hit) + 10, color, .8 * (1 - hit));
+          star(tx, ty, 69 * (1 - hit), '#fff9ed', 1 - hit, .3);
+          if (move.effect === 'fire') for (let i = 0; i < 9; i++) flame(tx - 80 + i * 20, ty + 40 - hit * 30, 13 + i % 3 * 4, -.4, 1 - hit);
+          else if (move.effect === 'ice') for (let i = 0; i < 10; i++) star(tx + Math.cos(i * 2.4) * hit * 95, ty + Math.sin(i * 2.4) * hit * 65, 8, '#d7fbff', 1 - hit);
+          else debris(tx, ty, hit, color, 25);
+        }
+        if (move.effect === 'fire') for (let i = 0; i < 8; i++) flame(tx - 95 + i * 27, ty - gap - 20, 9 + Math.sin(t * 14 + i) * 3, -.5);
+        c.restore();
+      } else if (motion === 'flame') {
+        if (move.id === 'ember' || move.id === 'fire-spin') {
+          for (let i=0;i<9;i++) {const p=(t*.8+i/9)%1;const spin=move.id==='fire-spin';const x=spin?tx+Math.cos(p*TAU*2)*43:sx+(tx-sx)*p;const y=spin?ty+65-p*130:sy+Math.sin(i*7)*17;flame(x,y,spin?15:10+i%3*3,-.4);}
+        } else {
+        const end = sx + (tx - sx) * travel;
+        const beam = c.createLinearGradient(sx, sy, end + 30, sy);
+        beam.addColorStop(0, '#fff9c9'); beam.addColorStop(.4, '#ffd04c'); beam.addColorStop(1, '#ef4c22');
+        c.fillStyle = beam; c.beginPath(); c.moveTo(sx, sy - 5);
+        c.bezierCurveTo(sx + 80, sy - 9, end - 55, sy - 40, end + 25, sy - 21);
+        c.lineTo(end + 5, sy + 22); c.bezierCurveTo(end - 55, sy + 34, sx + 80, sy + 9, sx, sy + 5); c.closePath(); c.fill();
+        for (let i = 0; i < 15; i++) {
+          const p = (i / 15 + t * 1.5) % 1;
+          flame(sx + (end - sx) * p, sy + Math.sin(i * 9 + t * 12) * (5 + p * 15), 9 + p * 12, .75);
+        }
+        if (hit > 0) for (let i = 0; i < 9; i++) flame(tx + Math.sin(i * 7) * 42, ty + 35 - hit * 66, 15 + i % 3 * 5, -.6, 1 - hit * .6);
+        if (move.id === 'fire-blast' && t > 1.1) {
+          const p = [[0,-65],[0,-22],[-63,-22],[0,-22],[62,-22],[0,-22],[-43,65],[0,-5],[45,65]];
+          stroke(p.map(([x,y])=>[tx+x,ty+y]), '#ee431b', 21);
+          stroke(p.map(([x,y])=>[tx+x,ty+y]), '#fff1a2', 8);
+        }
+        }
+      } else if (motion === 'bolt') {
+        // Thunder strikes downward and wraps the target; it is not a beam from the mouth.
+        for (let b = 0; b < 3; b++) {
+          const jitter = Math.floor(t * 14) % 3;
+          const x = tx + (b - 1) * 34;
+          const points = [[x - 8, 32], [x + 12, 80], [x - 15 - jitter * 4, 103], [x + 17, 144], [x - 8, ty + 23]];
+          stroke(points, '#d99120', 13, .5); stroke(points, '#ffdc3d', 7); stroke(points, '#fffbd1', 2);
+        }
+        for (let i = 0; i < 6; i++) {
+          const a = i * TAU / 6 + Math.floor(t * 12) * .4;
+          stroke([[tx + Math.cos(a) * 23, ty + Math.sin(a) * 28], [tx + Math.cos(a + .3) * 57, ty + Math.sin(a + .3) * 58], [tx + Math.cos(a) * 73, ty + Math.sin(a) * 76]], '#ffe66a', 3);
+        }
+        glow(tx, ty, 67, color, .4);
+      } else if (motion === 'psychic') {
+        glow(tx, targetY, 98, color, .48);
+        for (let i = 0; i < 3; i++) {
+          const p = (t * .8 + i / 3) % 1;
+          ellipse(tx, targetY, 32 + p * 53, 52 + p * 35, color, 3, 1 - p);
+        }
+        for (let i = 0; i < 5; i++) star(tx + Math.cos(i * 2.4 + t) * 62, targetY + Math.sin(i * 2.4 + t) * 60, 7, '#f6d4ff', .8);
+      } else if (motion === 'ball') {
+        const arrive = ease((t - .66) / .7), x = sx + (tx - sx) * arrive;
+        const radius = t < 1.36 ? 24 : 24 + hit * 72;
+        if (t < 1.36) for (let i = 1; i <= 5; i++) disc(x - i * 11, sy, 24 - i * 3, color, .12);
+        glow(x, sy, radius * 1.6, color, t < 1.36 ? .75 : 1 - hit);
+        const g = c.createRadialGradient(x - radius * .3, sy - radius * .3, 1, x, sy, radius);
+        g.addColorStop(0, move.effect === 'shadowball' ? '#d4a0ff' : '#fff');
+        g.addColorStop(.35, color); g.addColorStop(1, move.effect === 'shadowball' ? '#28103e' : '#3174bd');
+        disc(x, sy, radius, g, t < 1.36 ? 1 : 1 - hit);
+        ellipse(x, sy, radius * .85, radius * .43, '#e9d3ff', 2, .7 * (1 - hit));
+      } else if (motion === 'liquid' || motion === 'beam') {
+        const end = sx + (tx - sx) * travel;
+        if (/bubble/.test(move.id)) {
+          for (let i = 0; i < 13; i++) { const p = (i / 13 + t) % 1, x = sx + (end - sx) * p, y = sy + Math.sin(i * 4) * 24; disc(x,y,7+i%4*2,color,.5); ellipse(x,y,7+i%4*2,7+i%4*2,'#e1faff',2,.9); }
+        } else {
+          stroke([[sx,sy],[end,sy]], color, motion === 'beam' ? 28 : 22, .35);
+          stroke([[sx,sy],[end,sy]], color, motion === 'beam' ? 18 : 14);
+          stroke([[sx,sy-2],[end,sy-2]], '#e9ffff', 5, .85);
+          if (motion === 'liquid') for (let i = 0; i < 8; i++) { const p=(t*1.3+i/8)%1; ellipse(sx+(end-sx)*p,sy,4,10,color,2,.8); }
+        }
+        if (hit > 0) debris(tx, ty, hit, color, 28);
+      } else if (motion === 'slash') {
+        const p = clamp((t - .68) / .55);
+        for (let i = 0; i < 3; i++) {
+          c.save(); c.globalAlpha = 1 - hit; c.strokeStyle = color; c.lineWidth = 11; c.lineCap = 'round';
+          c.beginPath(); c.moveTo(tx - 58 + i * 32, ty - 75); c.quadraticCurveTo(tx - 42 + i * 32, ty - 40 + p * 80, tx - 22 + i * 32 + p * 30, ty - 75 + p * 155); c.stroke();
+          c.strokeStyle = '#fff6e9'; c.lineWidth = 3; c.stroke(); c.restore();
+        }
+      } else if (motion === 'needle') {
+        for (let i=0;i<5;i++) { const p=clamp((t-.58-i*.08)/.65),x=sx+(tx-sx)*p,y=sy+(i-2)*12; stroke([[x-36,y],[x,y]],color,4); c.fillStyle='#f2d9ff'; c.beginPath();c.moveTo(x+8,y);c.lineTo(x-9,y-5);c.lineTo(x-9,y+5);c.closePath();c.fill(); }
+      } else if (motion === 'wind') {
+        for(let i=0;i<4;i++){const p=(t*.9+i/4)%1;const x=sx+(tx-sx)*p;ellipse(x,sy,12+i*3,24+i*9,color,3,1-p*.6);}
+      } else if (motion === 'leaf') {
+        if (move.id === 'vine-whip') {
+          for (let i=0;i<2;i++) {c.save();c.strokeStyle=i?'#b0dc77':'#4a9a51';c.lineWidth=i?4:12;c.lineCap='round';c.beginPath();c.moveTo(sx,sy+18);c.bezierCurveTo(sx+80,sy-100*travel,tx-55,ty+90*travel,tx-8,ty-25+Math.sin(t*10)*14);c.stroke();c.restore();}
+        } else for(let i=0;i<12;i++){const p=(t*.9+i/12)%1,x=sx+(tx-sx)*p,y=sy+Math.sin(i*3+p*4)*34;c.save();c.translate(x,y);c.rotate(t*4+i);c.fillStyle=color;c.beginPath();c.moveTo(-17,0);c.quadraticCurveTo(0,-18,18,0);c.quadraticCurveTo(0,17,-17,0);c.fill();stroke([[-15,0],[16,0]],'#e5f8ad',1);c.restore();}
+      } else if (motion === 'ice') {
+        for(let i=0;i<7;i++){const a=i*TAU/7,x=tx+Math.cos(a)*43,y=ty+Math.sin(a)*40;star(x,y,18,'#b7f0ff',.9,t);}
+        if(hit>0)debris(tx,ty,hit,'#d9ffff');
+      } else if (motion === 'rock') {
+        if (/earthquake|earth-power|dig/.test(move.id)) {
+          for(let i=0;i<5;i++){const x=tx-70+i*34;stroke([[x,275],[x+14,255],[x+4,241],[x+20,221]],'#d3ac76',4,travel);crystal(x,264-travel*(28+i%3*13),.9,color);}
+        } else for(let i=0;i<5;i++){const p=clamp((t-.6-i*.08)/.6),x=sx+(tx-sx)*p,y=sy-Math.sin(p*Math.PI)*74+(i-2)*19;crystal(x,y,1,color);}
+      } else if (motion === 'shield') {
+        c.save();c.translate(sx,sy);c.fillStyle=color;c.globalAlpha=.2;c.beginPath();c.moveTo(-59,-62);c.quadraticCurveTo(0,-82,59,-62);c.lineTo(52,15);c.quadraticCurveTo(30,61,0,80);c.quadraticCurveTo(-30,61,-52,15);c.closePath();c.fill();c.globalAlpha=.9;c.strokeStyle=color;c.lineWidth=4;c.stroke();stroke([[-32,-39],[0,-48],[31,-39]],'#effaff',3,.7);c.restore();
+      } else if (motion === 'heal') {
+        glow(sx,sy,100,'#91e9b1',.35);
+        for(let i=0;i<7;i++){const p=(t*.55+i/7)%1,x=sx+Math.sin(i*5)*53,y=sy+65-p*135;stroke([[x-7,y],[x+7,y]],'#b5ffd1',4,1-p);stroke([[x,y-7],[x,y+7]],'#b5ffd1',4,1-p);}
+      } else if (motion === 'transform') {
+        for(let i=0;i<5;i++)ellipse(sx,sy,30+i*13,70-i*7,color,3,.65);
+        glow(sx,sy,90,color,.5);
+      } else if (motion === 'status') {
+        if (/powder|spore|smoke/.test(move.id)) {
+          for(let i=0;i<22;i++){const p=(t*.4+i/22)%1,x=sx+(tx-sx)*p,y=sy+Math.sin(i*3+t)*43;disc(x,y,3+i%3,color,.5);}
+        } else for(let i=0;i<4;i++){const p=(t*.8+i/4)%1;ellipse(sx+40+p*170,sy,8+p*12,16+p*25,color,3,1-p);}
+      } else if (motion === 'punch' || motion === 'kick') {
+        const x=sx+(tx-sx)*travel;for(let i=0;i<4;i++)stroke([[x-86,sy+(i-2)*14],[x-45,sy+(i-2)*14]],color,3,.6);
+        fist(x,sy,color,motion==='kick');
+        if(hit>0 && move.effect==='fire')for(let i=0;i<6;i++)flame(tx+Math.sin(i*4)*35,ty+Math.cos(i*4)*30,16,-.7,1-hit);
+      } else {
+        // Body/contact moves have impact streaks, never an unrelated fist or jaw.
+        for(let i=0;i<6;i++)stroke([[tx-115,ty+(i-3)*16],[tx-35,ty+(i-3)*10]],color,3,travel*.75);
+        if(t>1.16)star(tx,ty,64,'#fff1d1',1-hit,.3);
+      }
+    }
+    c.restore();
+    if (hit > 0 && hit < 1 && !supportive) {
+      // One sharp contact flash followed by a short outward burst.
+      star(tx, ty, 58 * (1-hit), '#fff7de', .85 * (1-hit), .25);
+      if (motion !== 'fang') debris(tx, ty, hit, color, 12);
+    }
+  }
+  function stop() { generation++; cancelAnimationFrame(frame); c.clearRect(0,0,W,H); }
+  function play(move) {
+    stop(); const token=generation, quiet=reduced();
+    if(quiet){render(move,1.5,true);return;}
+    const start=performance.now();
+    function tick(now){if(token!==generation)return;const t=(now-start)/1000;render(move,t,false);if(t<2.85)frame=requestAnimationFrame(tick);}
+    frame=requestAnimationFrame(tick);
+  }
   return {play,stop};
 }

@@ -21,11 +21,11 @@ select{width:100%;font:inherit;font-size:16px;color:var(--ink);border:1px solid 
 .celebration-reward{display:inline-block;font-size:42px;font-weight:900;letter-spacing:-1px;color:#7545b2;background:#ffffffb0;border-radius:18px;padding:7px 28px;margin:10px 0}
 #celebration-message{font-size:12px;line-height:1.7;color:#756080;margin-bottom:20px}
 #celebration-continue{width:100%;min-height:50px}#celebration-replay{font-size:12px;background:transparent;margin-top:8px}
-.celebration.playing .celebration-reward{animation:reward-pop .65s 2.5s ease-out both}
+.celebration.playing .celebration-reward{animation:reward-pop .65s 1.95s ease-out both}
 @keyframes reward-pop{0%{opacity:0;transform:translateY(10px) scale(.8)}70%{opacity:1;transform:scale(1.08)}100%{opacity:1;transform:none}}
 @media(max-height:740px){.celebration{padding-top:20px}.celebration h2{font-size:24px}.celebration-reward{font-size:34px}.celebration>.eyebrow{margin-top:8px}}
 @media(prefers-reduced-motion:reduce){.celebration.playing *{animation:none!important}}
-.partner-card{margin-top:20px;display:grid;grid-template-columns:minmax(0,1fr) 100px;gap:12px;align-items:center;background:linear-gradient(135deg,#f2e9ff,#fff5df)}.partner-card h2{margin:8px 0}.partner-card label{font-size:12px}.partner-card>img{width:100px;height:110px;object-fit:contain}.partner-card>p{grid-column:1/-1;font-size:12px;line-height:1.7;color:#765b92}.partner-moves{grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.partner-moves button{font-size:12px;padding:12px 6px;overflow-wrap:anywhere}
+.partner-card{margin-top:20px;display:grid;grid-template-columns:minmax(0,1fr) 100px;gap:12px;align-items:center;background:linear-gradient(135deg,#f2e9ff,#fff5df)}.partner-card h2{margin:8px 0}.partner-card label{font-size:12px}.partner-card>img{width:100px;height:110px;object-fit:contain}.partner-card>p{grid-column:1/-1;font-size:12px;line-height:1.7;color:#765b92}.partner-moves{grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.partner-move-chip{font-size:12px;padding:12px 6px;overflow-wrap:anywhere;background:#ffffffa8;border:1px solid #dcd0ed;border-radius:12px;text-align:center;font-weight:700;color:#71528e}
 /* The move scene uses a full arena with charge, release, impact and settling. */
 .celebration{width:min(calc(100% - 24px),580px);background:linear-gradient(145deg,#f9f4ff,#eae6ff 55%,#fcebf5)}
 .celebration .psychic-stage{height:auto;aspect-ratio:700/380;margin:18px -14px 12px;border:1px solid #66739c;border-radius:18px;background:radial-gradient(ellipse at 72% 42%,#32475d,#182c46 44%,#111c35 85%);box-shadow:inset 0 0 40px #080d22,0 8px 18px #28204120;overflow:hidden}
@@ -33,9 +33,15 @@ select{width:100%;font:inherit;font-size:16px;color:var(--ink);border:1px solid 
 .celebration .move-canvas{position:absolute;inset:0;width:100%;height:100%;z-index:3;pointer-events:none}
 .celebration .psychic-mewtwo{left:26%;top:13%;width:43%;height:74%;object-fit:contain;z-index:2;filter:drop-shadow(0 8px 3px #050b2699)}
 .celebration .psychic-stage :is(.psychic-aura,.psychic-ring,.psychic-star,.floating-ball,.psychic-mew,.reward-ball,.move-symbol,.move-orb,.move-beam,.move-fangs,.move-drops){display:none!important}
-.celebration.playing .psychic-mewtwo,.celebration.playing:not([data-motion="psychic"]) .psychic-mewtwo{animation:scene-cast 3.15s ease-in-out both!important}
-.celebration.playing:is([data-motion="shield"],[data-motion="heal"],[data-motion="transform"],[data-motion="status"]) .psychic-mewtwo{animation:scene-support 3.15s ease-in-out both!important}
+.celebration.playing .psychic-mewtwo,.celebration.playing:not([data-motion="psychic"]) .psychic-mewtwo{animation:scene-cast 2.85s ease-in-out both!important}
+.celebration.playing:is([data-motion="shield"],[data-motion="heal"],[data-motion="transform"],[data-motion="status"]) .psychic-mewtwo{animation:scene-support 2.85s ease-in-out both!important}
 .move-sound-toggle{font-size:12px;margin:0 0 12px;border:1px solid #d9cdeb}
 @keyframes scene-cast{0%{transform:translateX(-50%) scale(1)}15%{transform:translateX(-55%) scale(.96);filter:drop-shadow(0 0 8px var(--move-color))}25%{transform:translateX(-50%) scale(1.04);filter:drop-shadow(0 0 12px var(--move-color))}38%{transform:translateX(-42%) rotate(3deg) scale(1.04)}55%,100%{transform:translateX(-50%) scale(1);filter:drop-shadow(0 8px 3px #050b2699)}}
 @keyframes scene-support{0%,100%{transform:translateX(-50%)}40%,65%{transform:translateX(-50%) translateY(-6px);filter:drop-shadow(0 0 18px var(--move-color))}}
 @media(prefers-reduced-motion:reduce){.celebration.playing .psychic-mewtwo,.celebration.playing:not([data-motion="psychic"]) .psychic-mewtwo{animation:none!important}}
+
+.celebration.playing:is([data-motion="fang"],[data-motion="punch"],[data-motion="kick"],[data-motion="impact"],[data-motion="slash"]) .psychic-mewtwo{animation:scene-contact 2.85s ease-in-out both!important}
+.celebration.playing[data-motion="psychic"] .psychic-mewtwo{animation:scene-focus 2.85s ease-in-out both!important}
+@keyframes scene-contact{0%,18%,100%{transform:translateX(-50%)}25%{transform:translateX(-57%) scale(.98)}43%{transform:translateX(-29%) scale(1.03)}52%{transform:translateX(-34%)}68%{transform:translateX(-50%)}}
+@keyframes scene-focus{0%,100%{transform:translateX(-50%)}28%,64%{transform:translateX(-50%) translateY(-5px);filter:drop-shadow(0 0 9px var(--move-color))}}
+@media(prefers-reduced-motion:reduce){.celebration.playing:is([data-motion]) .psychic-mewtwo{animation:none!important}}
