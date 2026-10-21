@@ -1,4 +1,4 @@
-import { REGIONS } from './collection.js?v=seven-regions-shiny';
+import { REGIONS } from './collection.js?v=daily-words-60';
 
 export const QUESTIONS = [
   { id: 'tree', picture: '🌳', word: '', reading: '나무', prompt: '그림에 맞는 낱말을 골라볼까?', answer: '나무', choices: ['나무', '나비', '누나'], hint: '나무! “나” 하고 천천히 읽어 봐.' },
@@ -89,9 +89,8 @@ export const DIFFICULTIES = {
 export function createQuiz(random = Math.random, completed = [], difficulty = 'easy') {
   const level = DIFFICULTIES[difficulty] ? difficulty : 'easy';
   const fresh = shuffled(QUESTIONS.filter(q => !completed.includes(q.id)), random);
-  const review = shuffled(QUESTIONS.filter(q => completed.includes(q.id)), random);
   return { index: 0, answered: false, selected: [], difficulty: level,
-    questions: [...fresh, ...review].slice(0, 5).map(q => {
+    questions: fresh.slice(0, 5).map(q => {
       const reading = q.reading ?? q.word.replace('□', q.answer);
       if (level === 'hard' || level === 'easy') return { ...q, reading, word: '□'.repeat(reading.length), answer: reading,
         prompt: '글자를 순서대로 눌러 낱말을 만들어볼까?', choices: shuffled([...reading], random) };
@@ -200,6 +199,7 @@ export function setupHangulQuiz({ getState, confirmMission, notify, speech, coll
     $('#quiz-question-area').hidden = finished;
     $('#quiz-finish-area').hidden = !finished;
     $('#quiz-progress').textContent = finished ? '오늘의 작은 도전 성공!' : `${DIFFICULTIES[quiz.difficulty].name} · ${quiz.index + 1} / ${quiz.questions.length} 퀘스트`;
+    $('#quiz-progress-bar').max = quiz.questions.length;
     $('#quiz-progress-bar').value = quiz.index;
     $('#quiz-dialog').scrollTop = 0;
     if (finished) {
@@ -207,8 +207,8 @@ export function setupHangulQuiz({ getState, confirmMission, notify, speech, coll
       $('#quiz-claim').disabled = !mission();
       $('#quiz-claim').focus();
       const waiting = collection.pendingCount();
-      $('#quiz-finish-area h3').textContent = waiting ? '탐험 성공! 야생 포켓몬을 발견했어!' : '다섯 문제 성공! 잘했어, 연우!';
-      say(waiting ? `${REGIONS[region].name} 탐험 성공! 누가 나타났을까?` : '다섯 문제 성공! 복습도 멋져!');
+      $('#quiz-finish-area h3').textContent = waiting ? '탐험 성공! 야생 포켓몬을 발견했어!' : `${quiz.questions.length}문제 성공! 잘했어, 연우!`;
+      say(waiting ? `${REGIONS[region].name} 탐험 성공! 누가 나타났을까?` : `${quiz.questions.length}문제 성공! 오늘도 멋져!`);
       collection.finishRound();
       return;
     }
@@ -318,7 +318,8 @@ export function setupHangulQuiz({ getState, confirmMission, notify, speech, coll
     const state = getState();
     region = document.querySelector('input[name="adventure-region"]:checked')?.value ?? 'forest';
     walkSteps = collection.explorationProgress(region);
-    const completed = collection.completedAtDifficulty($('#quiz-difficulty').value);
+    const completed = collection.completedToday();
+    if (QUESTIONS.every(q => completed.includes(q.id))) { notify('오늘의 낱말을 모두 탐험했어! 내일 다시 만나자!'); say('오늘의 낱말을 모두 탐험했어! 정말 잘했어! 내일 다시 만나자!'); return; }
     quiz = createQuiz(Math.random, completed, $('#quiz-difficulty').value); $('#quiz-collection-note').textContent = `${REGIONS[region].name}에서 새로운 문제 5개를 성공하고 야생 포켓몬을 만나자!`; render(); $('#quiz-dialog').showModal();
   });
   $('#quiz-next').addEventListener('click', advanceQuestion);

@@ -1404,6 +1404,7 @@ export function setupCollection({ getState, save, speech }) {
     render,
     explorationProgress(region) { return explorationProgress(getState(), region); },
     pendingCount() { return visibleEncounters(getState()).length; },
+    completedToday() { return [...ensureCollection(getState()).questions]; },
     completedAtDifficulty(level) { return completedAtDifficulty(getState(), level); },
     recordCorrect(questionId, level, region = 'forest') {
       const result = recordExploration(getState(), questionId, level, region);

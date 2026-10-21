@@ -41,7 +41,7 @@ test('new quests are preferred over same-day review', () => {
   const completed = first.questions.map(q => q.id);
   const next = createQuiz(() => 0.4, completed);
   assert.ok(next.questions.every(q => !completed.includes(q.id)));
-  assert.equal(createQuiz(() => 0.4, QUESTIONS.map(q => q.id)).questions.length, 5);
+  assert.equal(createQuiz(() => 0.4, QUESTIONS.map(q => q.id)).questions.length, 0);
 });
 test('three levels keep quest identity but present different tasks', () => {
   const easy = createQuiz(() => 0.4, [], 'easy');
@@ -132,4 +132,15 @@ test('60 distinct pictured words allow twelve adventures without same-day repeat
   }
  }
  assert.equal(new Set(completed).size,60);
+});
+
+test('today completed words never return even at a different difficulty or at the end of the bank', () => {
+ const easy=createQuiz(()=>0.4,[],'easy');
+ const done=easy.questions.map(q=>q.id);
+ const medium=createQuiz(()=>0.4,done,'medium');
+ assert.ok(medium.questions.every(q=>!done.includes(q.id)));
+ const allButTwo=QUESTIONS.slice(0,-2).map(q=>q.id);
+ assert.equal(createQuiz(()=>0.4,allButTwo,'hard').questions.length,2);
+ assert.equal(createQuiz(()=>0.4,QUESTIONS.map(q=>q.id),'easy').questions.length,0);
+ assert.equal(createQuiz(()=>0.4,[],'easy').questions.length,5);
 });
