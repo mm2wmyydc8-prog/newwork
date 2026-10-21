@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#7550b7">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="연우의 포켓몬 모험">
+  <meta name="description" content="연우의 미션과 보상 시간을 모으는 작은 모험">
+  <title>연우의 포켓몬 모험</title>
+  <link rel="icon" href="assets/masterball.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="assets/touch-icon.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="celebration.css?v=mission-moves">
+  <link rel="stylesheet" href="hangul.css?v=seven-regions-shiny">
+  <link rel="stylesheet" href="collection.css?v=seven-regions-shiny">
+  <link rel="stylesheet" href="trainer.css?v=upper-body">
+  <script type="module" src="app.js?v=seven-regions-shiny"></script>
+</head>
+<body>
+  <main>
+    <p class="notice" style="margin-bottom:16px;text-align:center">🌳 7개 지역 모험 · 숲 / 바다 / 동굴 / 발전소 / 폐가 / 얼음지대 / 화산지대</p>
+    <header class="topbar"><a href="#" class="brand"><img src="assets/masterball.svg" alt="">연우의 포켓몬 모험</a><button id="parent-open" class="quiet">🔒 부모님</button></header>
+    <section class="hero">
+      <div class="hero-copy"><span class="eyebrow">✦ 연우의 오늘 모험</span><h1>뮤·뮤츠와 함께<br>미션 출발!</h1><p>작은 도전으로 즐거운 시간을 모으자.</p></div>
+      <div class="companions"><figure><img src="assets/mew.png" alt="뮤" width="475" height="475"><figcaption>뮤 <span>작은 도전도 좋아!</span></figcaption></figure><figure><img src="assets/mewtwo.png" alt="뮤츠" width="475" height="475"><figcaption>뮤츠 <span>연우, 넌 할 수 있어!</span></figcaption></figure></div>
+    </section>
+    <button id="welcome-speak" class="welcome-speak">🔊 연우야, 여기를 눌러 봐! · 사용 방법 듣기</button>
+    <section class="card collection-card"><div class="section-heading"><div><span class="eyebrow">YEONWOO'S POKÉDEX</span><h2>연우의 포켓몬 도감</h2></div><button id="pokedex-open" class="secondary">도감 보기</button></div><p><strong id="collection-count">0 / 151모습</strong> · <span id="collection-total">누적 퀘스트 0개 성공</span></p><progress id="collection-progress" value="0" max="5" aria-label="다음 포켓몬까지 퀘스트 진행"></progress><p id="collection-stone" class="notice" hidden></p><p id="collection-shiny" class="collection-shiny" hidden></p><p id="collection-next">이상해씨까지 퀘스트 5개!</p><p class="collection-footnote">쉬움: 기본 · 보통 이상: 희귀·전설 · 어려움: 상위 전설·환상<br>같은 낱말도 더 높은 난이도로 성공하면 도전 실적이 올라가요.</p></section>
+    <section class="card hangul-card"><img src="assets/mew.png" alt="응원하는 뮤"><div class="hangul-copy"><span class="eyebrow">뮤와 함께 떠나는 퀘스트</span><h2>연우의 포켓몬 모험</h2><p>뮤의 퀘스트를 풀고 포켓몬을 만나자!<br>문제·힌트 자동 읽기 · 보기마다 🔊 듣기</p><label for="quiz-difficulty" class="difficulty-label">모험 난이도</label><select id="quiz-difficulty"><option value="easy">쉬움 · 낱말 순서대로 만들기</option><option value="medium">보통 · 낱말 읽고 그림 찾기</option><option value="hard">어려움 · 낱말 순서대로 만들기</option></select><p id="difficulty-help" class="difficulty-help"></p><fieldset class="adventure-regions"><legend>어디로 모험을 떠날까?</legend><label><input type="radio" name="adventure-region" value="forest" checked><span>🌳<strong>숲</strong></span></label><label><input type="radio" name="adventure-region" value="sea"><span>🌊<strong>바다</strong></span></label><label><input type="radio" name="adventure-region" value="cave"><span>🪨<strong>동굴</strong></span></label><label><input type="radio" name="adventure-region" value="powerplant"><span>⚡<strong>발전소</strong></span></label><label><input type="radio" name="adventure-region" value="haunted"><span>👻<strong>폐가</strong></span></label><label><input type="radio" name="adventure-region" value="ice"><span>❄️<strong>얼음지대</strong></span></label><label><input type="radio" name="adventure-region" value="volcano"><span>🌋<strong>화산지대</strong></span></label></fieldset><p class="adventure-help">새로운 문제 5개 성공 → 야생 포켓몬 발견!</p><button id="pending-captures" class="secondary" hidden>만나둔 포켓몬 포획하기</button><button id="hangul-start" class="primary">🔊 모험 떠나기 ✦</button></div></section>
+    <div class="dashboard">
+      <section class="card timer-card" aria-labelledby="timer-title">
+        <span class="eyebrow" id="timer-title">⏱ 연우의 남은 시간</span>
+        <div id="clock" class="clock" role="timer" aria-label="남은 시간">00:30:00</div>
+        <p id="timer-message">준비됐어, 연우? 시작을 눌러 봐!</p>
+        <div class="timer-actions"><button id="toggle-timer" class="primary">▶ 보기 시작</button><button id="stop-timer" class="secondary">다 봤어요</button></div>
+        <p class="footnote">TV·패드로 볼 때 직접 시작하고 멈춰요.<br>체험판에서는 TV가 자동으로 꺼지지 않아요.</p>
+      </section>
+      <section class="card bank-card"><img src="assets/masterball.svg" class="bank-ball" alt="마스터볼"><span class="eyebrow">연우의 마스터 시간볼</span><h2 id="total-time">30분</h2><p id="budget-detail">기본 30분 + 오늘 보상 0분</p><div class="bank-note">오늘 받은 총시간이에요.<br>이미 본 시간도 포함돼요.</div><div class="move-unlock"><span id="unlock-label"></span><progress id="unlock-progress" max="60" value="0" aria-label="사이코키네시스 해금까지 오늘 모은 미션 보상 시간"></progress><small>오늘 미션 보상 60분이면 해금! 시청·차감과 관계없어요</small></div></section>
+    </div>
+
+    <section class="card missions"><div class="section-heading"><div><span class="eyebrow">MISSION QUEST</span><h2>오늘의 퀘스트</h2></div><button id="mission-add-shortcut" class="round" aria-label="부모님 확인 후 미션 추가">＋</button></div><div id="mission-list" class="mission-grid"></div><p class="footnote">미션을 누르고 부모님께 완료 확인을 받아요.<br>미션 보상은 오늘만 적용돼요.</p></section>
+    <section class="history"><div class="section-heading"><h2>✦ 연우의 모험 기록</h2><span class="small">최근 기록</span></div><div id="history-list"></div></section>
+    <footer>연우를 위한 작은 모험 · 웹 체험판<br>기록은 지금 쓰는 브라우저에만 저장돼요.<br><a href="https://github.com/mm2wmyydc8-prog/newwork/blob/main/ARTWORK.md">캐릭터 그림 출처</a></footer>
+  </main>
+  <div id="toast" role="status" aria-live="polite"></div>
+
+  <dialog id="pokedex-dialog" class="pokedex-dialog" aria-labelledby="pokedex-title"><div class="dialog-heading"><h2 id="pokedex-title">연우의 포켓몬 도감</h2><button type="button" data-close="pokedex-dialog" class="round" aria-label="도감 닫기">×</button></div><div class="pokedex-layout"><aside class="trainer-panel"><div class="trainer-character"><img src="assets/trainer-body.svg?v=upper-body" class="trainer-body" alt="모자와 파란 조끼를 입은 연우 트레이너의 상반신"><div class="trainer-face" data-saved><img class="trainer-photo" alt="연우 얼굴 사진" hidden></div><img src="assets/trainer-cap.svg" class="trainer-cap" alt=""></div><span class="eyebrow">POKÉMON TRAINER</span><h3>트레이너 연우</h3><p id="trainer-summary">친구 0마리 · 퀘스트 0개 성공</p><small>사진을 골라 연우의 얼굴을 넣어봐요.</small><div class="trainer-file-field"><label for="trainer-upload-pokedex">📷 얼굴 사진 선택</label><input id="trainer-upload-pokedex" data-trainer-upload type="file" accept="image/*"></div><p data-trainer-status class="trainer-photo-notice" role="status"></p></aside><div class="pokedex-content"><p class="notice">그림자가 보이면 아직 모험 중인 친구예요. 퀘스트를 모아 만나보자! 도감과 누적 기록은 이 브라우저에 저장돼요.</p><label id="pokedex-form-label" for="pokedex-form" hidden>모습 선택</label><select id="pokedex-form" hidden><option value="normal">기본 모습</option><option value="shiny">✦ 이로치 · 색이 다른 모습</option></select><label for="pokedex-filter">어떤 친구들을 볼까?</label><select id="pokedex-filter"><option value="all">전체</option><option value="owned">연우가 만난 친구</option><option value="기본">기본 포켓몬</option><option value="희귀">희귀 포켓몬</option><option value="전설">전설 포켓몬</option><option value="상위 전설">상위 전설</option><option value="환상">환상 포켓몬</option></select><button id="legendary-preview" class="legendary-preview" type="button">✦ 전설 등장 연출 미리보기</button><button id="shiny-preview" hidden class="legendary-preview shiny-preview" type="button">✦ 이로치 뮤츠 포획 미리보기</button><div id="pokedex-grid" class="pokedex-grid"></div></div></div></dialog>
+  <dialog id="stone-dialog" aria-labelledby="stone-title"><span class="eyebrow">SECRET REWARD!</span><h2 id="stone-title">💎 뮤츠나이트 획득!</h2><p>연우야, 퀴즈 100개 성공! 정말 멋져!</p><p>뮤츠에게는 <strong>메가뮤츠 X·Y</strong>라는 특별한 모습이 있대!</p><p>이제 도감에서 만나볼 수 있어. 앞으로 각각 포획하면 뮤츠나이트로 특별한 기술을 쓸 수 있어!</p><button type="button" class="primary" data-close="stone-dialog">새로운 모험 시작!</button></dialog>
+  <dialog id="capture-dialog" class="capture-dialog" aria-labelledby="capture-title"><span id="capture-label" class="eyebrow">NEW FRIEND!</span><span id="capture-shiny-badge" class="capture-shiny-badge" hidden>✦ 이로치 · 색이 다른 포켓몬 ✦</span><h2 id="capture-title">새 포켓몬을 만났어!</h2><div class="capture-art"><div class="capture-ring" aria-hidden="true"></div><div class="capture-sparks" aria-hidden="true"><i>✦</i><i>✦</i><i>✦</i><i>✦</i><i>✦</i><i>✦</i><i>✦</i><i>✦</i></div><img id="capture-image" src="assets/bulbasaur.png" alt="이상해씨"><div class="capture-absorb" aria-hidden="true"></div><div id="capture-ball" class="capture-ball" role="button" tabindex="0" aria-label="몬스터볼을 위로 밀어 던지기"><span class="ball-top"></span><span class="ball-bottom"></span></div><div class="caught-stars" aria-hidden="true">✦ ✧ ✦</div></div><span id="capture-rarity" class="rarity">첫 파트너</span><h3 id="capture-name">이상해씨</h3><p id="capture-message"></p><p id="capture-gesture-hint" class="capture-gesture-hint">☝️ 볼을 위로 슥 밀어 던져봐! 아래 버튼으로도 던질 수 있어.</p><button id="capture-continue" class="primary">몬스터볼 던지기! ✦</button><button id="capture-skip" class="quiet" hidden>연출 건너뛰기</button><button id="capture-replay" class="quiet" hidden>↻ 포획 다시 보기</button></dialog>
+
+<dialog id="trainer-dialog" aria-labelledby="trainer-title"><div class="dialog-heading"><h2 id="trainer-title">연우 얼굴 맞추기</h2><button type="button" data-close="trainer-dialog" class="round" aria-label="얼굴 편집 닫기">×</button></div><div id="trainer-preview"><div class="trainer-character"><img src="assets/trainer-body.svg?v=upper-body" class="trainer-body" alt="모자와 파란 조끼를 입은 연우 트레이너의 상반신"><div class="trainer-face"><img class="trainer-photo" alt="연우 얼굴 사진" hidden></div><img src="assets/trainer-cap.svg" class="trainer-cap" alt=""></div></div><p class="trainer-photo-notice">얼굴이 가운데 오도록 위치와 크기를 조절하세요. 자동 얼굴 인식은 하지 않아요.</p><label for="face-zoom">얼굴 확대</label><input id="face-zoom" type="range" min="1" max="3" step="0.05" value="1"><label for="face-x">좌우 위치</label><input id="face-x" type="range" min="-50" max="50" step="1" value="0"><label for="face-y">위아래 위치</label><input id="face-y" type="range" min="-50" max="50" step="1" value="0"><button id="trainer-save" class="primary">이 얼굴로 저장</button></dialog>
+  <dialog id="quiz-dialog" class="quiz-dialog" aria-labelledby="quiz-title">
+    <div class="dialog-heading"><h2 id="quiz-title">연우의 포켓몬 모험</h2><button type="button" data-close="quiz-dialog" class="round" aria-label="모험 닫기">×</button></div>
+    <div id="adventure-scene" class="adventure-scene" data-region="forest"><div class="adventure-sky" aria-hidden="true"></div><div id="adventure-scenery" class="adventure-scenery" aria-hidden="true">🌲 🌳 🌼 🌲 🌿</div><div class="adventure-road" aria-hidden="true"></div><div id="adventure-walker" class="adventure-walker" style="--step:0"><div class="trainer-character"><img src="assets/trainer-body.svg" class="trainer-body" alt="탐험하는 연우"><div class="trainer-face" data-saved><img class="trainer-photo" alt="연우 얼굴 사진" hidden></div><img src="assets/trainer-cap.svg" class="trainer-cap" alt=""></div></div><div class="adventure-goal" aria-hidden="true">❓</div></div><p id="adventure-status" class="adventure-status" role="status">숲 탐험 0/5걸음</p><div id="adventure-footsteps" class="adventure-footsteps" aria-hidden="true">○ ○ ○ ○ ○</div>
+    <span id="quiz-progress" class="eyebrow">1 / 5 문제</span><progress id="quiz-progress-bar" class="quiz-progress-bar" max="5" value="0" aria-label="끝낸 문제 수"></progress>
+    <div id="quiz-question-area"><div id="quiz-picture" class="quiz-picture" aria-hidden="true"></div><div id="quiz-word" class="quiz-word"></div><p id="quiz-prompt"></p><button id="quiz-speak" class="quiet">🔊 낱말·문제 듣기</button><div id="quiz-answers" class="quiz-answers" role="group" aria-label="정답을 골라요"></div><p id="quiz-feedback" role="status" aria-live="polite"></p><p id="quiz-collection-note" role="status" aria-live="polite"></p><button id="quiz-next" class="primary" hidden>다음 퀘스트 →</button></div>
+    <div id="quiz-finish-area" hidden><img src="assets/mew.png" class="quiz-finish-mew" alt="응원하는 뮤"><h3>다섯 번의 도전 성공!<br>잘했어, 연우! ✦</h3><p id="quiz-reward-note"></p><button id="quiz-claim" class="primary">부모님께 완료 확인 받기</button></div>
+    <p class="footnote">오답 3번이면 뮤와 연습한 뒤 다시 도전해요. 연습에는 보상이 없고, 스스로 맞히면 실적이 올라가요.<br>중간에 쉬어도 괜찮아요. 다시 시작하면 새 5문제가 나와요.<br>혼자 읽기 확인은 음성을 듣기 전에 해주세요.<br>음성은 기기의 한국어 TTS 지원에 따라 달라요.</p>
+  </dialog>
+
+  <dialog id="mission-confirm-dialog" aria-labelledby="mission-confirm-title" aria-describedby="mission-confirm-description">
+    <div class="dialog-heading"><h2 id="mission-confirm-title">미션을 마쳤나요?</h2><button type="button" data-close="mission-confirm-dialog" class="round" aria-label="미션 완료 확인 닫기">×</button></div>
+    <p id="mission-confirm-name" class="confirm-mission-name"></p>
+    <p id="mission-confirm-description" class="footnote">부모님이 미션을 마쳤는지 확인한 뒤 눌러주세요. 체험판에서는 비밀번호 확인 없이 진행돼요.</p>
+    <div class="editor-actions"><button type="button" data-close="mission-confirm-dialog" class="secondary">아직이에요</button><button id="mission-confirm-reward" class="primary">확인하고 보상 받기</button></div>
+  </dialog>
+
+  <dialog id="celebration-dialog" class="celebration" aria-labelledby="celebration-title" aria-describedby="celebration-message">
+    <button id="celebration-close" class="round celebration-close" aria-label="축하 화면 닫기">×</button>
+    <span class="eyebrow">MISSION CLEAR!</span>
+    <h2 id="celebration-title">연우, 미션 성공!</h2>
+    <div id="move-name" class="move-name">염동력</div>
+    <div class="psychic-stage" aria-hidden="true">
+      <div class="psychic-aura"></div><div class="psychic-ring ring-one"></div><div class="psychic-ring ring-two"></div>
+      <span class="psychic-star star-one">✦</span><span class="psychic-star star-two">✧</span><span class="psychic-star star-three">✦</span>
+      <img class="psychic-mewtwo" src="assets/mewtwo.png" alt="" width="475" height="475">
+      <img class="psychic-mew" src="assets/mew.png" alt="" width="475" height="475">
+      <div class="move-orb"></div><div class="move-beam"></div>
+      <img class="floating-ball floating-one" src="assets/masterball.svg" alt=""><img class="floating-ball floating-two" src="assets/masterball.svg" alt=""><img class="floating-ball floating-three" src="assets/masterball.svg" alt="">
+      <img class="reward-ball" src="assets/masterball.svg" alt="">
+    </div>
+    <p class="mewtwo-quote">“멋진 도전이었어, 연우!”</p>
+    <button id="celebration-speak" class="quiet">🔊 뮤츠 응원 듣기</button>
+    <p id="celebration-mission" class="celebration-mission"></p>
+    <div id="celebration-reward" class="celebration-reward">+30분</div>
+    <p id="celebration-message">마스터 시간볼에 보상을 넣었어요!</p>
+    <button id="celebration-continue" class="primary">좋아! 모험 계속하기 ✦</button>
+    <button id="celebration-replay" class="quiet">↻ 액션 다시 보기</button>
+  </dialog>
+
+  <dialog id="parent-dialog" aria-labelledby="parent-title">
+    <div class="dialog-heading"><h2 id="parent-title">연우의 미션 관리</h2><button type="button" data-close="parent-dialog" class="round" aria-label="부모님 메뉴 닫기">×</button></div>
+    <p class="notice">웹 체험판이에요. 부모님 메뉴는 비밀번호 없이 열립니다. 실제 보호 기능은 아직 적용하지 않았어요.</p>
+    <div class="section-heading"><h3>미션과 보상 시간</h3><button id="add-mission" class="primary compact">＋ 미션 추가</button></div>
+    <div id="parent-missions"></div>
+<section class="setting"><h3>연우 트레이너 얼굴</h3><p class="trainer-photo-notice">아이폰 사진에서 얼굴을 골라 트레이너에 넣어보세요. 이 기기에만 저장하며 사진을 서버나 GitHub로 보내지 않아요.</p><div class="trainer-settings-actions"><div class="trainer-file-field"><label for="trainer-upload">📷 얼굴 사진 선택</label><input id="trainer-upload" data-trainer-upload type="file" accept="image/*"></div><button id="trainer-remove" class="quiet" type="button">사진 지우기</button></div><p data-trainer-status class="trainer-photo-notice" role="status"></p></section>
+    <section class="setting"><h3>한국어 음성 읽기</h3><label class="speech-auto-label"><input id="speech-auto" type="checkbox" checked> 문제·힌트·칭찬 자동으로 읽기</label><label for="speech-rate">읽어주는 속도</label><select id="speech-rate"><option value="0.65">아주 천천히</option><option value="0.8">천천히</option><option value="1">보통</option></select><button id="speech-stop" type="button" class="quiet">음성 멈추기</button><p class="footnote">미션 듣기, 문제 듣기, 뮤츠 응원에 적용돼요. 기기의 한국어 TTS 음성을 사용하며 캐릭터 원작 목소리는 아니에요.</p></section>
+    <section class="setting"><h3>매일 기본 시간</h3><label for="base-minutes">매일 받는 시간 (분)</label><div class="input-action"><input id="base-minutes" type="number" min="0" max="180" step="1" inputmode="numeric"><button id="save-base" class="secondary">저장</button></div></section>
+    <section class="setting"><h3>시간 직접 조절</h3><label for="adjust-reason">이유</label><input id="adjust-reason" maxlength="60" placeholder="예: 약속을 잘 지켰어요"><label for="adjust-minutes">조절할 시간 (분)</label><input id="adjust-minutes" type="number" min="1" max="120" value="5" inputmode="numeric"><div class="timer-actions"><button id="reward-custom" class="secondary">＋ 시간 추가</button><button id="deduct-custom" class="danger">− 시간 차감</button></div></section>
+    <p class="footnote">하루 총 허용 시간은 최대 240분이에요. 앱 삭제·브라우저 데이터 삭제 시 기록은 복구할 수 없어요. 아이폰과 Mac 사이에 기록이 동기화되지는 않아요.</p>
+  </dialog>
+  <dialog id="editor-dialog" aria-labelledby="editor-title">
+    <form id="mission-form">
+      <div class="dialog-heading"><h2 id="editor-title">새 미션 추가</h2><button type="button" data-close="editor-dialog" class="round" aria-label="미션 편집 닫기">×</button></div>
+      <label for="mission-name">미션 이름</label><input id="mission-name" maxlength="60" placeholder="예: 장난감 정리하기" required>
+      <label for="mission-minutes">완료하면 받는 시간 (분)</label><input id="mission-minutes" type="number" min="1" max="120" value="30" inputmode="numeric" required>
+      <label for="mission-move">성공하면 뮤츠가 쓸 기술</label><select id="mission-move"><option value="confusion">염동력 · 초능력 고리</option><option value="shadowball">섀도볼 · 보라색 에너지 발사</option><option value="aurasphere">파동탄 · 푸른 파동 발사</option></select>
+      <div id="minute-presets" class="presets"><button type="button" data-minutes="5">5분</button><button type="button" data-minutes="10">10분</button><button type="button" data-minutes="15">15분</button><button type="button" data-minutes="30">30분</button></div>
+      <p class="footnote">보상 시간을 바꿔도 이미 받은 시간은 바뀌지 않아요.</p>
+      <div class="editor-actions"><button id="delete-mission" type="button" class="danger" hidden>미션 삭제</button><button type="submit" class="primary">저장</button></div>
+    </form>
+  </dialog>
+</body>
+</html>
