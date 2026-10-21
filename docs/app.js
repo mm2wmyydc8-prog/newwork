@@ -1,3 +1,5 @@
+import { createMoveScene } from './move-scene.js?v=cinematic-1';
+import { createMoveSound } from './move-sound.js?v=cinematic-1';
 import { classifyMove } from './move-effects.js?v=move-motions';
 import { availablePartners, getPartner, selectPartner, missionPartnerSlot, partnerCelebrationSlots } from './partner.js?v=partner-habitats';
 import { initialState, validateState, settle, totalMinutes, remainingSeconds, start, pause, adjust, missionDone, resetTodayQuests } from './model.js?v=partner-habitats';
@@ -8,6 +10,15 @@ import { setupCollection } from './collection.js?v=dex-progress-voice';
 import { setupTrainer } from './trainer.js?v=photo-picker-fix';
 
 const $ = selector => document.querySelector(selector);
+const moveScene = createMoveScene($('#move-canvas'));
+const moveSound = createMoveSound();
+let moveSoundEnabled = true;
+$('#move-sound-toggle').addEventListener('click', () => {
+  moveSoundEnabled = !moveSoundEnabled;
+  $('#move-sound-toggle').setAttribute('aria-pressed', String(moveSoundEnabled));
+  $('#move-sound-toggle').textContent = moveSoundEnabled ? '🔊 효과음 켜짐' : '🔇 효과음 꺼짐';
+  if (!moveSoundEnabled) moveSound.stop();
+});
 const key = 'yeonwoo-pocket-web-v1';
 let state = initialState(), editingId = null, pendingNewMission = false, storageAvailable = true;
 let confirmingMissionId = null;
@@ -69,6 +80,11 @@ function replayCelebration() {
   dialog.classList.remove('playing');
   void dialog.offsetWidth; // Restart visual effects only; never re-apply the reward.
   dialog.classList.add('playing');
+  if (celebration) {
+    const move = celebration.partner.moves[celebration.moves[celebration.index]];
+    moveScene.play(move);
+    if (moveSoundEnabled) moveSound.play(classifyMove(move).motion);
+  }
   dialog.scrollTop = 0;
 }
 function renderCelebration() {
@@ -82,7 +98,6 @@ function renderCelebration() {
   $('#celebration-title').textContent = preview ? '파트너 기술 구경하기!' : special ? '특별 기술 발동!' : '연우, 미션 성공!';
   $('#move-name').textContent = `${partner.name}의 ${move.name}!`;
   $('.psychic-mewtwo').src = partner.image;
-  $('#move-symbol').textContent = effect.symbol;
   $('#celebration-speak').textContent = `🔊 ${partner.name} 응원 듣기`;
   $('.mewtwo-quote').textContent = '“연우야, 멋진 도전이었어!”';
   $('#celebration-mission').textContent = preview ? '기술 연출만 보는 중이에요.' : special ? `오늘 미션 보상 ${PSYCHIC_THRESHOLD}분 달성!` : `${questTitle(mission)} 성공!`;
@@ -109,7 +124,7 @@ $('#celebration-continue').addEventListener('click', () => {
   } else closeCelebration();
 });
 $('#celebration-replay').addEventListener('click', replayCelebration);
-$('#celebration-dialog').addEventListener('close', () => { $('#celebration-dialog').classList.remove('playing'); speech.stop(); });
+$('#celebration-dialog').addEventListener('close', () => { $('#celebration-dialog').classList.remove('playing'); speech.stop(); moveScene.stop(); moveSound.stop(); });
 function completeMission(id) {
   settle(state);
   const mission = state.missions.find(x => x.id === id);
@@ -259,7 +274,7 @@ function tick() {
     if (wasRunning && state.day === previousDay) toast('시간이 끝났어요! TV 전원도 꺼 주세요.');
   } else renderClock();
 }
-document.addEventListener('visibilitychange', () => { tick(); persist(); if (document.hidden) speech.stop(); });
+document.addEventListener('visibilitychange', () => { tick(); persist(); if (document.hidden) { speech.stop(); moveScene.stop(); moveSound.stop(); } });
 window.addEventListener('pagehide', persist);
 setInterval(tick, 500);
 settle(state); saveAndRender();

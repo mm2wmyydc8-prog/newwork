@@ -12,11 +12,11 @@
   <link rel="apple-touch-icon" href="assets/touch-icon.png">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="celebration.css?v=move-motions">
+  <link rel="stylesheet" href="celebration.css?v=cinematic-1">
   <link rel="stylesheet" href="hangul.css?v=words-60">
   <link rel="stylesheet" href="collection.css?v=partner-habitats">
   <link rel="stylesheet" href="trainer.css?v=upper-body">
-  <script type="module" src="app.js?v=move-motions-voice"></script>
+  <script type="module" src="app.js?v=cinematic-1"></script>
 </head>
 <body>
   <main>
@@ -74,14 +74,10 @@
     <h2 id="celebration-title">연우, 미션 성공!</h2>
     <div id="move-name" class="move-name">염동력</div>
     <div class="psychic-stage" aria-hidden="true">
-      <div class="psychic-aura"></div><div class="psychic-ring ring-one"></div><div class="psychic-ring ring-two"></div>
-      <span class="psychic-star star-one">✦</span><span class="psychic-star star-two">✧</span><span class="psychic-star star-three">✦</span>
+      <div class="move-arena-floor"></div><canvas id="move-canvas" class="move-canvas"></canvas>
       <img class="psychic-mewtwo" src="assets/mewtwo.png" alt="" width="475" height="475">
-      <img class="psychic-mew" src="assets/mew.png" alt="" width="475" height="475">
-      <div class="move-fangs"><i></i><i></i><i></i><i></i></div><div class="move-drops"><i></i><i></i><i></i><i></i></div><div id="move-symbol" class="move-symbol"></div><div class="move-orb"></div><div class="move-beam"></div>
-      <img class="floating-ball floating-one" src="assets/masterball.svg" alt=""><img class="floating-ball floating-two" src="assets/masterball.svg" alt=""><img class="floating-ball floating-three" src="assets/masterball.svg" alt="">
-      <img class="reward-ball" src="assets/masterball.svg" alt="">
     </div>
+    <button id="move-sound-toggle" type="button" class="quiet move-sound-toggle" aria-pressed="true">🔊 효과음 켜짐</button>
     <p class="mewtwo-quote">“멋진 도전이었어, 연우!”</p>
     <button id="celebration-speak" class="quiet">🔊 뮤츠 응원 듣기</button>
     <p id="celebration-mission" class="celebration-mission"></p>
