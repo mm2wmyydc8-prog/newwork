@@ -22,7 +22,7 @@ function shuffled(items, random) {
   return result;
 }
 export const DIFFICULTIES = {
-  easy: { name: '쉬움', help: '소리를 듣고, 크게 보이는 글자와 같은 글자를 찾아요.' },
+  easy: { name: '쉬움', help: '그림과 소리를 듣고, 세 낱말 중 알맞은 낱말을 찾아요. 정답 글자는 미리 보이지 않아요.' },
   medium: { name: '보통', help: '익숙한 낱말에서 비어 있는 글자 하나를 채워요.' },
   hard: { name: '어려움', help: '글자를 순서대로 눌러 낱말을 직접 만들어요.' }
 };
@@ -35,11 +35,23 @@ export function createQuiz(random = Math.random, completed = [], difficulty = 'e
       const reading = q.reading ?? q.word.replace('□', q.answer);
       if (level === 'hard') return { ...q, reading, word: '□'.repeat(reading.length), answer: reading,
         prompt: '글자를 순서대로 눌러 낱말을 만들어볼까?', choices: shuffled([...reading], random) };
-      const answer = level === 'easy' ? reading[0] : reading.at(-1);
+      if (level === 'easy') {
+        const distractors = {
+          tree: ['나비', '누나'], sea: ['바나나', '바지'], hat: ['모기', '모래'],
+          banana: ['바다', '나비'], butterfly: ['나무', '나이'], shoes: ['구이', '기차'],
+          cucumber: ['오리', '아이'], milk: ['오이', '오리'], tomato: ['토끼', '모자'],
+          lion: ['사과', '기차'], bus: ['바지', '구두'], grape: ['파도', '포기']
+        };
+        return { ...q, reading, answer: reading, word: '',
+          prompt: '그림과 소리에 맞는 낱말을 골라봐!',
+          hint: `뮤랑 들어보자. ${[...reading].join('~ ')}! 첫 글자는 ‘${reading[0]}’야.`,
+          choices: shuffled([reading, ...distractors[q.id]], random) };
+      }
+      const answer = reading.at(-1);
       const alternatives = shuffled(['가', '나', '다', '라', '마', '바', '사', '자', '아', '이', '오', '우', '비', '토', '스'].filter(x => x !== answer), random).slice(0, 2);
-      return { ...q, reading, answer, word: level === 'easy' ? answer : reading.slice(0, -1) + '□',
-        prompt: level === 'easy' ? '위에 보이는 글자와 같은 글자를 찾아봐!' : '빈 곳에 들어갈 글자를 골라봐!',
-        hint: `다시 들어보자. ${reading}. ${level === 'easy' ? '찾을' : '빈 곳의'} 글자는 ‘${answer}’야.`,
+      return { ...q, reading, answer, word: reading.slice(0, -1) + '□',
+        prompt: '빈 곳에 들어갈 글자를 골라봐!',
+        hint: `다시 들어보자. ${reading}. 빈 곳의 글자는 ‘${answer}’야.`,
         choices: shuffled([answer, ...alternatives], random) };
     }) };
 }

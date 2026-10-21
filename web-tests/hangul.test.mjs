@@ -48,7 +48,7 @@ test('three levels keep quest identity but present different tasks', () => {
   const medium = createQuiz(() => 0.4, [], 'medium');
   const hard = createQuiz(() => 0.4, [], 'hard');
   assert.deepEqual(easy.questions.map(q => q.id), hard.questions.map(q => q.id));
-  easy.questions.forEach(q => { assert.equal(q.word, q.answer); assert.equal(q.answer.length, 1); });
+  easy.questions.forEach(q => { assert.equal(q.word, ''); assert.equal(q.answer, q.reading); assert.ok(q.answer.length >= 2); assert.equal(q.choices.filter(c => c === q.answer).length, 1); assert.equal(new Set(q.choices).size, 3); });
   medium.questions.forEach(q => { assert.ok(q.word.endsWith('□')); assert.equal(q.word.replace('□', q.answer), q.reading); });
   hard.questions.forEach(q => { assert.equal(q.answer, q.reading); assert.deepEqual([...q.choices].sort(), [...q.reading].sort()); });
 });
