@@ -67,3 +67,7 @@
 .capture-gesture-hint{font-size:13px;color:#775491;line-height:1.6;margin:12px 0}
 
 #collection-shiny[hidden],#pokedex-form-label[hidden],#pokedex-form[hidden],#shiny-preview[hidden]{display:none!important}
+
+.capture-dialog[data-phase="failed"] #capture-image{animation:escape-ball .8s ease-out both!important;opacity:1}.capture-dialog[data-phase="failed"] .ball-top{transform:translateY(-12px) rotate(-8deg)}.capture-dialog[data-phase="failed"] .ball-bottom{transform:translateY(9px) rotate(6deg)}.capture-dialog[data-phase="failed"] .caught-stars{display:none}.capture-dialog[data-phase="failed"] .capture-ring,.capture-dialog[data-phase="failed"] .capture-sparks{display:none}
+@keyframes escape-ball{0%{opacity:0;transform:translateY(65px) scale(.05);filter:brightness(1.8)}65%{opacity:1;transform:translateY(-12px) scale(1.06)}100%{opacity:1;transform:none;filter:none}}
+@media(prefers-reduced-motion:reduce){.capture-dialog[data-phase="failed"] #capture-image{animation:none!important;opacity:1}}

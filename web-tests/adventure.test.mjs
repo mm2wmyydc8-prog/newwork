@@ -129,3 +129,14 @@ test('three errors defer captures across reloads; a later successful round resto
  assert.equal(completeCapture(restored,id),true);
  assert.equal(collectionProgress(restored).owned.length,1);
 });
+
+test('failed rounds can display the encounter but cannot award it even after throwing', () => {
+ const state=initialState();
+ for(let i=0;i<5;i++)recordExploration(state,`throwfail-${i}`,'easy','sea',()=>0);
+ finishCaptureAttempt(state,3);
+ const encounter=visibleEncounters(state,{allowFailedAttempt:true})[0];
+ assert.ok(encounter);
+ assert.equal(completeCapture(state,encounter.pendingId),false);
+ assert.equal(state.collection.pendingEncounters.length,1);
+ assert.equal(collectionProgress(state).owned.length,0);
+});

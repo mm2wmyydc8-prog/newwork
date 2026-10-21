@@ -1222,9 +1222,9 @@ export function recordExploration(state, questionId, level, region, random = Mat
   }
   return { ...result, steps: data.explorationSteps[region], encountered };
 }
-export function visibleEncounters(state) {
+export function visibleEncounters(state, { allowFailedAttempt = false } = {}) {
   const data = enableAdventure(state), discovered = shinyDiscovered(state);
-  if (data.captureRetryRequired) return [];
+  if (data.captureRetryRequired && !allowFailedAttempt) return [];
   return data.pendingEncounters.filter(p => !p.shiny || discovered || (p.shinyGift && data.total >= 25))
     .sort((a, b) => Number(Boolean(b.shinyGift)) - Number(Boolean(a.shinyGift)));
 }
@@ -1235,6 +1235,7 @@ export function finishCaptureAttempt(state, mistakes = 0) {
 }
 export function completeCapture(state, pendingId) {
   const data = enableAdventure(state);
+  if (data.captureRetryRequired) return false;
   const index = data.pendingEncounters.findIndex(p => p.pendingId === pendingId);
   if (index < 0) return false;
   const [pokemon] = data.pendingEncounters.splice(index, 1);
@@ -1247,7 +1248,7 @@ export function setupCollection({ getState, save, speech }) {
   const $ = selector => document.querySelector(selector);
   enableAdventure(getState()); save();
   let pending = [];
-  let previewing = false;
+  let previewing = false, roundCaptureFailed = false;
   let captureTimer, currentCapture;
   const ball = $('#capture-ball');
   let drag = null;
@@ -1334,7 +1335,7 @@ export function setupCollection({ getState, save, speech }) {
     const rule = REWARD_RULES.get(pokemon.id);
     const special = ['전설', '상위 전설', '환상'].includes(rule.tier);
     clearTimeout(captureTimer);
-    currentCapture = { pokemon, preview, special };
+    currentCapture = { pokemon, preview, special, failed: roundCaptureFailed && !preview };
     $('#capture-dialog').dataset.phase = 'encounter';
     $('#capture-dialog').dataset.shiny = String(Boolean(pokemon.shiny));
     $('#capture-shiny-badge').hidden = !pokemon.shiny;
@@ -1364,10 +1365,24 @@ export function setupCollection({ getState, save, speech }) {
   $('#pokedex-form').addEventListener('change', render);
   $('#legendary-preview').addEventListener('click', () => showCapture(POKEMON.find(p => p.id === 'mewtwo'), true));
   $('#shiny-preview').addEventListener('click', () => { if (shinyDiscovered(getState())) showCapture({ ...POKEMON.find(p => p.id === 'mewtwo'), shiny: true }, true); });
-  function captureSuccess() {
+  function resolveCapture() {
     clearTimeout(captureTimer);
     if (!$('#capture-dialog').open || !currentCapture) return;
     const { pokemon, preview } = currentCapture;
+    if (currentCapture.failed) {
+      $('#capture-dialog').dataset.phase = 'failed';
+      $('#capture-label').textContent = 'OH NO!';
+      $('#capture-title').textContent = '포획 실패!';
+      $('#capture-message').textContent = `${pokemon.name}가 볼에서 빠져나갔어! 이번 모험에서 오답이 3번 이상 쌓였어. 뮤와 연습하고 다음 모험에서 다시 만나자!`;
+      $('#capture-continue').disabled = false;
+      $('#capture-continue').textContent = '다음 모험에서 다시 도전!';
+      $('#capture-skip').hidden = true; $('#capture-replay').hidden = true;
+      $('#quiz-finish-area h3').textContent = '포획 실패! 다음 모험에서 다시 만나자!';
+      $('#quiz-progress').textContent = '탐험 완료 · 포획 실패';
+      $('#quiz-reward-note').textContent = '포획 기회는 그대로 기다리고 있어. 이미 번 TV 시간과 잡은 포켓몬도 그대로야!';
+      if (getState().speechAuto !== false) speech.speak(`아! ${pokemon.name}가 볼에서 빠져나갔어! 포획 실패! 뮤랑 연습하고 다음 모험에서 다시 만나자!`);
+      return;
+    }
     if (!preview && pokemon.pendingId && completeCapture(getState(), pokemon.pendingId)) { save(); render(); }
     $('#capture-dialog').dataset.phase = 'caught';
     $('#capture-label').textContent = 'GOTCHA!';
@@ -1395,22 +1410,22 @@ export function setupCollection({ getState, save, speech }) {
     $('#capture-skip').hidden = false;
     $('#capture-replay').hidden = true;
     if (getState().speechAuto !== false) speech.speak(currentCapture.special ? '마스터볼, 가라!' : '몬스터볼, 가라!');
-    captureTimer = setTimeout(captureSuccess, window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 100 : 3400);
+    captureTimer = setTimeout(resolveCapture, window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 100 : 3400);
   }
   $('#capture-continue').addEventListener('click', () => {
     if ($('#capture-dialog').dataset.phase === 'encounter') throwBall();
-    else if ($('#capture-dialog').dataset.phase === 'caught') $('#capture-dialog').close();
+    else if (['caught', 'failed'].includes($('#capture-dialog').dataset.phase)) $('#capture-dialog').close();
   });
-  $('#capture-skip').addEventListener('click', captureSuccess);
+  $('#capture-skip').addEventListener('click', resolveCapture);
   $('#capture-replay').addEventListener('click', throwBall);
   $('#capture-dialog').addEventListener('close', () => { resetBallDrag(); clearTimeout(captureTimer); speech.stop(); if (previewing) { previewing = false; return; } if (pending.length) showCapture(); });
-  $('#pending-captures').addEventListener('click', () => { pending = visibleEncounters(getState()); if (pending.length) showCapture(); });
+  $('#pending-captures').addEventListener('click', () => { roundCaptureFailed = false; pending = visibleEncounters(getState()); if (pending.length) showCapture(); });
   $('#stone-dialog').addEventListener('close', () => { speech.stop(); if (pending.length) showCapture(); });
   return {
     render,
     markCaptureFailure() { finishCaptureAttempt(getState(), 3); save(); render(); },
     explorationProgress(region) { return explorationProgress(getState(), region); },
-    pendingCount() { return visibleEncounters(getState()).length; },
+    pendingCount({ includeRetry = false } = {}) { return visibleEncounters(getState(), { allowFailedAttempt: includeRetry }).length; },
     completedToday() { return [...ensureCollection(getState()).questions]; },
     completedAtDifficulty(level) { return completedAtDifficulty(getState(), level); },
     recordCorrect(questionId, level, region = 'forest') {
@@ -1424,8 +1439,8 @@ export function setupCollection({ getState, save, speech }) {
     },
     finishRound({ mistakes = 0 } = {}) {
       const passed = finishCaptureAttempt(getState(), mistakes); save(); render();
-      if (!passed) { pending = []; return; }
-      pending = visibleEncounters(getState());
+      roundCaptureFailed = !passed;
+      pending = visibleEncounters(getState(), { allowFailedAttempt: true });
       const state = getState();
       if (hasMewtwonite(state) && !state.collection.stoneNoticeSeen) {
         state.collection.stoneNoticeSeen = true; save();

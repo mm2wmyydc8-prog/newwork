@@ -1,8 +1,8 @@
-import { initialState, validateState, settle, totalMinutes, remainingSeconds, start, pause, adjust, missionDone } from './model.js?v=capture-failure';
+import { initialState, validateState, settle, totalMinutes, remainingSeconds, start, pause, adjust, missionDone } from './model.js?v=throw-then-result';
 import { MOVES, PSYCHIC_THRESHOLD, missionMove, celebrationMoves, earnedMissionMinutes } from './moves.js?v=daily60';
-import { setupHangulQuiz } from './hangul.js?v=capture-failure';
+import { setupHangulQuiz } from './hangul.js?v=throw-then-result';
 import { createKoreanSpeech } from './speech.js';
-import { setupCollection } from './collection.js?v=capture-failure';
+import { setupCollection } from './collection.js?v=throw-then-result';
 import { setupTrainer } from './trainer.js?v=photo-picker-fix';
 
 const $ = selector => document.querySelector(selector);
