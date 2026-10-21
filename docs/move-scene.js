@@ -1,5 +1,5 @@
 // Original 2D move drawings. Animation families follow the action, not just the type.
-import { classifyMove } from './move-effects.js?v=move-motions';
+import { classifyMove } from './move-effects.js?v=sludge-bomb';
 const TAU = Math.PI * 2;
 const clamp = n => Math.max(0, Math.min(1, n));
 const ease = n => 1 - (1 - clamp(n)) ** 3;
@@ -76,12 +76,49 @@ export function createMoveScene(canvas, { reduced = () => matchMedia('(prefers-r
     c.beginPath(); c.moveTo(-89, -19); c.quadraticCurveTo(0, -33, 89, -19);
     c.strokeStyle = '#fff0ff'; c.lineWidth = 4; c.globalAlpha = .7; c.stroke(); c.restore();
   }
+  function sludge(x, y, radius, angle = 0, alpha = 1) {
+    c.save(); c.translate(x, y); c.rotate(angle); c.globalAlpha = alpha;
+    const g = c.createRadialGradient(-radius*.28, -radius*.32, 1, 0, 0, radius*1.2);
+    g.addColorStop(0, '#cf8be6'); g.addColorStop(.38, '#9552b3'); g.addColorStop(1, '#492050');
+    c.fillStyle = g; c.strokeStyle = '#57265e'; c.lineWidth = 2.5;
+    c.beginPath(); c.moveTo(radius, 0);
+    for (let i=1; i<=12; i++) {
+      const a=i*TAU/12, prev=(i-.5)*TAU/12;
+      const r=radius*(.85+Math.sin(i*7)*.13);
+      c.quadraticCurveTo(Math.cos(prev)*radius*1.3, Math.sin(prev)*radius*1.3, Math.cos(a)*r, Math.sin(a)*r);
+    }
+    c.closePath(); c.fill(); c.stroke();
+    c.fillStyle='#dda3ea';c.globalAlpha=alpha*.65;c.beginPath();c.ellipse(-radius*.28,-radius*.35,radius*.3,radius*.13,-.4,0,TAU);c.fill();
+    disc(radius*.23,radius*.2,radius*.11,'#55265f',.65);c.restore();
+  }
   function crystal(x, y, alpha, color = '#93afc6') {
     c.save(); c.globalAlpha = alpha; c.translate(x, y);
     c.fillStyle = color; c.strokeStyle = '#d8edff'; c.lineWidth = 2;
     c.beginPath(); c.moveTo(0, -39); c.lineTo(25, -12); c.lineTo(19, 24); c.lineTo(0, 40); c.lineTo(-23, 14); c.lineTo(-25, -14); c.closePath(); c.fill(); c.stroke();
     stroke([[0, -39], [-6, -6], [0, 40]], '#eaf7ff', 2, .6);
     stroke([[-25, -14], [-6, -6], [25, -12]], '#eaf7ff', 2, .6); c.restore();
+  }
+  function substitute(x, y, alpha, tilt = 0) {
+    c.save(); c.translate(x, y); c.rotate(tilt); c.globalAlpha=alpha;
+    c.lineJoin='round'; c.lineCap='round';
+    // Soft green body, ears and tail, drawn as one reusable training doll.
+    c.fillStyle='#6b9467';c.strokeStyle='#45694b';c.lineWidth=2.5;
+    c.beginPath();c.moveTo(24,34);c.bezierCurveTo(60,52,67,34,60,11);c.bezierCurveTo(83,42,69,73,30,67);c.closePath();c.fill();c.stroke();
+    const body=c.createLinearGradient(-45,-60,50,72);body.addColorStop(0,'#bed29d');body.addColorStop(.5,'#9bb87e');body.addColorStop(1,'#6e985f');
+    c.fillStyle=body;c.beginPath();c.moveTo(-45,24);c.bezierCurveTo(-54,-1,-52,-23,-38,-42);c.lineTo(-34,-71);c.quadraticCurveTo(-29,-82,-12,-60);c.quadraticCurveTo(10,-67,29,-57);c.quadraticCurveTo(45,-82,49,-63);c.lineTo(50,-31);c.bezierCurveTo(67,-6,65,43,46,66);c.quadraticCurveTo(4,89,-39,64);c.quadraticCurveTo(-56,48,-45,24);c.closePath();c.fill();c.stroke();
+    // White belly and short plush feet.
+    c.fillStyle='#edeedb';c.beginPath();c.ellipse(0,32,33,44,-.1,0,TAU);c.fill();
+    for(const side of [-1,1]){c.fillStyle=body;c.beginPath();c.ellipse(side*34,66,21,17,side*.25,0,TAU);c.fill();c.stroke();}
+    // A broad snout with the characteristic smiling closed eye.
+    c.fillStyle='#a9c38b';c.beginPath();c.moveTo(-41,-39);c.bezierCurveTo(-66,-30,-69,-8,-47,-3);c.quadraticCurveTo(-13,3,27,-11);c.quadraticCurveTo(38,-34,18,-45);c.closePath();c.fill();
+    c.strokeStyle='#304f39';c.lineWidth=4;
+    c.beginPath();c.moveTo(3,-35);c.quadraticCurveTo(14,-48,26,-38);c.stroke();
+    c.beginPath();c.moveTo(-59,-15);c.quadraticCurveTo(-51,-23,-43,-14);c.quadraticCurveTo(-15,-2,22,-14);c.stroke();
+    disc(29,-13,8,'#e9e9cf');disc(-51,-27,2,'#486847');
+    // Little arms sit in front of the belly.
+    for(const side of [-1,1]){c.fillStyle=body;c.strokeStyle='#648454';c.lineWidth=2;c.beginPath();c.ellipse(side*36,16,13,21,side*.55,0,TAU);c.fill();c.stroke();}
+    c.strokeStyle='#cdddaf';c.lineWidth=2;c.globalAlpha=alpha*.5;c.beginPath();c.moveTo(44,-35);c.quadraticCurveTo(60,7,45,42);c.stroke();
+    c.restore();
   }
   function fist(x, y, color, kick) {
     c.save(); c.translate(x, y); c.rotate(kick ? -.55 : -.15);
@@ -106,10 +143,10 @@ export function createMoveScene(canvas, { reduced = () => matchMedia('(prefers-r
     const alive = t > .5 && t < 2.35, fade = 1 - clamp((t - 1.95) / .4);
     c.clearRect(0, 0, W, H);
     ellipse(sx, 310, 100, 15, '#a6b9e0', 2, .2);
-    if (!supportive) ellipse(tx, 310, 78, 12, '#a6b9e0', 2, .2);
+    if (!supportive) ellipse(tx, ty + 87, 68, 10, '#a6b9e0', 2, .2);
     const shake = !quiet && t > 1.36 && t < 1.62 ? Math.sin(t * 75) * 4 : 0;
     const targetY = motion === 'psychic' && alive ? ty - Math.sin(clamp((t - .6) / 1.6) * Math.PI) * 26 : ty;
-    if (!supportive) crystal(tx + shake, targetY, t > 1.36 && t < 1.55 ? .35 : .68);
+    if (!supportive) substitute(tx + shake, targetY, t > 1.36 && t < 1.5 ? .65 : 1, quiet ? 0 : shake * .006);
     // Brief anticipation; no generic rings or floating balls over every attack.
     if (t < .58 && t > .14) glow(sx, sy, 25 + t * 22, color, Math.sin((t - .14) / .44 * Math.PI) * .55);
     c.save(); c.globalAlpha = fade;
@@ -169,6 +206,29 @@ export function createMoveScene(canvas, { reduced = () => matchMedia('(prefers-r
           ellipse(tx, targetY, 32 + p * 53, 52 + p * 35, color, 3, 1 - p);
         }
         for (let i = 0; i < 5; i++) star(tx + Math.cos(i * 2.4 + t) * 62, targetY + Math.sin(i * 2.4 + t) * 60, 7, '#f6d4ff', .8);
+      } else if (move.id === 'sludge-bomb') {
+        // One heavy, lumpy projectile follows an arc, then bursts into sticky splatter.
+        const p = clamp((t - .58) / .78);
+        if (t < 1.36) {
+          const x=sx+(tx-sx)*p, y=sy-Math.sin(p*Math.PI)*68;
+          for (let i=0;i<5;i++) {
+            const q=clamp(p-i*.025),bx=sx+(tx-sx)*q,by=sy-Math.sin(q*Math.PI)*68;
+            if(p>i*.025)disc(bx-10,by+8+i*4,2+i%2,'#87509e',.45);
+          }
+          sludge(x,y,25+Math.sin(p*Math.PI)*3,t*3);
+        } else {
+          const expand=ease(hit/.28), vanish=1-clamp((hit-.55)/.45);
+          c.save();c.translate(tx,ty);c.scale(1+expand*.5, .7+expand*.25);
+          sludge(0,0,31+expand*15,0,vanish*.9);c.restore();
+          for(let i=0;i<15;i++) {
+            const a=i*2.399,r=(55+i%4*20)*ease(hit),x=tx+Math.cos(a)*r,y=ty+Math.sin(a)*r*.68+hit*hit*75;
+            c.save();c.translate(x,y);c.rotate(a+Math.PI/2);c.scale(1,1+hit*.8);
+            disc(0,0,3+i%4,'#a768be',vanish);disc(-1,-2,1+i%2,'#d79ce4',vanish*.7);c.restore();
+          }
+          // Brief poison mist and sticky drips remain after the impact.
+          for(let i=0;i<4;i++)disc(tx-35+i*24,ty-30-hit*46,12+hit*17,'#ae74c2',.12*vanish);
+          for(let i=0;i<5;i++){const x=tx-38+i*18;stroke([[x,ty+12],[x,ty+17+hit*(15+i%3*12)]],'#9758ad',5,vanish*.8);}
+        }
       } else if (motion === 'ball') {
         const arrive = ease((t - .66) / .7), x = sx + (tx - sx) * arrive;
         const radius = t < 1.36 ? 24 : 24 + hit * 72;
@@ -235,7 +295,7 @@ export function createMoveScene(canvas, { reduced = () => matchMedia('(prefers-r
       }
     }
     c.restore();
-    if (hit > 0 && hit < 1 && !supportive) {
+    if (hit > 0 && hit < 1 && !supportive && move.id !== 'sludge-bomb') {
       // One sharp contact flash followed by a short outward burst.
       star(tx, ty, 58 * (1-hit), '#fff7de', .85 * (1-hit), .25);
       if (motion !== 'fang') debris(tx, ty, hit, color, 12);

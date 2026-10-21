@@ -21,3 +21,9 @@ test('actions take precedence over type colors and all partner moves have a usab
   const effect=classifyMove(move);assert.ok(effect.motion);assert.match(effect.color,/^#[a-f0-9]{6}$/i);
  }
 });
+
+test('Sludge Bomb is a projectile while Acid and Sludge Wave remain liquid attacks', () => {
+ assert.equal(classifyMove({id:'sludge-bomb',effect:'poison'}).motion,'ball');
+ assert.equal(classifyMove({id:'sludge-bomb',effect:'poison'}).color,'#b66cce');
+ for (const id of ['acid','sludge','sludge-wave']) assert.equal(classifyMove({id,effect:'poison'}).motion,'liquid');
+});

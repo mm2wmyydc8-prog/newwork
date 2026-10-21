@@ -1091,23 +1091,23 @@ function ruleProgress(data, rule) {
   if (rule.level === 'medium') return data.byDifficulty.medium + data.byDifficulty.hard;
   return data.byDifficulty.hard;
 }
-export function hasMewtwonite(state) { return ensureCollection(state).total >= 100; }
+export function hasMewtwonite(state) { const data = ensureCollection(state); return data.total >= 100 || data.testAllCaptured === true; }
 export function canUseMegaMoves(state, id) {
   const pokemon = POKEMON.find(p => p.id === id && p.form);
   return Boolean(pokemon && hasMewtwonite(state) && eligible(ensureCollection(state), pokemon));
 }
 function rewardEligible(data, pokemon) {
   const rule = REWARD_RULES.get(pokemon.id);
-  if (pokemon.form && data.total < 100) return false;
+  if (pokemon.form && data.total < 100 && !data.testAllCaptured) return false;
   return data.owned.includes(pokemon.id) || ruleProgress(data, rule) >= rule.target;
 }
 function eligible(data, pokemon) {
-  if (data.adventureMode) return (!pokemon.form || data.total >= 100) && data.owned.includes(pokemon.id);
+  if (data.adventureMode) return (!pokemon.form || data.total >= 100 || data.testAllCaptured === true) && data.owned.includes(pokemon.id);
   return rewardEligible(data, pokemon);
 }
 export function revealedPokemon(state, shinyView = false) {
   const data = ensureCollection(state);
-  return POKEMON.filter(p => !p.form || data.total >= 100);
+  return POKEMON.filter(p => !p.form || data.total >= 100 || data.testAllCaptured === true);
 }
 export function collectionProgress(state, difficulty = state.quizDifficulty ?? 'easy') {
   const data = ensureCollection(state);
@@ -1125,7 +1125,7 @@ export function completedAtDifficulty(state, difficulty) {
 }
 export function shinyDiscovered(state) {
   const data = ensureCollection(state);
-  return data.total >= 25 && (data.shinyIntroSeen === true || data.shiny.includes('pikachu'));
+  return data.testAllCaptured === true || (data.total >= 25 && (data.shinyIntroSeen === true || data.shiny.includes('pikachu')));
 }
 export const SHINY_CHANCE = { easy: 0, medium: 1 / 24, hard: 1 / 16 };
 export function shinyDifficulty(pokemon) { return !pokemon.form && REWARD_RULES.get(pokemon.id).level === 'easy' ? 'medium' : 'hard'; }
@@ -1220,6 +1220,19 @@ export function recordExploration(state, questionId, level, region, random = Mat
   }
   return { ...result, steps: data.explorationSteps[region], encountered };
 }
+// Explicit parent test action; leaves earned time and actual quiz counts intact.
+export function captureAllForTesting(state) {
+  const data = enableAdventure(state);
+  data.testAllCaptured = true;
+  data.owned = POKEMON.map(p => p.id);
+  data.shiny = POKEMON.map(p => p.id);
+  data.shinyIntroSeen = true;
+  data.pikachuGiftClaimed = true;
+  data.stoneNoticeSeen = true;
+  data.pendingEncounters = [];
+  data.captureRetryRequired = false;
+}
+
 export function visibleEncounters(state, { allowFailedAttempt = false } = {}) {
   const data = enableAdventure(state), discovered = shinyDiscovered(state);
   if (data.captureRetryRequired && !allowFailedAttempt) return [];

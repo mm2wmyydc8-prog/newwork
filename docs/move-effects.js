@@ -9,7 +9,8 @@ const SYMBOLS = { fang: '', needle: '➤', liquid: '●', flame: '▲', bolt: '�
 export function classifyMove(move) {
   const id = move.id;
   let motion;
-  if (/fang|^bite$|^crunch$|^bug-bite$/.test(id)) motion = 'fang';
+  if (id === 'sludge-bomb') motion = 'ball';
+  else if (/fang|^bite$|^crunch$|^bug-bite$/.test(id)) motion = 'fang';
   else if (/sting|needle|jab|pin-missile/.test(id)) motion = 'needle';
   else if (/slash|claw|scratch|cut|razor-wind|fury-swipes/.test(id)) motion = 'slash';
   else if (/punch|palm|hammer-arm/.test(id)) motion = 'punch';

@@ -152,3 +152,28 @@ test('caught Pokemon can appear again without increasing unique collection count
  completeCapture(state,visibleEncounters(state)[0].pendingId);
  assert.equal(collectionProgress(state).owned.length,1);
 });
+
+test('explicit full-capture testing unlocks every form without faking study or TV rewards', async () => {
+ const {captureAllForTesting,POKEMON,canUseMegaMoves}=await import('../docs/collection.js');
+ const {availablePartners}=await import('../docs/partner.js');
+ const state=initialState();enableAdventure(state);
+ const original=JSON.parse(JSON.stringify(state));
+ captureAllForTesting(state);
+ assert.equal(collectionProgress(state).owned.length,POKEMON.length);
+ assert.equal(state.collection.shiny.length,POKEMON.length);
+ assert.equal(revealedPokemon(state).length,153);
+ assert.equal(availablePartners(state).length,306);
+ assert.ok(canUseMegaMoves(state,'mewtwo-mega-x'));
+ assert.ok(canUseMegaMoves(state,'mewtwo-mega-y'));
+ assert.ok(shinyDiscovered(state));
+ assert.equal(state.collection.total,original.collection.total);
+ assert.deepEqual(state.collection.byDifficulty,original.collection.byDifficulty);
+ assert.deepEqual(state.entries,original.entries);
+ assert.equal(state.baseMinutes,original.baseMinutes);
+ assert.ok(validateState(state));
+ captureAllForTesting(state);
+ assert.equal(new Set(state.collection.owned).size,153);
+ delete state.collection;
+ assert.equal(revealedPokemon(state).length,151);
+ assert.equal(shinyDiscovered(state),false);
+});

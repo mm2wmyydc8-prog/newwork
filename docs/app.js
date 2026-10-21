@@ -1,12 +1,12 @@
-import { createMoveScene } from './move-scene.js?v=techniques-2';
+import { createMoveScene } from './move-scene.js?v=sludge-substitute';
 import { createMoveSound } from './move-sound.js?v=techniques-2';
-import { classifyMove } from './move-effects.js?v=move-motions';
-import { availablePartners, getPartner, selectPartner, missionPartnerSlot, partnerCelebrationSlots, revealedPartnerSlots } from './partner.js?v=earned-techniques';
-import { initialState, validateState, settle, totalMinutes, remainingSeconds, start, pause, adjust, missionDone, resetTodayQuests } from './model.js?v=partner-habitats';
+import { classifyMove } from './move-effects.js?v=sludge-bomb';
+import { availablePartners, getPartner, selectPartner, missionPartnerSlot, partnerCelebrationSlots, revealedPartnerSlots } from './partner.js?v=test-all-captured';
+import { initialState, validateState, settle, totalMinutes, remainingSeconds, start, pause, adjust, missionDone, resetTodayQuests } from './model.js?v=test-all-captured';
 import { PSYCHIC_THRESHOLD, missionMove, earnedMissionMinutes } from './moves.js?v=partner-habitats';
 import { setupHangulQuiz } from './hangul.js?v=partner-habitats';
 import { createKoreanSpeech } from './speech.js?v=move-motions-voice';
-import { setupCollection } from './collection.js?v=dex-progress-voice';
+import { setupCollection, captureAllForTesting } from './collection.js?v=test-all-captured';
 import { setupTrainer } from './trainer.js?v=photo-picker-fix';
 
 const $ = selector => document.querySelector(selector);
@@ -304,6 +304,11 @@ function openQuestReset() {
 }
 $('#reset-quests-open').addEventListener('click', openQuestReset);
 $('#reset-quests-shortcut').addEventListener('click', openQuestReset);
+$('#test-capture-all').addEventListener('click', () => {
+  if (!confirm('테스트용으로 모든 포켓몬·메가 X·Y·이로치를 포획 처리할까요? 실제 공부 횟수와 TV 시간은 그대로 유지돼요.')) return;
+  captureAllForTesting(state); saveAndRender(); collection.render();
+  toast('전체 포켓몬 테스트 포획 완료! 파트너를 바꿔 확인해 보세요.');
+});
 $('#reset-learning-open').addEventListener('click', openLearningReset);
 $('#reset-learning-confirm').addEventListener('click', () => {
   if (!storageAvailable) { toast('브라우저 저장 공간에 접근할 수 없어 초기화하지 않았어요.'); return; }
