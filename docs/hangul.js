@@ -1,3 +1,5 @@
+import { REGIONS } from './collection.js?v=adventure-regions';
+
 export const QUESTIONS = [
   { id: 'tree', picture: '🌳', word: '', reading: '나무', prompt: '그림에 맞는 낱말을 골라볼까?', answer: '나무', choices: ['나무', '나비', '누나'], hint: '나무! “나” 하고 천천히 읽어 봐.' },
   { id: 'sea', picture: '🌊', word: '', reading: '바다', prompt: '그림에 맞는 낱말을 골라볼까?', answer: '바다', choices: ['바나나', '바다', '바지'], hint: '바다! 입술을 붙였다 떼며 “바”라고 해 봐.' },
@@ -86,6 +88,18 @@ export function quizCreditReady(quiz) { return quiz.answered && !quiz.assisted &
 export function setupHangulQuiz({ getState, confirmMission, notify, speech, collection, saveSettings }) {
   const $ = selector => document.querySelector(selector);
   let quiz;
+  let region = 'forest', walkSteps = 0;
+  function renderAdventure(walking = false) {
+    const place = REGIONS[region];
+    $('#adventure-scene').dataset.region = region;
+    $('#adventure-scenery').textContent = place.scenery;
+    $('#adventure-walker').style.setProperty('--step', walkSteps);
+    const walker = $('#adventure-walker');
+    walker.classList.remove('walking');
+    if (walking) { void walker.offsetWidth; walker.classList.add('walking'); }
+    $('#adventure-status').textContent = `${place.name} 탐험 ${walkSteps}/5걸음${walkSteps === 5 ? ' · 누가 나타날까?' : ''}`;
+    $('#adventure-footsteps').textContent = Array.from({ length: 5 }, (_, i) => i < walkSteps ? '👣' : '○').join(' ');
+  }
   let inputLocked = false;
   let unlockTimer;
   function lockInput() {
@@ -112,6 +126,7 @@ export function setupHangulQuiz({ getState, confirmMission, notify, speech, coll
   }
   function render() {
     stopSpeaking();
+    renderAdventure();
     const finished = quiz.index === quiz.questions.length;
     $('#quiz-question-area').hidden = finished;
     $('#quiz-finish-area').hidden = !finished;
@@ -122,7 +137,9 @@ export function setupHangulQuiz({ getState, confirmMission, notify, speech, coll
       $('#quiz-reward-note').textContent = mission() ? '부모님이 확인하면 모험 보상을 받을 수 있어요. 오늘 시간 보상을 이미 받았어도 포켓몬 퀘스트는 계속할 수 있어요.' : '연결할 한글 미션이 없어요. 부모님 메뉴에서 이름에 ‘한글’이 들어가는 미션을 추가해 주세요.';
       $('#quiz-claim').disabled = !mission();
       $('#quiz-claim').focus();
-      say('다섯 번의 도전 성공! 잘했어, 연우! 부모님께 보여드리자.');
+      const waiting = collection.pendingCount();
+      $('#quiz-finish-area h3').textContent = waiting ? '탐험 성공! 야생 포켓몬을 발견했어!' : '다섯 문제 성공! 잘했어, 연우!';
+      say(waiting ? `${REGIONS[region].name} 탐험 성공! 누가 나타났을까?` : '다섯 문제 성공! 복습도 멋져!');
       collection.finishRound();
       return;
     }
@@ -161,7 +178,8 @@ export function setupHangulQuiz({ getState, confirmMission, notify, speech, coll
           if (!quizCreditReady(quiz)) {
             quiz.recovery = 'practice'; render(); return;
           }
-          collection.recordCorrect(question.id, quiz.difficulty);
+          const outcome = collection.recordCorrect(question.id, quiz.difficulty, region);
+          if (outcome.counted || outcome.upgraded) { walkSteps = outcome.encountered ? 5 : outcome.steps; renderAdventure(true); }
           button.classList.add('correct');
           $('#quiz-feedback').textContent = `맞았어! ${(question.reading ?? question.word.replace('□', question.answer))}! 잘했어, 연우! ✦`;
           say($('#quiz-feedback').textContent);
@@ -225,8 +243,10 @@ export function setupHangulQuiz({ getState, confirmMission, notify, speech, coll
   }
   $('#hangul-start').addEventListener('click', () => {
     const state = getState();
+    region = document.querySelector('input[name="adventure-region"]:checked')?.value ?? 'forest';
+    walkSteps = collection.explorationProgress(region);
     const completed = collection.completedAtDifficulty($('#quiz-difficulty').value);
-    quiz = createQuiz(Math.random, completed, $('#quiz-difficulty').value); $('#quiz-collection-note').textContent = '쉬움은 기본 친구, 보통은 희귀·전설, 어려움은 상위 전설·환상!'; render(); $('#quiz-dialog').showModal();
+    quiz = createQuiz(Math.random, completed, $('#quiz-difficulty').value); $('#quiz-collection-note').textContent = `${REGIONS[region].name}에서 새로운 문제 5개를 성공하고 야생 포켓몬을 만나자!`; render(); $('#quiz-dialog').showModal();
   });
   $('#quiz-next').addEventListener('click', () => { if (nextQuestion(quiz)) render(); });
   $('#quiz-speak').disabled = !canSpeak;

@@ -1,8 +1,8 @@
-import { initialState, validateState, settle, totalMinutes, remainingSeconds, start, pause, adjust, missionDone } from './model.js?v=shiny-forms';
+import { initialState, validateState, settle, totalMinutes, remainingSeconds, start, pause, adjust, missionDone } from './model.js?v=adventure-regions';
 import { MOVES, PSYCHIC_THRESHOLD, missionMove, celebrationMoves, earnedMissionMinutes } from './moves.js?v=daily60';
-import { setupHangulQuiz } from './hangul.js?v=medium-reading';
+import { setupHangulQuiz } from './hangul.js?v=adventure-regions';
 import { createKoreanSpeech } from './speech.js';
-import { setupCollection } from './collection.js?v=swipe-throw';
+import { setupCollection } from './collection.js?v=adventure-regions';
 import { setupTrainer } from './trainer.js?v=photo-picker-fix';
 
 const $ = selector => document.querySelector(selector);

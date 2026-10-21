@@ -1,0 +1,79 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { initialState, validateState, settle } from '../docs/model.js';
+import { enableAdventure, explorationProgress, recordExploration, completeCapture, collectionProgress, pokemonRegion, hasMewtwonite, revealedPokemon } from '../docs/collection.js';
+
+test('each habitat requires five new successes then stages a local encounter without ownership', () => {
+ for (const region of ['forest', 'sea', 'cave']) {
+  const state = initialState();
+  for (let i=0;i<4;i++) assert.equal(recordExploration(state, `q${i}`, 'easy', region, () => 0).encountered, false);
+  assert.equal(state.collection.pendingEncounters.length, 0);
+  assert.equal(recordExploration(state, 'q4', 'easy', region, () => 0).encountered, true);
+  const encounter = state.collection.pendingEncounters[0];
+  assert.equal(pokemonRegion(encounter), region);
+  assert.equal(collectionProgress(state).owned.length, 0);
+  assert.equal(explorationProgress(state, region), 0);
+  assert.ok(validateState(state));
+  const restored = JSON.parse(JSON.stringify(state));
+  assert.equal(completeCapture(restored, encounter.pendingId), true);
+  assert.equal(completeCapture(restored, encounter.pendingId), false);
+  assert.equal(collectionProgress(restored).owned.length, 1);
+  assert.equal(restored.collection.pendingEncounters.length, 0);
+ }
+});
+test('paths persist separately across interruptions/days and duplicate questions do not farm steps', () => {
+ const state=initialState();
+ recordExploration(state,'a','easy','forest');
+ recordExploration(state,'a','easy','forest');
+ recordExploration(state,'b','easy','sea');
+ assert.equal(explorationProgress(state,'forest'),1);
+ assert.equal(explorationProgress(state,'sea'),1);
+ const restored=JSON.parse(JSON.stringify(state));
+ settle(restored, Date.now()+86400_000);
+ assert.equal(explorationProgress(restored,'forest'),1);
+ recordExploration(restored,'a','easy','forest');
+ assert.equal(explorationProgress(restored,'forest'),2);
+});
+test('legacy friends persist but new threshold rewards wait for successful capture', () => {
+ const state=initialState();
+ state.collection={total:755,day:state.day,questions:[]};
+ const previous=collectionProgress(state).owned.map(p=>p.id);
+ enableAdventure(state);
+ assert.deepEqual(collectionProgress(state).owned.map(p=>p.id),previous);
+ assert.ok(validateState(state));
+});
+test('25 gift is queued once and survives reload without consuming random guarantees', () => {
+ const state=initialState();
+ for(let i=0;i<25;i++)recordExploration(state,`q${i}`,'easy','forest',()=>0.999);
+ const gifts=state.collection.pendingEncounters.filter(p=>p.shinyGift);
+ assert.equal(gifts.length,1);
+ assert.ok(!state.collection.shiny.includes('pikachu'));
+ assert.equal(state.collection.shinyBonusAwards,0);
+ const restored=JSON.parse(JSON.stringify(state));
+ recordExploration(restored,'extra','easy','forest');
+ assert.equal(restored.collection.pendingEncounters.filter(p=>p.shinyGift).length,1);
+ completeCapture(restored,gifts[0].pendingId);
+ assert.ok(restored.collection.shiny.includes('pikachu'));
+ assert.ok(validateState(restored));
+});
+test('legendary and Mega milestones remain hidden/uncaught until appropriate thresholds and captures', () => {
+ const state=initialState();
+ for(let i=1;i<=140;i++) {
+  recordExploration(state,`q${i}`,'hard','cave',()=>0.999);
+  if(i===25)assert.ok(state.collection.pendingEncounters.some(p=>p.id==='mewtwo'));
+  if(i===99)assert.equal(revealedPokemon(state).filter(p=>p.form).length,0);
+  if(i===100){assert.ok(hasMewtwonite(state));assert.equal(revealedPokemon(state).filter(p=>p.form).length,2);assert.ok(!state.collection.pendingEncounters.some(p=>p.form));}
+ }
+ assert.equal(state.collection.pendingEncounters.filter(p=>p.id==='mewtwo-mega-x').length,1);
+ assert.equal(state.collection.pendingEncounters.filter(p=>p.id==='mewtwo-mega-y').length,1);
+ assert.equal(collectionProgress(state).owned.length,0);
+});
+
+test('invalid saved paths and duplicate pending encounter keys are rejected', () => {
+ const state=initialState(); enableAdventure(state);
+ state.collection.explorationSteps.forest=5;
+ assert.equal(validateState(state),false);
+ state.collection.explorationSteps.forest=0;
+ state.collection.pendingEncounters=[{id:'bulbasaur',pendingId:'same',shiny:false},{id:'squirtle',pendingId:'same',shiny:false}];
+ assert.equal(validateState(state),false);
+});

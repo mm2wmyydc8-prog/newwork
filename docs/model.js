@@ -69,6 +69,13 @@ export function validateState(value) {
         !c.levels || typeof c.levels !== 'object' || Array.isArray(c.levels) ||
         !Object.values(c.levels).every(level => ['easy', 'medium', 'hard'].includes(level))) return false;
   }
+  if (value.collection?.adventureMode !== undefined && typeof value.collection.adventureMode !== 'boolean') return false;
+  if (value.collection?.explorationSteps !== undefined && (!value.collection.explorationSteps ||
+      !['forest', 'sea', 'cave'].every(region => Number.isInteger(value.collection.explorationSteps[region]) && value.collection.explorationSteps[region] >= 0 && value.collection.explorationSteps[region] < 5))) return false;
+  if (value.collection?.pendingEncounters !== undefined && (!Array.isArray(value.collection.pendingEncounters) ||
+      !value.collection.pendingEncounters.every(p => p && typeof p.id === 'string' && typeof p.pendingId === 'string' &&
+        typeof p.shiny === 'boolean' && (!p.exploration || ['forest', 'sea', 'cave'].includes(p.region))) ||
+      new Set(value.collection.pendingEncounters.map(p => p.pendingId)).size !== value.collection.pendingEncounters.length)) return false;
   if (value.collection?.pikachuGiftClaimed !== undefined && typeof value.collection.pikachuGiftClaimed !== 'boolean') return false;
   if (value.collection?.stoneNoticeSeen !== undefined && typeof value.collection.stoneNoticeSeen !== 'boolean') return false;
   if (value.collection?.shiny !== undefined && (!Array.isArray(value.collection.shiny) ||
