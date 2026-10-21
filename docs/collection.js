@@ -1214,9 +1214,7 @@ export function recordExploration(state, questionId, level, region, random = Mat
     data.explorationSteps[region] -= 5;
     const pool = POKEMON.filter(p => !p.form && !['전설', '환상'].includes(p.rarity) && pokemonRegion(p) === region &&
       (p.rarity !== '희귀' || (level !== 'easy' && rewardEligible(data, p))));
-    const waiting = new Set(data.pendingEncounters.filter(p => !p.shiny).map(p => p.id));
-    const fresh = pool.filter(p => !data.owned.includes(p.id) && !waiting.has(p.id));
-    const choices = fresh.length ? fresh : pool;
+    const choices = pool;
     const pokemon = choices[Math.min(choices.length - 1, Math.floor(random() * choices.length))];
     if (pokemon) { stageEncounter(data, { ...pokemon, shiny: false, region, exploration: true }); encountered = true; }
   }
@@ -1301,8 +1299,9 @@ export function setupCollection({ getState, save, speech, onCapture = () => {} }
     const advanced = byDifficulty.medium + byDifficulty.hard;
     $('#collection-shiny').textContent = discovered ? `✦ 이로치 ${shiny.length}마리 · 보통 이상 ${20 - advanced % 20}개 더 성공하면 확정 만남` : '';
     $('#collection-next').textContent = state.collection.adventureMode ? '원하는 지역에서 새 문제 5개를 성공하면 야생 포켓몬을 만나요!' : next ? `${next.name}까지 ${next.requirement} ${Math.max(0, next.threshold - next.progress)}개!` : '전설과 환상까지, 연우의 도감 완성!';
-    $('#collection-progress').max = next?.threshold ?? 1;
-    $('#collection-progress').value = next?.progress ?? 1;
+    $('#collection-progress').max = revealedPokemon(state).length;
+    $('#collection-progress').value = owned.length;
+    $('#collection-progress').setAttribute('aria-label', `도감 수집 ${owned.length} / ${revealedPokemon(state).length}모습`);
     const grid = $('#pokedex-grid'); grid.replaceChildren();
     const filter = $('#pokedex-filter').value;
     const visible = revealedPokemon(state, shinyView).filter(p => filter === 'all' || (filter === 'owned' ? (shinyView ? shinyIds.has(p.id) : ownedIds.has(p.id)) : REWARD_RULES.get(p.id).tier === filter));

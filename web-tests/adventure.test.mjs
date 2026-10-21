@@ -141,12 +141,14 @@ test('failed rounds can display the encounter but cannot award it even after thr
  assert.equal(collectionProgress(state).owned.length,0);
 });
 
-test('a fresh forest encounter prefers an uncaught friend instead of repeating Bulbasaur', () => {
+test('caught Pokemon can appear again without increasing unique collection count', () => {
  const state=initialState();
  for(let i=0;i<5;i++)recordExploration(state,`first-${i}`,'easy','forest',()=>0);
  const first=visibleEncounters(state)[0];
  assert.equal(first.id,'bulbasaur');
  completeCapture(state,first.pendingId);
  for(let i=0;i<5;i++)recordExploration(state,`second-${i}`,'easy','forest',()=>0);
- assert.notEqual(visibleEncounters(state)[0].id,'bulbasaur');
+ assert.equal(visibleEncounters(state)[0].id,'bulbasaur');
+ completeCapture(state,visibleEncounters(state)[0].pendingId);
+ assert.equal(collectionProgress(state).owned.length,1);
 });

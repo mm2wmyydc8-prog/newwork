@@ -1,9 +1,10 @@
+import { classifyMove } from './move-effects.js?v=move-motions';
 import { availablePartners, getPartner, selectPartner, missionPartnerSlot, partnerCelebrationSlots } from './partner.js?v=partner-habitats';
 import { initialState, validateState, settle, totalMinutes, remainingSeconds, start, pause, adjust, missionDone, resetTodayQuests } from './model.js?v=partner-habitats';
 import { PSYCHIC_THRESHOLD, missionMove, earnedMissionMinutes } from './moves.js?v=partner-habitats';
 import { setupHangulQuiz } from './hangul.js?v=partner-habitats';
-import { createKoreanSpeech } from './speech.js';
-import { setupCollection } from './collection.js?v=partner-habitats';
+import { createKoreanSpeech } from './speech.js?v=move-motions-voice';
+import { setupCollection } from './collection.js?v=dex-progress-voice';
 import { setupTrainer } from './trainer.js?v=photo-picker-fix';
 
 const $ = selector => document.querySelector(selector);
@@ -27,7 +28,7 @@ function toast(text) {
   clearTimeout(toastTimeout);
   toastTimeout = setTimeout(() => $('#toast').classList.remove('visible'), 3500);
 }
-const speech = createKoreanSpeech({ getRate: () => state.speechRate ?? 0.8, onError: toast });
+const speech = createKoreanSpeech({ getRate: () => state.speechRate ?? 0.8, onError: toast, onStatus: text => { $('#speech-status').textContent = text; } });
 const collection = setupCollection({ getState: () => { settle(state); return state; }, save: persist, speech, onCapture: renderPartner });
 const autoSpeak = text => { if (state.speechAuto !== false) speech.speak(text); };
 $('#speech-auto').checked = state.speechAuto !== false;
@@ -42,6 +43,10 @@ $('#celebration-speak').addEventListener('click', () => {
   speech.speak(`${$('#move-name').textContent}. ${$('.mewtwo-quote').textContent}. ${$('#celebration-mission').textContent}`);
 });
 $('#speech-stop').addEventListener('click', speech.stop);
+$('#speech-recover').addEventListener('click', () => {
+  state.speechAuto = true; $('#speech-auto').checked = true; persist();
+  speech.speak('음성을 다시 켰어요. 연우야, 우리 다시 모험하자!');
+});
 function persist() {
   if (!storageAvailable) return;
   try { localStorage.setItem(key, JSON.stringify(state)); }
@@ -69,13 +74,15 @@ function replayCelebration() {
 function renderCelebration() {
   const { mission, minutes, moves, index, partner, preview } = celebration;
   const move = partner.moves[moves[index]], special = !preview && index > 0;
-  const id = move.effect;
+  const id = move.effect, effect = classifyMove(move);
+  $('#celebration-dialog').dataset.motion = effect.motion;
+  $('#celebration-dialog').style.setProperty('--move-color', effect.color);
   $('#celebration-dialog').dataset.move = id;
   $('#celebration-dialog .eyebrow').textContent = preview ? 'PARTNER MOVES' : 'MISSION CLEAR!';
   $('#celebration-title').textContent = preview ? '파트너 기술 구경하기!' : special ? '특별 기술 발동!' : '연우, 미션 성공!';
   $('#move-name').textContent = `${partner.name}의 ${move.name}!`;
   $('.psychic-mewtwo').src = partner.image;
-  $('#move-symbol').textContent = move.name === '불대문자' ? '大' : ({fire:'🔥',water:'💧',electric:'⚡',leaf:'🍃',ice:'❄️',rock:'🪨',normal:'💥',wind:'💨',poison:'🟣',psychic:'✦',shadowball:'●',aurasphere:'◉',confusion:'✧'}[move.effect] ?? '✦');
+  $('#move-symbol').textContent = effect.symbol;
   $('#celebration-speak').textContent = `🔊 ${partner.name} 응원 듣기`;
   $('.mewtwo-quote').textContent = '“연우야, 멋진 도전이었어!”';
   $('#celebration-mission').textContent = preview ? '기술 연출만 보는 중이에요.' : special ? `오늘 미션 보상 ${PSYCHIC_THRESHOLD}분 달성!` : `${questTitle(mission)} 성공!`;

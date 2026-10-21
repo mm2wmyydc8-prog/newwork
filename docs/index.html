@@ -12,11 +12,11 @@
   <link rel="apple-touch-icon" href="assets/touch-icon.png">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="celebration.css?v=partner-habitats">
+  <link rel="stylesheet" href="celebration.css?v=move-motions">
   <link rel="stylesheet" href="hangul.css?v=words-60">
   <link rel="stylesheet" href="collection.css?v=partner-habitats">
   <link rel="stylesheet" href="trainer.css?v=upper-body">
-  <script type="module" src="app.js?v=partner-habitats"></script>
+  <script type="module" src="app.js?v=move-motions-voice"></script>
 </head>
 <body>
   <main>
@@ -77,7 +77,7 @@
       <span class="psychic-star star-one">✦</span><span class="psychic-star star-two">✧</span><span class="psychic-star star-three">✦</span>
       <img class="psychic-mewtwo" src="assets/mewtwo.png" alt="" width="475" height="475">
       <img class="psychic-mew" src="assets/mew.png" alt="" width="475" height="475">
-      <div id="move-symbol" class="move-symbol"></div><div class="move-orb"></div><div class="move-beam"></div>
+      <div class="move-fangs"><i></i><i></i><i></i><i></i></div><div class="move-drops"><i></i><i></i><i></i><i></i></div><div id="move-symbol" class="move-symbol"></div><div class="move-orb"></div><div class="move-beam"></div>
       <img class="floating-ball floating-one" src="assets/masterball.svg" alt=""><img class="floating-ball floating-two" src="assets/masterball.svg" alt=""><img class="floating-ball floating-three" src="assets/masterball.svg" alt="">
       <img class="reward-ball" src="assets/masterball.svg" alt="">
     </div>
@@ -96,7 +96,7 @@
     <div class="section-heading"><h3>미션과 보상 시간</h3><button id="add-mission" class="primary compact">＋ 미션 추가</button></div>
     <div id="parent-missions"></div>
 <section class="setting"><h3>연우 트레이너 얼굴</h3><p class="trainer-photo-notice">아이폰 사진에서 얼굴을 골라 트레이너에 넣어보세요. 이 기기에만 저장하며 사진을 서버나 GitHub로 보내지 않아요.</p><div class="trainer-settings-actions"><div class="trainer-file-field"><label for="trainer-upload">📷 얼굴 사진 선택</label><input id="trainer-upload" data-trainer-upload type="file" accept="image/*"></div><button id="trainer-remove" class="quiet" type="button">사진 지우기</button></div><p data-trainer-status class="trainer-photo-notice" role="status"></p></section>
-    <section class="setting"><h3>한국어 음성 읽기</h3><label class="speech-auto-label"><input id="speech-auto" type="checkbox" checked> 문제·힌트·칭찬 자동으로 읽기</label><label for="speech-rate">읽어주는 속도</label><select id="speech-rate"><option value="0.65">아주 천천히</option><option value="0.8">천천히</option><option value="1">보통</option></select><button id="speech-stop" type="button" class="quiet">음성 멈추기</button><p class="footnote">미션 듣기, 문제 듣기, 뮤츠 응원에 적용돼요. 기기의 한국어 TTS 음성을 사용하며 캐릭터 원작 목소리는 아니에요.</p></section>
+    <section class="setting"><h3>한국어 음성 읽기</h3><label class="speech-auto-label"><input id="speech-auto" type="checkbox" checked> 문제·힌트·칭찬 자동으로 읽기</label><label for="speech-rate">읽어주는 속도</label><select id="speech-rate"><option value="0.65">아주 천천히</option><option value="0.8">천천히</option><option value="1">보통</option></select><button id="speech-recover" type="button" class="secondary">🔊 음성 다시 켜기</button><p id="speech-status" class="footnote" role="status">🔊 음성 다시 켜기를 눌러 소리를 확인할 수 있어요.</p><button id="speech-stop" type="button" class="quiet">음성 멈추기</button><p class="footnote">미션 듣기, 문제 듣기, 뮤츠 응원에 적용돼요. 기기의 한국어 TTS 음성을 사용하며 캐릭터 원작 목소리는 아니에요.</p></section>
     <section class="setting"><h3>테스트 기록 정리</h3><button id="reset-learning-open" type="button" class="danger">학습·도감 초기화</button><button id="reset-quests-open" type="button" class="danger">오늘 퀘스트 초기화</button><p class="footnote">퀘스트 초기화는 오늘 완료 표시와 해당 보상 시간을 되돌립니다. 학습·도감 초기화는 학습·포획 기록만 처음으로 되돌립니다. TV 시간과 설정은 유지해요.</p></section>
     <section class="setting"><h3>매일 기본 시간</h3><label for="base-minutes">매일 받는 시간 (분)</label><div class="input-action"><input id="base-minutes" type="number" min="0" max="180" step="1" inputmode="numeric"><button id="save-base" class="secondary">저장</button></div></section>
     <section class="setting"><h3>시간 직접 조절</h3><label for="adjust-reason">이유</label><input id="adjust-reason" maxlength="60" placeholder="예: 약속을 잘 지켰어요"><label for="adjust-minutes">조절할 시간 (분)</label><input id="adjust-minutes" type="number" min="1" max="120" value="5" inputmode="numeric"><div class="timer-actions"><button id="reward-custom" class="secondary">＋ 시간 추가</button><button id="deduct-custom" class="danger">− 시간 차감</button></div></section>
