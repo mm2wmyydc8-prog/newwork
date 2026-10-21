@@ -252,3 +252,26 @@ if (!storageAvailable) toast('저장된 기록을 읽지 못했어요. 기존 �
 collection.render();
 setupTrainer({ notify: toast });
 setupHangulQuiz({ getState: () => { settle(state); return state; }, confirmMission, notify: toast, speech, collection, saveSettings: persist });
+
+function openLearningReset() {
+  const data = state.collection ?? {};
+  $('#reset-learning-summary').textContent = `누적 퀴즈 ${data.total ?? 0}개 · 포켓몬 ${data.owned?.length ?? 0}마리 · 포획 대기 ${data.pendingEncounters?.length ?? 0}개 기록을 초기화합니다.`;
+  $('#reset-learning-dialog').showModal();
+}
+$('#reset-learning-open').addEventListener('click', openLearningReset);
+$('#reset-learning-confirm').addEventListener('click', () => {
+  if (!storageAvailable) { toast('브라우저 저장 공간에 접근할 수 없어 초기화하지 않았어요.'); return; }
+  const cleared = { ...state };
+  delete cleared.collection;
+  try {
+    localStorage.setItem(key, JSON.stringify(cleared));
+    state = cleared;
+    window.location.reload();
+  } catch { toast('기록을 초기화하지 못했어요. 기존 기록은 유지됩니다.'); }
+});
+const entryUrl = new URL(window.location.href);
+if (entryUrl.searchParams.get('reset') === 'learning') {
+  entryUrl.searchParams.delete('reset');
+  window.history.replaceState(null, '', entryUrl.pathname + entryUrl.search + entryUrl.hash);
+  openLearningReset();
+}
