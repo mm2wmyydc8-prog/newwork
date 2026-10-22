@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {SENTENCE_QUESTIONS as BANK} from '../docs/sentence-questions.js';
-import {sentencePicture, PICTURE_POKEMON} from '../docs/sentence-pictures.js';
+import {sentencePicture, PICTURE_POKEMON, ILLUSTRATED_SPECIES, ILLUSTRATED_ACTIONS} from '../docs/sentence-pictures.js';
 import {ensureReading,createSentenceQuiz,markSentenceShown,noteSentenceWrong,recordSentenceCorrect,readingStage} from '../docs/sentence-learning.js';
 import {initialState,validateState} from '../docs/model.js';
 import {quizCreditReady,chooseAnswer,nextQuestion} from '../docs/hangul.js';
@@ -19,7 +19,7 @@ test('authored list and bank contain exactly 20/20/10 unique sentences and three
   const images=q.options.map(o=>sentencePicture(o.scene));assert.equal(new Set(images).size,3);
   for(const svg of images){assert.match(svg,/^<svg/);assert.doesNotMatch(svg,/<text|<script|foreignObject/i);
    for (const match of svg.matchAll(/href="([^"]+)"/g)) {
-    assert.ok(PICTURE_POKEMON.some(name=>match[1]===`assets/reading/sleep/${name}.png`) || PICTURE_POKEMON.some(name=>match[1]===`assets/${name}.png`));
+    assert.ok(match[1]==='assets/reading/pokemon-actions.png' || PICTURE_POKEMON.some(name=>match[1]===`assets/reading/sleep/${name}.png`) || PICTURE_POKEMON.some(name=>match[1]===`assets/${name}.png`));
     assert.ok(readFileSync(new URL('../docs/'+match[1],import.meta.url)).length>0);
    }}
   assert.equal(q.hints.length,2);assert.notEqual(q.hints[0],q.hints[1]);assert.ok(q.reveal.includes(q.sentence));
@@ -109,4 +109,16 @@ test('Pokemon and cats use ground sleeping poses while humans keep their bed',()
   const svg=sentencePicture({kind:'action',actor,action:'sleep'});
   assert.match(svg,/data-human-bed=/);assert.doesNotMatch(svg,/data-sleep-pose=/);
  }
+});
+
+test('all fifteen approved species actions use distinct illustrated poses, including actions in paired sentences',()=>{
+ const images=[];
+ for(const actor of ILLUSTRATED_SPECIES)for(const action of ILLUSTRATED_ACTIONS){
+  const svg=sentencePicture({kind:'action',actor,action});images.push(svg);
+  assert.ok(svg.includes(`data-action-pose="${actor}:${action}"`));
+  assert.match(svg,/pokemon-actions\.png/);assert.doesNotMatch(svg,/data-pokemon=|<text/);
+ }
+ assert.equal(new Set(images).size,15);
+ const pair=sentencePicture({kind:'pair',left:'bulbasaur',leftAction:'eat',right:'squirtle',rightAction:'sleep'});
+ assert.match(pair,/data-action-pose="bulbasaur:eat"/);assert.match(pair,/data-action-pose="squirtle:sleep"/);
 });
