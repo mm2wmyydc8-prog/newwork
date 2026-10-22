@@ -390,6 +390,13 @@ export function setupHangulQuiz({ getState, confirmMission, notify, speech, coll
     clearTimeout(advanceTimer);
     stopSpeaking();
     const state = getState();
+    // Starting the spoken easy adventure restores narration even after a saved mute.
+    if ($('#quiz-difficulty').value === 'easy' && state.speechAuto === false) {
+      state.speechAuto = true;
+      const autoToggle = $('#speech-auto');
+      if (autoToggle) autoToggle.checked = true;
+      saveSettings();
+    }
     region = document.querySelector('input[name="adventure-region"]:checked')?.value ?? 'forest';
     walkSteps = collection.explorationProgress(region);
     const completed = collection.completedToday();
@@ -411,7 +418,7 @@ export function setupHangulQuiz({ getState, confirmMission, notify, speech, coll
     }
     if (quiz.difficulty === 'medium' && !quiz.answered) quiz.assisted = true;
     const text = quiz.difficulty === 'medium' ? `뮤랑 읽어보자. ${question.reading}. ${[...question.reading].join(', ')}. ${question.reading}.` : questionText(question);
-    speech.speak(text, { interrupt: false, enqueue: true });
+    speech.speak(text); // Explicit replay must also recover from a missing native onend.
   });
   $('#quiz-claim').addEventListener('click', () => {
     if (!quiz || quiz.index !== quiz.questions.length) return;
