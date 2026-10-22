@@ -10,7 +10,7 @@ function engine() {
    getVoices:()=>[{lang:'en-US'},{lang:'ko-KR',name:'Korean'}],
    cancel(){events.push('cancel');fenced=true;this.speaking=false;},
    resume(){events.push('resume');this.paused=false;},
-   speak(u){assert.equal(fenced,false,'speak must not run in the same turn as cancel');events.push('speak');spoken.push(u);this.speaking=true;}
+   speak(u){assert.equal(fenced,false,'speak must not run in the same turn as cancel');events.push('speak');spoken.push(u);this.speaking=true;u.onstart?.();}
   }};
  return {scope,spoken,events,flush(){const work=[...timers.values()];timers.clear();fenced=false;work.forEach(fn=>fn());},timers};
 }
@@ -51,7 +51,7 @@ test('missing Korean voice and invalid rate use language fallback; unsupported b
 });
 test('status reports start, end, blocked speech; a terminal error allows future feedback',()=>{
  const e=engine(),statuses=[],r=createKoreanSpeech({scope:e.scope,onStatus:t=>statuses.push(t)});
- r.speak('확인');assert.match(statuses.at(-1),/준비/);e.spoken[0].onstart();assert.match(statuses.at(-1),/재생 중/);
+ r.speak('확인');assert.ok(statuses.some(t=>/준비/.test(t))); e.spoken[0].onstart();assert.match(statuses.at(-1),/재생 중/);
  e.scope.speechSynthesis.speaking=false;e.spoken[0].onend();assert.match(statuses.at(-1),/마쳤/);
  r.speak('다시');e.spoken[1].onerror({error:'not-allowed'});assert.match(statuses.at(-1),/듣기 버튼/);
  e.scope.speechSynthesis.speaking=false;assert.equal(r.speak('새로',{interrupt:false}),true);
@@ -108,4 +108,37 @@ test('a correct-answer boundary clears old queued readings and permits the next 
  staleEnd();e.flush();assert.equal(e.spoken.length,2);
  for(let i=0;i<3;i++)r.speak('글자 선택 칭찬',{interrupt:false});
  assert.equal(e.events.filter(x=>x==='cancel').length,1);
+});
+
+
+test('silently dropped speech after each cancel retries once with a fresh utterance for questions 2–5',()=>{
+ const e=engine(), nativeSpeak=e.scope.speechSynthesis.speak;
+ let dropNext=false;
+ e.scope.speechSynthesis.speak=function(u){
+  if(dropNext){dropNext=false;e.spoken.push(u);return;} // No start/end/error: WebKit drops the request.
+  nativeSpeak.call(this,u);
+ };
+ const r=createKoreanSpeech({scope:e.scope});
+ r.speak('문제 1');
+ for(let n=2;n<=5;n++){
+  r.stop();dropNext=true;r.speak(`문제 ${n}`,{interrupt:false,enqueue:true});
+  e.flush();const dropped=e.spoken.at(-1);
+  e.flush(); // Start watchdog resets the blocked native queue.
+  e.flush(); // Fresh utterance starts after cancellation settles.
+  assert.equal(e.spoken.at(-1).text,`문제 ${n}`);
+  assert.notEqual(e.spoken.at(-1),dropped);
+  assert.equal(e.timers.size,0,'successful retry leaves no watchdog running');
+ }
+});
+test('closing or changing question invalidates delayed voice recovery',()=>{
+ const e=engine();e.scope.speechSynthesis.speak=u=>e.spoken.push(u);
+ const r=createKoreanSpeech({scope:e.scope});r.speak('옛 문제');r.stop();e.flush();
+ assert.equal(e.spoken.length,1);
+});
+test('unstarted canceled speech recovers but repeated dropped starts report failure without a loop',()=>{
+ const e=engine(),errors=[];e.scope.speechSynthesis.speak=u=>e.spoken.push(u);
+ const r=createKoreanSpeech({scope:e.scope,onError:t=>errors.push(t)});
+ r.speak('문제');e.spoken[0].onerror({error:'interrupted'});
+ e.flush();e.flush();e.flush();
+ assert.equal(e.spoken.length,2);assert.equal(errors.length,1);assert.equal(e.timers.size,0);
 });
