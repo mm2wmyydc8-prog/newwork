@@ -97,3 +97,15 @@ test('a stale native speaking flag after onend never cancels the next quiz quest
  assert.deepEqual(e.spoken.map(u=>u.text),['문제 1','문제 2']);
  assert.equal(e.events.includes('cancel'),false);
 });
+
+test('a correct-answer boundary clears old queued readings and permits the next question before old onend',()=>{
+ const e=engine(),r=createKoreanSpeech({scope:e.scope});
+ r.speak('문제 1',{interrupt:false,enqueue:true});const staleEnd=e.spoken[0].onend;
+ r.speak('듣기 버튼의 글자',{interrupt:false,enqueue:true});
+ r.stop(); // Whole answer is correct, not a partial tile selection.
+ r.speak('문제 2',{interrupt:false,enqueue:true});e.flush();
+ assert.deepEqual(e.spoken.map(u=>u.text),['문제 1','문제 2']);
+ staleEnd();e.flush();assert.equal(e.spoken.length,2);
+ for(let i=0;i<3;i++)r.speak('글자 선택 칭찬',{interrupt:false});
+ assert.equal(e.events.filter(x=>x==='cancel').length,1);
+});

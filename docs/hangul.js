@@ -172,14 +172,17 @@ export function setupHangulQuiz({ getState, confirmMission, notify, speech, coll
   let unlockTimer, advanceTimer;
   function advanceQuestion() {
     clearTimeout(advanceTimer);
-    if ($('#quiz-dialog').open && quiz && nextQuestion(quiz)) render();
+    if ($('#quiz-dialog').open && quiz && nextQuestion(quiz)) {
+      stopSpeaking(); // A new question may replace the old reading; individual tile taps may not.
+      render();
+    }
   }
   function scheduleNextQuestion() {
     clearTimeout(advanceTimer);
     const currentQuiz = quiz, currentIndex = quiz.index;
     advanceTimer = setTimeout(() => {
       if (quiz === currentQuiz && quiz.index === currentIndex) advanceQuestion();
-    }, 1400);
+    }, 650);
   }
   function lockInput() {
     inputLocked = true; clearTimeout(unlockTimer);
@@ -262,7 +265,8 @@ export function setupHangulQuiz({ getState, confirmMission, notify, speech, coll
           if (outcome.counted || outcome.upgraded) { walkSteps = outcome.encountered ? 5 : outcome.steps; renderAdventure(true); }
           button.classList.add('correct');
           $('#quiz-feedback').textContent = `맞았어! ${(question.reading ?? question.word.replace('□', question.answer))}! 잘했어, 연우! ✦`;
-          say('맞았어!', { enqueue: false });
+          stopSpeaking(); // Clear this question and queued letter readings once the whole answer is correct.
+          // Keep the success message visual so it cannot delay the next question's voice.
           $('#quiz-next').hidden = true;
           scheduleNextQuestion();
           $('#quiz-answers').querySelectorAll('.quiz-answer').forEach(node => { node.disabled = true; });
