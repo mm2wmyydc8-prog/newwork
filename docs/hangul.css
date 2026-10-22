@@ -52,3 +52,5 @@
 @media(max-width:480px){.quiz-dialog[data-mode="hard"] .adventure-scene{display:none}.quiz-dialog[data-mode="hard"] .adventure-footsteps{margin-bottom:9px}}
 
 .word-picture-image{display:block;object-fit:contain;margin:8px auto;width:96px;height:96px}.quiz-picture-answer .word-picture-image{width:64px;height:64px;max-width:100%;margin:0 auto}
+
+.region-icon{display:block;object-fit:contain;width:28px;height:28px;margin:0 auto 5px}.scenery-icon{display:inline-block;object-fit:contain;width:36px;height:36px;vertical-align:middle;margin:0 3px}.adventure-scenery .scenery-icon{width:clamp(27px,7vw,38px);height:clamp(27px,7vw,38px)}.footstep-icon{width:20px;height:20px;vertical-align:middle;margin:0 3px}.adventure-goal .scenery-icon{width:28px;height:28px}

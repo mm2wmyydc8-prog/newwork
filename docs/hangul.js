@@ -1,6 +1,7 @@
+import { regionArt, sceneryArt } from './region-art.js?v=local-regions';
 import { createSentenceQuiz, ensureReading, markSentenceShown, noteSentenceWrong, recordSentenceCorrect } from './sentence-learning.js?v=sentence-reading';
 import { sentencePicture } from './sentence-pictures.js?v=clear-reading-actions';
-import { REGIONS } from './collection.js?v=capture-scenery-fix';
+import { REGIONS } from './collection.js?v=local-regions';
 
 export const QUESTIONS = [
   { id: 'tree', picture: '🌳', word: '', reading: '나무', prompt: '그림에 맞는 낱말을 골라볼까?', answer: '나무', choices: ['나무', '나비', '누나'], hint: '나무! “나” 하고 천천히 읽어 봐.' },
@@ -163,13 +164,13 @@ export function setupHangulQuiz({ getState, confirmMission, notify, speech, coll
   function renderAdventure(walking = false) {
     const place = REGIONS[region];
     $('#adventure-scene').dataset.region = region;
-    $('#adventure-scenery').textContent = place.scenery;
+    $('#adventure-scenery').innerHTML = sceneryArt(place.scenery);
     $('#adventure-walker').style.setProperty('--step', walkSteps);
     const walker = $('#adventure-walker');
     walker.classList.remove('walking');
     if (walking) { void walker.offsetWidth; walker.classList.add('walking'); }
     $('#adventure-status').textContent = `${place.name} 탐험 ${walkSteps}/5걸음${walkSteps === 5 ? ' · 누가 나타날까?' : ''}`;
-    $('#adventure-footsteps').textContent = Array.from({ length: 5 }, (_, i) => i < walkSteps ? '👣' : '○').join(' ');
+    $('#adventure-footsteps').innerHTML = Array.from({ length: 5 }, (_, i) => i < walkSteps ? regionArt('👣', 'footstep-icon') : '○').join(' ');
   }
   let inputLocked = false;
   let unlockTimer, advanceTimer;

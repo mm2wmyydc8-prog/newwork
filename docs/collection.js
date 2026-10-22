@@ -1,3 +1,4 @@
+import { sceneryArt } from './region-art.js?v=local-regions';
 export const POKEMON = [
   {
     "id": "bulbasaur",
@@ -1375,7 +1376,7 @@ export function setupCollection({ getState, save, speech, onCapture = () => {} }
     const region = pokemon.region ?? activeRegion;
     $('#capture-dialog').dataset.region = region;
     $('#capture-habitat-name').textContent = REGIONS[region].name;
-    $('#capture-habitat-scenery').textContent = REGIONS[region].scenery;
+    $('#capture-habitat-scenery').innerHTML = sceneryArt(REGIONS[region].scenery);
     $('#capture-dialog').dataset.phase = 'searching';
     $('#capture-title').textContent = `${REGIONS[region].name}에서 누가 나타날까?`;
     $('#capture-label').textContent = 'EXPLORING';

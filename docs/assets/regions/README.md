@@ -1,0 +1,1 @@
+Region illustrations from Twemoji (https://github.com/jdecked/twemoji). Copyright Twitter, Inc. and other contributors. Licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). Bundled locally without modification. Full license: ../words/LICENSE-GRAPHICS.
