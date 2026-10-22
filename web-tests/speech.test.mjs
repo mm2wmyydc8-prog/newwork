@@ -56,3 +56,44 @@ test('status reports start, end, blocked speech; a terminal error allows future 
  r.speak('다시');e.spoken[1].onerror({error:'not-allowed'});assert.match(statuses.at(-1),/듣기 버튼/);
  e.scope.speechSynthesis.speaking=false;assert.equal(r.speak('새로',{interrupt:false}),true);
 });
+
+test('quiz queue never cancels active narration and reads only the latest next prompt',()=>{
+ const e=engine(),r=createKoreanSpeech({scope:e.scope});
+ r.speak('첫 문제');
+ r.speak('맞았어!',{interrupt:false});
+ r.speak('둘째 문제',{interrupt:false,enqueue:true});
+ r.speak('셋째 문제',{interrupt:false,enqueue:true});
+ assert.deepEqual(e.events,['speak']);
+ e.scope.speechSynthesis.speaking=false;e.spoken[0].onend();e.flush();
+ assert.deepEqual(e.spoken.map(u=>u.text),['첫 문제','셋째 문제']);
+ assert.equal(e.events.includes('cancel'),false);
+ r.speak('넷째 문제',{interrupt:false,enqueue:true});r.stop();e.flush();
+ assert.equal(e.spoken.length,2);
+});
+test('five rounds of answering while speaking preserve narration with no cancellation',()=>{
+ const e=engine(),r=createKoreanSpeech({scope:e.scope});r.speak('문제 1');
+ for(let n=1;n<=5;n++){
+  for(let tile=0;tile<4;tile++)r.speak('글자 칭찬',{interrupt:false});
+  if(n<5)r.speak(`문제 ${n+1}`,{interrupt:false,enqueue:true});
+  e.scope.speechSynthesis.speaking=false;e.spoken.at(-1).onend();e.flush();
+ }
+ assert.deepEqual(e.spoken.map(u=>u.text),['문제 1','문제 2','문제 3','문제 4','문제 5']);
+ assert.equal(e.events.includes('cancel'),false);
+});
+
+test('a tile tap during the gap between utterances cannot displace the next question',()=>{
+ const e=engine(),r=createKoreanSpeech({scope:e.scope});r.speak('첫 문제');
+ r.speak('둘째 문제',{interrupt:false,enqueue:true});
+ e.scope.speechSynthesis.speaking=false;e.spoken[0].onend();
+ assert.equal(r.speak('짧은 칭찬',{interrupt:false}),false);
+ e.flush();assert.equal(e.spoken.at(-1).text,'둘째 문제');
+});
+
+test('a stale native speaking flag after onend never cancels the next quiz question',()=>{
+ const e=engine(),r=createKoreanSpeech({scope:e.scope});r.speak('문제 1',{interrupt:false,enqueue:true});
+ r.speak('문제 2',{interrupt:false,enqueue:true});
+ // Simulate WebKit reporting speaking=true for a moment after the end event.
+ e.spoken[0].onend();e.flush();
+ assert.deepEqual(e.spoken.map(u=>u.text),['문제 1','문제 2']);
+ assert.equal(e.events.includes('cancel'),false);
+});

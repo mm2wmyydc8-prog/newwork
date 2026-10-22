@@ -198,13 +198,12 @@ export function setupHangulQuiz({ getState, confirmMission, notify, speech, coll
     say(`${DIFFICULTIES[level].name} 모험. ${DIFFICULTIES[level].help}`);
   });
   function stopSpeaking() { speech.stop(); }
-  function say(text, options) { if (getState().speechAuto !== false) speech.speak(text, options); }
+  function say(text, options) { if (getState().speechAuto !== false) speech.speak(text, { interrupt: false, enqueue: true, ...options }); }
   function questionText(question) {
     if (quiz.difficulty === 'medium') return '글을 스스로 읽고, 알맞은 그림을 골라봐. 어려우면 뮤에게 소리 도움을 요청해도 괜찮아.';
     return `${quiz.difficulty === 'easy' ? question.answer : question.reading}. ${question.prompt} 글자가 궁금하면 작은 스피커를 눌러 들어 봐.`;
   }
   function render() {
-    stopSpeaking();
     renderAdventure();
     const finished = quiz.index === quiz.questions.length;
     $('#quiz-question-area').hidden = finished;
@@ -251,7 +250,7 @@ export function setupHangulQuiz({ getState, confirmMission, notify, speech, coll
           button.disabled = true;
           $('#quiz-word').textContent = [...question.reading].map((letter, index) => index < quiz.selected.length ? letter : '□').join('');
           $('#quiz-feedback').textContent = '좋아! 다음 글자도 이어보자.';
-          say($('#quiz-feedback').textContent, { interrupt: false });
+          say($('#quiz-feedback').textContent, { enqueue: false });
           return;
         }
         if (result === 'correct') {
@@ -263,7 +262,7 @@ export function setupHangulQuiz({ getState, confirmMission, notify, speech, coll
           if (outcome.counted || outcome.upgraded) { walkSteps = outcome.encountered ? 5 : outcome.steps; renderAdventure(true); }
           button.classList.add('correct');
           $('#quiz-feedback').textContent = `맞았어! ${(question.reading ?? question.word.replace('□', question.answer))}! 잘했어, 연우! ✦`;
-          say('맞았어!');
+          say('맞았어!', { enqueue: false });
           $('#quiz-next').hidden = true;
           scheduleNextQuestion();
           $('#quiz-answers').querySelectorAll('.quiz-answer').forEach(node => { node.disabled = true; });
@@ -282,7 +281,7 @@ export function setupHangulQuiz({ getState, confirmMission, notify, speech, coll
       const listen = document.createElement('button');
       listen.type = 'button'; listen.className = 'quiz-choice-listen'; listen.textContent = '🔊 듣기';
       listen.setAttribute('aria-label', `${answer} 소리 듣기`); listen.disabled = !canSpeak;
-      listen.addEventListener('click', () => speech.speak(answer));
+      listen.addEventListener('click', () => speech.speak(answer, { interrupt: false, enqueue: true }));
       if (quiz.difficulty === 'medium') cell.append(button);
       else cell.append(button, listen); $('#quiz-answers').append(cell);
     }
@@ -327,6 +326,7 @@ export function setupHangulQuiz({ getState, confirmMission, notify, speech, coll
   }
   $('#hangul-start').addEventListener('click', () => {
     clearTimeout(advanceTimer);
+    stopSpeaking();
     const state = getState();
     region = document.querySelector('input[name="adventure-region"]:checked')?.value ?? 'forest';
     walkSteps = collection.explorationProgress(region);
@@ -338,11 +338,10 @@ export function setupHangulQuiz({ getState, confirmMission, notify, speech, coll
   $('#quiz-speak').disabled = !canSpeak;
   $('#quiz-speak').addEventListener('click', () => {
     if (!canSpeak || quiz.index >= quiz.questions.length) return;
-    stopSpeaking();
     const question = quiz.questions[quiz.index];
     if (quiz.difficulty === 'medium' && !quiz.answered) quiz.assisted = true;
     const text = quiz.difficulty === 'medium' ? `뮤랑 읽어보자. ${question.reading}. ${[...question.reading].join(', ')}. ${question.reading}.` : questionText(question);
-    speech.speak(text);
+    speech.speak(text, { interrupt: false, enqueue: true });
   });
   $('#quiz-claim').addEventListener('click', () => {
     if (!quiz || quiz.index !== quiz.questions.length) return;

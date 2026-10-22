@@ -2,11 +2,12 @@ export function createKoreanSpeech({ scope = globalThis, getRate = () => 0.8, on
   const supported = 'speechSynthesis' in scope && 'SpeechSynthesisUtterance' in scope;
   const later = scope.setTimeout?.bind(scope) ?? globalThis.setTimeout.bind(globalThis);
   const clear = scope.clearTimeout?.bind(scope) ?? globalThis.clearTimeout.bind(globalThis);
-  let current = null, timer = null, generation = 0, needsYield = false;
+  let current = null, timer = null, generation = 0, needsYield = false, queued = null;
   const reportError = message => { onStatus(message); onError(message); };
   function stop() {
     if (!supported) return;
     generation++;
+    queued = null;
     if (timer !== null) clear(timer);
     timer = null;
     const previous = current;
@@ -17,11 +18,20 @@ export function createKoreanSpeech({ scope = globalThis, getRate = () => 0.8, on
       scope.speechSynthesis.cancel();
     }
   }
-  function speak(text, { interrupt = true } = {}) {
+  function speak(text, { interrupt = true, enqueue = false } = {}) {
     if (!supported) { reportError('이 브라우저는 음성 읽기를 지원하지 않아요. Safari에서 열어주세요.'); return false; }
     // Optional tile encouragement never interrupts a word, prompt, hint or manual reading.
-    if (!interrupt && current) return false;
-    stop();
+    if (!interrupt && (current || timer !== null)) {
+      if (enqueue) queued = String(text); // Keep only the latest relevant reading, never a stale backlog.
+      return enqueue;
+    }
+    if (interrupt) stop();
+    else {
+      // Some engines keep speaking=true briefly after onend. Do not cancel that
+      // stale native state when handing off between quiz questions.
+      generation++;
+      queued = null;
+    }
     const token = generation;
     const utterance = new scope.SpeechSynthesisUtterance(String(text));
     utterance.lang = 'ko-KR';
@@ -30,7 +40,22 @@ export function createKoreanSpeech({ scope = globalThis, getRate = () => 0.8, on
     const voice = scope.speechSynthesis.getVoices().find(v => v.lang.toLowerCase().replace('_', '-').startsWith('ko'));
     if (voice) utterance.voice = voice;
     utterance.onstart = () => { if (current === utterance) onStatus('음성 재생 중이에요. 소리가 안 들리면 탭 음소거와 Mac의 소리 출력 장치를 확인해 주세요.'); };
-    utterance.onend = () => { if (current === utterance) { current = null; onStatus('음성 재생을 마쳤어요.'); } };
+    utterance.onend = () => {
+      if (current !== utterance) return;
+      current = null;
+      onStatus('음성 재생을 마쳤어요.');
+      if (queued !== null) {
+        const finishedToken = generation;
+        timer = later(() => {
+          timer = null;
+          if (generation === finishedToken && !current && queued !== null) {
+            const next = queued;
+            queued = null;
+            speak(next, { interrupt: false, enqueue: true });
+          }
+        }, 60);
+      }
+    };
     utterance.onerror = event => {
       if (current !== utterance) return;
       current = null;
