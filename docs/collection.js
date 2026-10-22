@@ -1063,10 +1063,10 @@ const RANK = { easy: 0, medium: 1, hard: 2 };
 export const REWARD_RULES = new Map();
 let basic = 0, rare = 0, legendary = 0;
 for (const pokemon of POKEMON) {
-  const rule = pokemon.id === 'mewtwo' ? { level: 'hard', target: 25, label: '어려움', tier: '상위 전설' }
+  const rule = pokemon.id === 'mewtwo' ? { level: 'hard', target: 100, label: '어려움', tier: '상위 전설' }
     : pokemon.id === 'mewtwo-mega-x' ? { level: 'easy', target: 120, label: '모든 난이도', tier: '상위 전설' }
     : pokemon.id === 'mewtwo-mega-y' ? { level: 'easy', target: 140, label: '모든 난이도', tier: '상위 전설' }
-    : pokemon.id === 'mew' ? { level: 'hard', target: 40, label: '어려움', tier: '환상' }
+    : pokemon.id === 'mew' ? { level: 'hard', target: 90, label: '어려움', tier: '환상' }
     : pokemon.rarity === '전설' ? { level: 'medium', target: 40 + (++legendary) * 10, label: '보통 이상', tier: '전설' }
     : pokemon.rarity === '희귀' ? { level: 'medium', target: (++rare) * 5, label: '보통 이상', tier: '희귀' }
     : { level: 'easy', target: (++basic) * 5, label: '모든 난이도', tier: pokemon.rarity };

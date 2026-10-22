@@ -60,7 +60,10 @@ test('legendary and Mega milestones remain hidden/uncaught until appropriate thr
  const state=initialState();
  for(let i=1;i<=140;i++) {
   recordExploration(state,`q${i}`,'hard','cave',()=>0.999);
-  if(i===25)assert.ok(state.collection.pendingEncounters.some(p=>p.id==='mewtwo'));
+  if(i===89)assert.ok(!state.collection.pendingEncounters.some(p=>p.id==='mew'));
+  if(i===90)assert.ok(state.collection.pendingEncounters.some(p=>p.id==='mew'));
+  if(i===99)assert.ok(!state.collection.pendingEncounters.some(p=>p.id==='mewtwo'));
+  if(i===100)assert.ok(state.collection.pendingEncounters.some(p=>p.id==='mewtwo'));
   if(i===99)assert.equal(revealedPokemon(state).filter(p=>p.form).length,0);
   if(i===100){assert.ok(hasMewtwonite(state));assert.equal(revealedPokemon(state).filter(p=>p.form).length,2);assert.ok(!state.collection.pendingEncounters.some(p=>p.form));}
  }

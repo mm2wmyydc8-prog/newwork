@@ -42,11 +42,15 @@ test('easy cannot unlock rare or legendary species; medium and hard have separat
   for (let i = 0; i < 50; i++) recordQuest(state, `medium-${i}`, 'medium');
   assert.ok(collectionProgress(state).owned.some(p => p.id === 'articuno'));
   assert.ok(!collectionProgress(state).owned.some(p => p.id === 'mewtwo'));
-  for (let i = 0; i < 25; i++) recordQuest(state, `hard-${i}`, 'hard');
-  assert.ok(collectionProgress(state).owned.some(p => p.id === 'mewtwo'));
+  for (let i = 0; i < 89; i++) recordQuest(state, `hard-${i}`, 'hard');
   assert.ok(!collectionProgress(state).owned.some(p => p.id === 'mew'));
-  for (let i = 25; i < 40; i++) recordQuest(state, `hard-${i}`, 'hard');
+  assert.ok(!collectionProgress(state).owned.some(p => p.id === 'mewtwo'));
+  recordQuest(state, 'hard-89', 'hard');
   assert.ok(collectionProgress(state).owned.some(p => p.id === 'mew'));
+  for (let i = 90; i < 99; i++) recordQuest(state, `hard-${i}`, 'hard');
+  assert.ok(!collectionProgress(state).owned.some(p => p.id === 'mewtwo'));
+  recordQuest(state, 'hard-99', 'hard');
+  assert.ok(collectionProgress(state).owned.some(p => p.id === 'mewtwo'));
 });
 test('harder repeat upgrades its difficulty without counting the quest twice', () => {
   const state = initialState();
