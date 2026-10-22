@@ -1,16 +1,14 @@
+import { illustratedScene } from './reading-illustrations.js?v=complete-companions';
 import { SLEEPING_POSES } from './sleeping-poses.js?v=ground-sleep';
 // Text-free SVG scenes with local Pokedex artwork for Pokemon and drawn props.
 const COLORS={red:'#ed4953',blue:'#4289e6',yellow:'#f0cf40',green:'#4baa6e'};
 const PALETTE={pikachu:'#f4d351',charmander:'#ed9457',squirtle:'#8ccbd2',bulbasaur:'#7dbab0',eevee:'#b88a62',kiki:'#e1ad69',huchu:'#9aa6ac',yeonwoo:'#759bdb',mom:'#e3939d',dad:'#80b293'};
 export const PICTURE_POKEMON = ['pikachu','charmander','squirtle','bulbasaur','eevee'];
 export const PICTURE_SLEEPERS = [...PICTURE_POKEMON, 'kiki', 'huchu'];
-export const ILLUSTRATED_SPECIES = ['charmander','squirtle','bulbasaur'];
+export const ILLUSTRATED_SPECIES = ['charmander','squirtle','bulbasaur','pikachu','eevee'];
 export const ILLUSTRATED_ACTIONS = ['sleep','eat','drink','walk','jump'];
-function illustratedPose(name, action, {x=40,y=0,width=240,height=240}={}) {
- const row=ILLUSTRATED_SPECIES.indexOf(name),column=ILLUSTRATED_ACTIONS.indexOf(action);
- if(row<0||column<0)return '';
- const left=column*324+6,top=row*(971/3)+6,w=312,h=971/3-12,id=`action-frame-${name}-${action}`;
- return `<svg data-action-pose="${name}:${action}" ${action==='sleep'?`data-sleep-pose="${name}"`:''} x="${x}" y="${y}" width="${width}" height="${height}" viewBox="${left} ${top} ${w} ${h}" overflow="hidden" preserveAspectRatio="xMidYMid meet"><defs><clipPath id="${id}" clipPathUnits="userSpaceOnUse"><rect x="${left}" y="${top}" width="${w}" height="${h}"/></clipPath></defs><image clip-path="url(#${id})" href="assets/reading/pokemon-actions.png" width="1620" height="971"/></svg>`;
+function illustratedPose(name, action, options) {
+ return illustratedScene({kind:'action',actor:name,action},options);
 }
 const ellipse=(x,y,rx,ry,fill,extra='')=>`<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" fill="${fill}" ${extra}/>`;
 const path=(d,fill='none',stroke='#43535b',width=3)=>`<path d="${d}" fill="${fill}" stroke="${stroke}" stroke-width="${width}" stroke-linecap="round" stroke-linejoin="round"/>`;
@@ -69,9 +67,8 @@ function actor(name,action='stand',hatColor){
  return s;
 }
 function actionPicture(name,action,{x=145,y=143,scale=.83,color,propName,size='medium'}={}){
- if (!propName && ILLUSTRATED_SPECIES.includes(name) && ILLUSTRATED_ACTIONS.includes(action)) {
-  return `<g transform="translate(${x} ${y}) scale(${scale})">${illustratedPose(name,action,{x:-126,y:-154,width:252,height:234})}</g>`;
- }
+ const drawing = !propName && illustratedPose(name,action,{x:-126,y:-154,width:252,height:234});
+ if (drawing) return `<g transform="translate(${x} ${y}) scale(${scale})">${drawing}</g>`;
  if (action === 'sleep' && PICTURE_SLEEPERS.includes(name)) {
   const pose = SLEEPING_POSES[name];
   let sleeping;
@@ -120,8 +117,9 @@ function reference(ref){
 }
 export function sentencePicture(scene){
  const bg=rect(0,0,320,240,'#eaf3f4',16)+rect(0,198,320,42,'#dce8cd',0);let body='';
- if(scene.kind==='action' && !scene.prop && ILLUSTRATED_SPECIES.includes(scene.actor) && ILLUSTRATED_ACTIONS.includes(scene.action)) {
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 240" width="320" height="240" aria-hidden="true">${bg}${illustratedPose(scene.actor,scene.action)}</svg>`;
+ const illustration = illustratedScene(scene);
+ if(illustration) {
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 240" width="320" height="240" aria-hidden="true">${bg}${illustration}</svg>`;
  }
  if(['action','color'].includes(scene.kind))body=actionPicture(scene.actor,scene.action,{color:COLORS[scene.color],propName:scene.prop});
  if(scene.kind==='size'){

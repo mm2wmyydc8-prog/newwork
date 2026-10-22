@@ -6,6 +6,7 @@ import {sentencePicture, PICTURE_POKEMON, ILLUSTRATED_SPECIES, ILLUSTRATED_ACTIO
 import {ensureReading,createSentenceQuiz,markSentenceShown,noteSentenceWrong,recordSentenceCorrect,readingStage} from '../docs/sentence-learning.js';
 import {initialState,validateState} from '../docs/model.js';
 import {quizCreditReady,chooseAnswer,nextQuestion} from '../docs/hangul.js';
+import {ILLUSTRATION_ATLASES, ILLUSTRATION_FRAMES} from '../docs/reading-illustrations.js';
 import {REGIONS,recordExploration,visibleEncounters,finishCaptureAttempt,completeCapture} from '../docs/collection.js';
 const rng=()=>.4;
 function resolve(state,quiz,q){markSentenceShown(state,q);chooseAnswer(quiz,q.answer);recordSentenceCorrect(state,quiz);nextQuestion(quiz);}
@@ -19,7 +20,7 @@ test('authored list and bank contain exactly 20/20/10 unique sentences and three
   const images=q.options.map(o=>sentencePicture(o.scene));assert.equal(new Set(images).size,3);
   for(const svg of images){assert.match(svg,/^<svg/);assert.doesNotMatch(svg,/<text|<script|foreignObject/i);
    for (const match of svg.matchAll(/href="([^"]+)"/g)) {
-    assert.ok(match[1]==='assets/reading/pokemon-actions.png' || PICTURE_POKEMON.some(name=>match[1]===`assets/reading/sleep/${name}.png`) || PICTURE_POKEMON.some(name=>match[1]===`assets/${name}.png`));
+    assert.ok(['assets/reading/pokemon-actions.png','assets/reading/companion-actions.png','assets/reading/activity-details.png'].includes(match[1]) || PICTURE_POKEMON.some(name=>match[1]===`assets/reading/sleep/${name}.png`) || PICTURE_POKEMON.some(name=>match[1]===`assets/${name}.png`));
     assert.ok(readFileSync(new URL('../docs/'+match[1],import.meta.url)).length>0);
    }}
   assert.equal(q.hints.length,2);assert.notEqual(q.hints[0],q.hints[1]);assert.ok(q.reveal.includes(q.sentence));
@@ -111,14 +112,42 @@ test('Pokemon and cats use ground sleeping poses while humans keep their bed',()
  }
 });
 
-test('all fifteen approved species actions use distinct illustrated poses, including actions in paired sentences',()=>{
+test('all twenty-five approved species actions use distinct illustrated poses, including actions in paired sentences',()=>{
  const images=[];
  for(const actor of ILLUSTRATED_SPECIES)for(const action of ILLUSTRATED_ACTIONS){
   const svg=sentencePicture({kind:'action',actor,action});images.push(svg);
   assert.ok(svg.includes(`data-action-pose="${actor}:${action}"`));
-  assert.match(svg,/pokemon-actions\.png/);assert.doesNotMatch(svg,/data-pokemon=|<text/);
+  assert.match(svg,/(?:pokemon-actions|companion-actions)\.png/);assert.doesNotMatch(svg,/data-pokemon=|<text/);
  }
- assert.equal(new Set(images).size,15);
+ assert.equal(new Set(images).size,25);
  const pair=sentencePicture({kind:'pair',left:'bulbasaur',leftAction:'eat',right:'squirtle',rightAction:'sleep'});
  assert.match(pair,/data-action-pose="bulbasaur:eat"/);assert.match(pair,/data-action-pose="squirtle:sleep"/);
+});
+
+test('condition questions and ball activities use illustrated scenes rather than idle sprites with props',()=>{
+ for(const actor of ['charmander','squirtle'])for(const color of ['red','blue','yellow']){
+  const svg=sentencePicture({kind:'color',actor,action:'water',prop:'flower',color});
+  assert.ok(svg.includes(`data-illustrated-scene="${actor}:water:${color}"`));assert.doesNotMatch(svg,/data-pokemon=/);
+ }
+ for(const position of ['under','on','beside'])assert.ok(sentencePicture({kind:'position',actor:'eevee',reference:'tree',position}).includes(`data-illustrated-scene="eevee:tree:${position}"`));
+ for(const actor of ['bulbasaur','squirtle','pikachu','eevee'])assert.match(sentencePicture({kind:'action',actor,action:'ball'}),/data-illustrated-scene=/);
+ for(const color of ['red','yellow','blue'])assert.ok(sentencePicture({kind:'color',actor:'pikachu',action:'ball',prop:'ball',color}).includes(`pikachu:ball:color:${color}`));
+ for(const size of ['big','medium','small'])assert.ok(sentencePicture({kind:'size',actor:'pikachu',action:'ball',prop:'ball',size}).includes(`pikachu:ball:size:${size}`));
+});
+
+test('illustration frame boundaries match each bundled atlas and never extend beyond it',()=>{
+ for(const sheet of Object.values(ILLUSTRATION_ATLASES)){
+  const png=readFileSync(new URL('../docs/'+sheet.file,import.meta.url));
+  assert.equal(png.readUInt32BE(16),sheet.width);assert.equal(png.readUInt32BE(20),sheet.height);
+  assert.equal(sheet.xRanges.length,sheet.columns);assert.equal(sheet.yRanges.length,sheet.rows);
+  for(const [start,end] of sheet.xRanges)assert.ok(start>=0&&end>start&&end<=sheet.width);
+  for(const [start,end] of sheet.yRanges)assert.ok(start>=0&&end>start&&end<=sheet.height);
+ }
+ for(const frame of Object.values(ILLUSTRATION_FRAMES)){
+  const sheet=ILLUSTRATION_ATLASES[frame.atlas];assert.ok(frame.column<sheet.columns&&frame.row<sheet.rows);
+ }
+ // The companion sheet has nonuniform columns: equal division cuts off tails
+ // and leaks neighboring characters even though the image itself is valid.
+ const widths=ILLUSTRATION_ATLASES.companions.xRanges.map(([a,b])=>b-a);
+ assert.ok(new Set(widths).size>1);
 });
