@@ -1,13 +1,13 @@
-import { ensureReading, readingStage } from './sentence-learning.js?v=evolution-levels';
+import { ensureReading, readingStage } from './sentence-learning.js?v=family-art';
 import { createMoveScene } from './move-scene.js?v=move-batch';
 import { createMoveSound } from './move-sound.js?v=techniques-2';
 import { classifyMove } from './move-effects.js?v=move-batch';
-import { availablePartners, getPartner, selectPartner, missionPartnerSlot, partnerCelebrationSlots, revealedPartnerSlots } from './partner.js?v=evolution-levels';
-import { initialState, validateState, settle, totalMinutes, remainingSeconds, start, pause, adjust, missionDone, resetTodayQuests, resetTestProgress } from './model.js?v=evolution-levels';
+import { availablePartners, getPartner, selectPartner, missionPartnerSlot, partnerCelebrationSlots, revealedPartnerSlots } from './partner.js?v=family-art';
+import { initialState, validateState, settle, totalMinutes, remainingSeconds, start, pause, adjust, missionDone, resetTodayQuests, resetTestProgress } from './model.js?v=family-art';
 import { PSYCHIC_THRESHOLD, missionMove, earnedMissionMinutes } from './moves.js?v=partner-habitats';
-import { setupHangulQuiz } from './hangul.js?v=evolution-levels';
+import { setupHangulQuiz } from './hangul.js?v=family-art';
 import { createKoreanSpeech } from './speech.js?v=voice-idle-recovery';
-import { setupCollection, captureAllForTesting } from './collection.js?v=evolution-levels';
+import { setupCollection, captureAllForTesting } from './collection.js?v=family-art';
 import { setupTrainer } from './trainer.js?v=photo-picker-fix';
 
 const $ = selector => document.querySelector(selector);

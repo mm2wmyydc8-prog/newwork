@@ -20,7 +20,7 @@ test('authored list and bank contain exactly 20/20/10 unique sentences and three
   const images=q.options.map(o=>sentencePicture(o.scene));assert.equal(new Set(images).size,3);
   for(const svg of images){assert.match(svg,/^<svg/);assert.doesNotMatch(svg,/<text|<script|foreignObject/i);
    for (const match of svg.matchAll(/href="([^"]+)"/g)) {
-    assert.ok(['assets/reading/pokemon-actions.png','assets/reading/companion-actions.png','assets/reading/activity-details.png','assets/reading/remaining-actions.png','assets/reading/desk-positions.png'].includes(match[1]) || PICTURE_POKEMON.some(name=>match[1]===`assets/reading/sleep/${name}.png`) || PICTURE_POKEMON.some(name=>match[1]===`assets/${name}.png`));
+    assert.ok(['assets/reading/pokemon-actions.png','assets/reading/companion-actions.png','assets/reading/activity-details.png','assets/reading/remaining-actions.png','assets/reading/desk-positions.png',...Object.values(ILLUSTRATION_ATLASES).map(a=>a.file)].includes(match[1]) || PICTURE_POKEMON.some(name=>match[1]===`assets/reading/sleep/${name}.png`) || PICTURE_POKEMON.some(name=>match[1]===`assets/${name}.png`));
     assert.ok(readFileSync(new URL('../docs/'+match[1],import.meta.url)).length>0);
    }}
   assert.equal(q.hints.length,2);assert.notEqual(q.hints[0],q.hints[1]);assert.ok(q.reveal.includes(q.sentence));

@@ -1,4 +1,4 @@
-import { SENTENCE_QUESTIONS } from './sentence-questions.js?v=evolution-levels';
+import { SENTENCE_QUESTIONS } from './sentence-questions.js?v=family-art';
 const IDS = new Set(SENTENCE_QUESTIONS.map(q=>q.id));
 export const DEFAULT_READING_SETTINGS = {stage2Correct:12,stage3Correct:12,minAccuracy:70,reviewEnabled:true};
 export function mix(items,random=Math.random){const a=[...items];for(let i=a.length-1;i>0;i--){const j=Math.min(i,Math.floor(random()*(i+1)));[a[i],a[j]]=[a[j],a[i]];}return a;}
