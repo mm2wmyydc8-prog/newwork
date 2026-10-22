@@ -1,4 +1,4 @@
-import { sceneryArt } from './region-art.js?v=desk-actions';
+import { sceneryArt } from './region-art.js?v=evolution-levels';
 export const POKEMON = [
   {
     "id": "bulbasaur",
@@ -1129,6 +1129,18 @@ export function shinyDiscovered(state) {
   const data = ensureCollection(state);
   return data.testAllCaptured === true || (data.total >= 25 && (data.shinyIntroSeen === true || data.shiny.includes('pikachu')));
 }
+// Evolution depth within the original 151 species; single-stage species stay basic.
+const FIRST_EVOLUTIONS = new Set('ivysaur charmeleon wartortle metapod kakuna pidgeotto raticate fearow arbok raichu sandslash nidorina nidorino clefable ninetales wigglytuff golbat gloom parasect venomoth dugtrio persian golduck primeape arcanine poliwhirl kadabra machoke weepinbell rapidash slowbro magneton dodrio dewgong muk cloyster haunter hypno kingler electrode exeggutor marowak weezing rhydon seadra seaking starmie gyarados vaporeon jolteon flareon omastar kabutops dragonair graveler tentacruel'.split(' '));
+const SECOND_EVOLUTIONS = new Set('venusaur charizard blastoise butterfree beedrill pidgeot nidoqueen nidoking vileplume poliwrath alakazam machamp victreebel golem gengar dragonite'.split(' '));
+export function evolutionDifficulty(pokemon) {
+  return SECOND_EVOLUTIONS.has(pokemon.id) ? 'hard' : FIRST_EVOLUTIONS.has(pokemon.id) ? 'medium' : 'easy';
+}
+export function explorationPool(state, level, region) {
+  const data = enableAdventure(state), rank = RANK[level] ?? 0;
+  return POKEMON.filter(p => !p.form && !['전설', '환상'].includes(p.rarity) && pokemonRegion(p) === region &&
+    RANK[evolutionDifficulty(p)] <= rank &&
+    (p.rarity !== '희귀' || (rank > 0 && rewardEligible(data, p))));
+}
 export const SHINY_CHANCE = { easy: 0, medium: 1 / 24, hard: 1 / 16 };
 export function shinyDifficulty(pokemon) { return !pokemon.form && REWARD_RULES.get(pokemon.id).level === 'easy' ? 'medium' : 'hard'; }
 export function recordQuest(state, questionId, difficulty = 'easy', random = Math.random) {
@@ -1214,8 +1226,7 @@ export function recordExploration(state, questionId, level, region, random = Mat
   let encountered = false;
   if (data.explorationSteps[region] >= 5) {
     data.explorationSteps[region] -= 5;
-    const pool = POKEMON.filter(p => !p.form && !['전설', '환상'].includes(p.rarity) && pokemonRegion(p) === region &&
-      (p.rarity !== '희귀' || (level !== 'easy' && rewardEligible(data, p))));
+    const pool = explorationPool(state, level, region);
     const choices = pool;
     const pokemon = choices[Math.min(choices.length - 1, Math.floor(random() * choices.length))];
     if (pokemon) { stageEncounter(data, { ...pokemon, shiny: false, region, exploration: true }); encountered = true; }
