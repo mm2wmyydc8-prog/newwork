@@ -207,6 +207,16 @@ export function setupHangulQuiz({ getState, confirmMission, notify, speech, coll
   $('#hard-reading-mode-label').hidden = $('#quiz-difficulty').value !== 'hard';
   function stopSpeaking() { speech.stop(); }
   function say(text, options) { if (getState().speechAuto !== false) speech.speak(text, { interrupt: false, enqueue: true, ...options }); }
+  function wordPicture(node, picture) {
+    const entry = QUESTIONS.find(q => q.picture === picture);
+    if (!entry) { node.textContent = picture; return; }
+    const image = document.createElement('img');
+    image.src = `assets/words/${entry.id}.svg`;
+    image.alt = entry.reading ?? entry.word.replace('□', entry.answer);
+    image.className = 'word-picture-image';
+    image.width = 96; image.height = 96;
+    node.replaceChildren(image);
+  }
   function questionText(question) {
     if (quiz.difficulty === 'medium') return '글을 스스로 읽고, 알맞은 그림을 골라봐. 어려우면 뮤에게 소리 도움을 요청해도 괜찮아.';
     return `${quiz.difficulty === 'easy' ? question.answer : question.reading}. ${question.prompt} 글자가 궁금하면 작은 스피커를 눌러 들어 봐.`;
@@ -238,7 +248,7 @@ export function setupHangulQuiz({ getState, confirmMission, notify, speech, coll
     if (quiz.recovery) { renderPractice(question); return; }
     lockInput();
     $('#quiz-picture').hidden = quiz.difficulty === 'medium';
-    $('#quiz-picture').textContent = question.picture;
+    wordPicture($('#quiz-picture'), question.picture);
     $('#quiz-speak').textContent = quiz.difficulty === 'medium' ? '🔊 뮤에게 읽기 도움 받기' : '🔊 낱말·문제 듣기';
     $('#quiz-word').textContent = question.word;
     $('#quiz-word').hidden = !question.word;
@@ -252,7 +262,7 @@ export function setupHangulQuiz({ getState, confirmMission, notify, speech, coll
       const cell = document.createElement('div'); cell.className = 'quiz-choice';
       const button = document.createElement('button');
       button.type = 'button'; button.className = answer.length > 1 ? 'quiz-answer quiz-answer-word' : 'quiz-answer'; button.textContent = answer;
-      if (quiz.difficulty === 'medium') button.classList.add('quiz-picture-answer');
+      if (quiz.difficulty === 'medium') { button.classList.add('quiz-picture-answer'); wordPicture(button, answer); }
       button.addEventListener('click', () => {
         if (quiz.answered || inputLocked) return;
         lockInput();

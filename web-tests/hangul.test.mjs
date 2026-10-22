@@ -1,3 +1,4 @@
+import {readFileSync} from 'node:fs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { QUESTIONS, createQuiz, chooseAnswer, nextQuestion, chooseQuizTile, noteQuizMistake, retryQuizQuestion, quizCreditReady } from '../docs/hangul.js';
@@ -169,4 +170,11 @@ test('round mistake total survives question changes and practice retries', () =>
  noteQuizMistake(quiz);retryQuizQuestion(quiz);
  assert.equal(quiz.totalMistakes,3);
  assert.equal(quiz.mistakes,0);
+});
+
+test('all sixty word pictures are bundled SVGs, including unsupported ladder, goose and donkey emoji',()=>{
+ for(const q of QUESTIONS){
+  const svg=readFileSync(new URL(`../docs/assets/words/${q.id}.svg`,import.meta.url),'utf8');
+  assert.match(svg,/<svg/);assert.match(svg,/viewBox=/);assert.doesNotMatch(svg,/<script|<text|<image|(?:href|src)=/i);
+ }
 });

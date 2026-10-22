@@ -1,0 +1,1 @@
+Word illustrations from Twemoji (https://github.com/jdecked/twemoji). Copyright Twitter, Inc. and other contributors. Licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). Original SVG artwork, bundled locally without modification. See LICENSE-GRAPHICS.
