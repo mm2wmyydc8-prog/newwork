@@ -1,7 +1,7 @@
-import { regionArt, sceneryArt } from './region-art.js?v=family-art';
-import { createSentenceQuiz, ensureReading, markSentenceShown, noteSentenceWrong, recordSentenceCorrect } from './sentence-learning.js?v=family-art';
-import { sentencePicture } from './sentence-pictures.js?v=family-art';
-import { REGIONS } from './collection.js?v=family-art';
+import { regionArt, sceneryArt } from './region-art.js?v=all-scenes';
+import { createSentenceQuiz, ensureReading, markSentenceShown, noteSentenceWrong, recordSentenceCorrect } from './sentence-learning.js?v=all-scenes';
+import { sentencePicture } from './sentence-pictures.js?v=all-scenes';
+import { REGIONS } from './collection.js?v=all-scenes';
 
 export const QUESTIONS = [
   { id: 'tree', picture: '🌳', word: '', reading: '나무', prompt: '그림에 맞는 낱말을 골라볼까?', answer: '나무', choices: ['나무', '나비', '누나'], hint: '나무! “나” 하고 천천히 읽어 봐.' },

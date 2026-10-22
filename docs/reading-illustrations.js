@@ -443,6 +443,41 @@ export const ILLUSTRATION_ATLASES = {
         1024
       ]
     ]
+  },
+  "lastScenes": {
+    "file": "assets/reading/last-scenes.png",
+    "width": 1536,
+    "height": 1024,
+    "columns": 3,
+    "rows": 3,
+    "xRanges": [
+      [
+        0,
+        504
+      ],
+      [
+        516,
+        1020
+      ],
+      [
+        1031,
+        1536
+      ]
+    ],
+    "yRanges": [
+      [
+        0,
+        366
+      ],
+      [
+        376,
+        667
+      ],
+      [
+        675,
+        1024
+      ]
+    ]
   }
 };
 export const ILLUSTRATION_FRAMES = {
@@ -1135,6 +1170,51 @@ export const ILLUSTRATION_FRAMES = {
     "atlas": "boxScenes",
     "column": 2,
     "row": 1
+  },
+  "pikachu:tree:under": {
+    "atlas": "lastScenes",
+    "column": 0,
+    "row": 0
+  },
+  "pikachu:tree:on": {
+    "atlas": "lastScenes",
+    "column": 1,
+    "row": 0
+  },
+  "pikachu:tree:beside": {
+    "atlas": "lastScenes",
+    "column": 2,
+    "row": 0
+  },
+  "give:pikachu:eevee:ball": {
+    "atlas": "lastScenes",
+    "column": 0,
+    "row": 1
+  },
+  "give:eevee:pikachu:ball": {
+    "atlas": "lastScenes",
+    "column": 1,
+    "row": 1
+  },
+  "give:pikachu:eevee:book": {
+    "atlas": "lastScenes",
+    "column": 2,
+    "row": 1
+  },
+  "give:squirtle:charmander:book": {
+    "atlas": "lastScenes",
+    "column": 0,
+    "row": 2
+  },
+  "give:charmander:squirtle:book": {
+    "atlas": "lastScenes",
+    "column": 1,
+    "row": 2
+  },
+  "give:squirtle:charmander:apple": {
+    "atlas": "lastScenes",
+    "column": 2,
+    "row": 2
   }
 };
 export function illustrationKey(scene) {

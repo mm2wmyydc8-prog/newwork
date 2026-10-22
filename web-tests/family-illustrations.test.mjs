@@ -30,3 +30,13 @@ test('conditional choices have different frames and giving scenes preserve objec
  assert.notEqual(illustrationKey(a),illustrationKey({...a,giver:'yeonwoo',receiver:'mom'}));
  assert.notEqual(illustrationKey(a),illustrationKey({...a,prop:'apple'}));
 });
+
+test('every choice in all fifty sentence questions has a complete illustrated scene or illustrated pair',()=>{
+ for(const q of SENTENCE_QUESTIONS)for(const {scene} of q.options){
+  if(scene.kind==='pair'){
+   for(const [actor,action] of [[scene.left,scene.leftAction],[scene.right,scene.rightAction]])
+    assert.ok(ILLUSTRATION_FRAMES[illustrationKey({kind:'action',actor,action})],`${q.id}: ${actor}:${action}`);
+  }else assert.ok(ILLUSTRATION_FRAMES[illustrationKey(scene)],`${q.id}: ${JSON.stringify(scene)}`);
+  assert.doesNotMatch(sentencePicture(scene),/data-pokemon=/,q.id);
+ }
+});
