@@ -1,3 +1,5 @@
+import { createSentenceQuiz, ensureReading, markSentenceShown, noteSentenceWrong, recordSentenceCorrect } from './sentence-learning.js?v=sentence-reading';
+import { sentencePicture } from './sentence-pictures.js?v=sentence-reading';
 import { REGIONS } from './collection.js?v=partner-habitats';
 
 export const QUESTIONS = [
@@ -84,9 +86,10 @@ function shuffled(items, random) {
 export const DIFFICULTIES = {
   easy: { name: '쉬움', help: '소리를 듣고 낱말을 만들어요. 두 글자 2개·세 글자 2개·네 글자 1개를 섞어요. 오늘 푼 낱말은 다시 나오지 않아요.' },
   medium: { name: '보통', help: '짧은 낱말을 스스로 읽고, 알맞은 그림을 골라요. 막히면 뮤에게 소리 도움을 요청해요.' },
-  hard: { name: '어려움', help: '글자를 순서대로 눌러 낱말을 직접 만들어요.' }
+  hard: { name: '어려움', help: '짧은 문장을 혼자 읽고 그림을 골라요. 막히면 뮤에게 설명을 부탁해요. 5연속 오답이면 포획에 실패해요.' }
 };
 export function createQuiz(random = Math.random, completed = [], difficulty = 'easy') {
+  if (difficulty === 'hard') return createSentenceQuiz({}, {random});
   const level = DIFFICULTIES[difficulty] ? difficulty : 'easy';
   const fresh = shuffled(QUESTIONS.filter(q => !completed.includes(q.id)), random);
   let selectedQuestions = fresh.slice(0, 5);
@@ -102,7 +105,7 @@ export function createQuiz(random = Math.random, completed = [], difficulty = 'e
   return { index: 0, answered: false, selected: [], difficulty: level,
     questions: selectedQuestions.map(q => {
       const reading = q.reading ?? q.word.replace('□', q.answer);
-      if (level === 'hard' || level === 'easy') return { ...q, reading, word: '□'.repeat(reading.length), answer: reading,
+      if (level === 'easy') return { ...q, reading, word: '□'.repeat(reading.length), answer: reading,
         prompt: '글자를 순서대로 눌러 낱말을 만들어볼까?', choices: shuffled([...reading], random) };
       const alternatives = shuffled(QUESTIONS.filter(other => other.id !== q.id), random).slice(0, 2);
       return { ...q, reading, answer: q.picture, word: reading,
@@ -120,11 +123,11 @@ export function chooseAnswer(quiz, answer) {
 export function nextQuestion(quiz) {
   if (!quiz.answered) return false;
   quiz.index++; quiz.answered = false; quiz.selected = [];
-  quiz.assisted = false; quiz.failedAttempts = 0; quiz.recovery = null;
+  quiz.assisted = false; quiz.failedAttempts = 0; quiz.recovery = null; quiz.mistakes = 0; quiz.answerRevealed = false;
   return true;
 }
 export function chooseQuizTile(quiz, tileIndex) {
-  if (!['easy', 'hard'].includes(quiz.difficulty) || quiz.answered || quiz.index >= quiz.questions.length || !Number.isInteger(tileIndex)) return 'blocked';
+  if (quiz.difficulty !== 'easy' || quiz.answered || quiz.index >= quiz.questions.length || !Number.isInteger(tileIndex)) return 'blocked';
   const q = quiz.questions[quiz.index];
   if (tileIndex < 0 || tileIndex >= q.choices.length || quiz.selected.includes(tileIndex)) return 'blocked';
   if (q.choices[tileIndex] !== q.reading[quiz.selected.length]) return 'wrong';
@@ -151,7 +154,7 @@ export function retryQuizQuestion(quiz, random = Math.random) {
   quiz.selected = []; quiz.answered = false; quiz.assisted = false;
   quiz.mistakes = 0; quiz.recovery = null;
 }
-export function quizCreditReady(quiz) { return quiz.answered && !quiz.assisted && !quiz.recovery; }
+export function quizCreditReady(quiz) { return quiz.answered && (quiz.difficulty === 'hard' || (!quiz.assisted && !quiz.recovery)); }
 
 export function setupHangulQuiz({ getState, confirmMission, notify, speech, collection, saveSettings }) {
   const $ = selector => document.querySelector(selector);
@@ -198,8 +201,10 @@ export function setupHangulQuiz({ getState, confirmMission, notify, speech, coll
     getState().quizDifficulty = level; saveSettings();
     collection.render();
     $('#difficulty-help').textContent = DIFFICULTIES[level].help;
+    $('#hard-reading-mode-label').hidden = level !== 'hard';
     say(`${DIFFICULTIES[level].name} 모험. ${DIFFICULTIES[level].help}`);
   });
+  $('#hard-reading-mode-label').hidden = $('#quiz-difficulty').value !== 'hard';
   function stopSpeaking() { speech.stop(); }
   function say(text, options) { if (getState().speechAuto !== false) speech.speak(text, { interrupt: false, enqueue: true, ...options }); }
   function questionText(question) {
@@ -207,6 +212,7 @@ export function setupHangulQuiz({ getState, confirmMission, notify, speech, coll
     return `${quiz.difficulty === 'easy' ? question.answer : question.reading}. ${question.prompt} 글자가 궁금하면 작은 스피커를 눌러 들어 봐.`;
   }
   function render() {
+    $('#quiz-dialog').dataset.mode = quiz.difficulty;
     renderAdventure();
     const finished = quiz.index === quiz.questions.length;
     $('#quiz-question-area').hidden = finished;
@@ -222,10 +228,11 @@ export function setupHangulQuiz({ getState, confirmMission, notify, speech, coll
       const waiting = collection.pendingCount({ includeRetry: true });
       $('#quiz-finish-area h3').textContent = waiting ? '탐험 성공! 야생 포켓몬을 발견했어!' : `${quiz.questions.length}문제 성공! 잘했어, 연우!`;
       say(waiting ? `${REGIONS[region].name} 탐험 성공! 누가 나타났을까?` : `${quiz.questions.length}문제 성공! 오늘도 멋져!`);
-      collection.finishRound({ mistakes: quiz.totalMistakes ?? 0, region });
+      collection.finishRound({ mistakes: quiz.difficulty === 'hard' ? (quiz.captureFailed ? 3 : 0) : quiz.totalMistakes ?? 0, region });
       return;
     }
     const question = quiz.questions[quiz.index];
+    if (quiz.difficulty === 'hard') { renderSentence(question); return; }
     if (quiz.recovery) { renderPractice(question); return; }
     lockInput();
     $('#quiz-picture').hidden = quiz.difficulty === 'medium';
@@ -291,6 +298,57 @@ export function setupHangulQuiz({ getState, confirmMission, notify, speech, coll
     }
     say(questionText(question));
   }
+  function renderSentence(question) {
+    markSentenceShown(getState(), question); saveSettings();
+    lockInput();
+    $('#quiz-progress').textContent = `어려움 · ${quiz.index + 1} / ${quiz.questions.length} · ${question.stage}단계 · ${question.isReview ? '복습' : '새 문제 · '+question.cycle+'바퀴'}`;
+    $('#quiz-picture').hidden = true;
+    $('#quiz-word').hidden = false;
+    $('#quiz-word').textContent = question.sentence;
+    $('#quiz-prompt').textContent = '문장을 읽고, 알맞은 그림을 골라봐!';
+    $('#quiz-speak').textContent = '🔊 뮤에게 설명 듣기';
+    $('#quiz-feedback').textContent = '천천히 읽어 봐. 도움이 필요하면 뮤를 불러 줘!';
+    $('#quiz-next').hidden = true;
+    $('#quiz-answers').replaceChildren();
+    $('#quiz-answers').dataset.longWord = 'false';
+    $('#quiz-answers').style.gridTemplateColumns = 'repeat(3, minmax(0, 1fr))';
+    for (const option of question.options) {
+      const button = document.createElement('button');
+      button.type = 'button'; button.className = 'quiz-answer sentence-answer';
+      button.dataset.choice = option.id;
+      button.setAttribute('aria-label', option.description);
+      button.innerHTML = sentencePicture(option.scene);
+      button.addEventListener('click', () => {
+        if (quiz.answered || inputLocked) return;
+        lockInput();
+        if (chooseAnswer(quiz, option.id)) {
+          recordSentenceCorrect(getState(), quiz);
+          const outcome = collection.recordCorrect(question.rewardId, 'hard', region);
+          if (outcome.counted || outcome.upgraded) { walkSteps = outcome.encountered ? 5 : outcome.steps; renderAdventure(true); }
+          saveSettings();
+          button.classList.add('correct');
+          $('#quiz-feedback').textContent = '맞았어! 문장을 잘 읽었어! ✦';
+          stopSpeaking();
+          $('#quiz-answers').querySelectorAll('button').forEach(b => { b.disabled = true; });
+          scheduleNextQuestion();
+        } else {
+          const result = noteSentenceWrong(getState(), quiz);
+          if (result === 'reveal') collection.markCaptureFailure();
+          const message = result === 'reveal' ? `다섯 번 연속 틀렸어. 이번 포획은 실패야. ${question.reveal}` : question.hints[result === 'hint' ? 0 : 1];
+          $('#quiz-feedback').textContent = message;
+          if (result === 'reveal') {
+            $('#quiz-answers').querySelectorAll('button').forEach(b => {
+              if (b.dataset.choice === question.answer) b.classList.add('answer-revealed');
+              else b.disabled = true;
+            });
+          }
+          saveSettings(); say(message);
+        }
+      });
+      $('#quiz-answers').append(button);
+    }
+    // Deliberately no automatic sentence reading, even on later questions or in review.
+  }
   function renderPractice(question) {
     const easy = quiz.recovery === 'easy-practice';
     $('#quiz-picture').hidden = false;
@@ -335,14 +393,22 @@ export function setupHangulQuiz({ getState, confirmMission, notify, speech, coll
     region = document.querySelector('input[name="adventure-region"]:checked')?.value ?? 'forest';
     walkSteps = collection.explorationProgress(region);
     const completed = collection.completedToday();
-    if (QUESTIONS.every(q => completed.includes(q.id))) { notify('오늘의 낱말을 모두 탐험했어! 내일 다시 만나자!'); say('오늘의 낱말을 모두 탐험했어! 정말 잘했어! 내일 다시 만나자!'); return; }
-    quiz = createQuiz(Math.random, completed, $('#quiz-difficulty').value); $('#quiz-collection-note').textContent = `${REGIONS[region].name}에서 새로운 문제 5개를 성공하고 야생 포켓몬을 만나자!`; render(); $('#quiz-dialog').showModal();
+    if ($('#quiz-difficulty').value !== 'hard' && QUESTIONS.every(q => completed.includes(q.id))) { notify('오늘의 낱말을 모두 탐험했어! 내일 다시 만나자!'); say('오늘의 낱말을 모두 탐험했어! 정말 잘했어! 내일 다시 만나자!'); return; }
+    if ($('#quiz-difficulty').value === 'hard') {
+      quiz = createSentenceQuiz(state, {review: $('#hard-reading-mode').value === 'review'});
+      if (!quiz) { notify('복습할 문장이 없거나, 부모님 설정에서 복습이 꺼져 있어요.'); return; }
+    } else quiz = createQuiz(Math.random, completed, $('#quiz-difficulty').value); $('#quiz-collection-note').textContent = `${REGIONS[region].name}에서 새로운 문제 5개를 성공하고 야생 포켓몬을 만나자!`; render(); $('#quiz-dialog').showModal();
   });
   $('#quiz-next').addEventListener('click', advanceQuestion);
   $('#quiz-speak').disabled = !canSpeak;
   $('#quiz-speak').addEventListener('click', () => {
     if (!canSpeak || quiz.index >= quiz.questions.length) return;
     const question = quiz.questions[quiz.index];
+    if (quiz.difficulty === 'hard') {
+      quiz.assisted = true;
+      speech.speak(question.hints[0], {interrupt: false, enqueue: true});
+      return;
+    }
     if (quiz.difficulty === 'medium' && !quiz.answered) quiz.assisted = true;
     const text = quiz.difficulty === 'medium' ? `뮤랑 읽어보자. ${question.reading}. ${[...question.reading].join(', ')}. ${question.reading}.` : questionText(question);
     speech.speak(text, { interrupt: false, enqueue: true });

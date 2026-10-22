@@ -1,10 +1,11 @@
+import { ensureReading, readingStage } from './sentence-learning.js?v=sentence-reading';
 import { createMoveScene } from './move-scene.js?v=move-batch';
 import { createMoveSound } from './move-sound.js?v=techniques-2';
 import { classifyMove } from './move-effects.js?v=move-batch';
 import { availablePartners, getPartner, selectPartner, missionPartnerSlot, partnerCelebrationSlots, revealedPartnerSlots } from './partner.js?v=move-batch';
-import { initialState, validateState, settle, totalMinutes, remainingSeconds, start, pause, adjust, missionDone, resetTodayQuests } from './model.js?v=test-all-captured';
+import { initialState, validateState, settle, totalMinutes, remainingSeconds, start, pause, adjust, missionDone, resetTodayQuests } from './model.js?v=sentence-reading';
 import { PSYCHIC_THRESHOLD, missionMove, earnedMissionMinutes } from './moves.js?v=partner-habitats';
-import { setupHangulQuiz } from './hangul.js?v=tts-fast-next';
+import { setupHangulQuiz } from './hangul.js?v=sentence-reading';
 import { createKoreanSpeech } from './speech.js?v=tts-all-questions';
 import { setupCollection, captureAllForTesting } from './collection.js?v=test-all-captured';
 import { setupTrainer } from './trainer.js?v=photo-picker-fix';
@@ -209,6 +210,12 @@ function render() {
   if (!state.entries.length) $('#history-list').append(el('p', 'empty', '아직 기록이 없어요. 첫 번째 미션에 도전해 볼까?'));
 }
 function openParent(add = false) {
+  const reading = ensureReading(state);
+  $('#reading-stage2').value = reading.settings.stage2Correct;
+  $('#reading-stage3').value = reading.settings.stage3Correct;
+  $('#reading-accuracy').value = reading.settings.minAccuracy;
+  $('#reading-review-enabled').checked = reading.settings.reviewEnabled;
+  $('#reading-settings-status').textContent = `현재 중심 단계 ${readingStage(state)} · 새 문제 ${reading.seen.length}/50 · 복습 ${reading.reviews.length}개`;
   $('#base-minutes').value = state.baseMinutes;
   pendingNewMission = add;
   showDialog('#parent-dialog');
@@ -224,6 +231,14 @@ function openEditor(mission = null) {
   $('#delete-mission').hidden = !mission;
   showDialog('#editor-dialog');
 }
+$('#reading-settings-form').addEventListener('submit', event => {
+  event.preventDefault();
+  const stage2Correct=Number($('#reading-stage2').value),stage3Correct=Number($('#reading-stage3').value),minAccuracy=Number($('#reading-accuracy').value);
+  if (![stage2Correct,stage3Correct].every(n=>Number.isInteger(n)&&n>=1&&n<=100)||!Number.isInteger(minAccuracy)||minAccuracy<0||minAccuracy>100) { toast('진급 정답 수는 1~100, 정답률은 0~100으로 입력해 주세요.'); return; }
+  ensureReading(state).settings={stage2Correct,stage3Correct,minAccuracy,reviewEnabled:$('#reading-review-enabled').checked};
+  persist();
+  $('#reading-settings-status').textContent = `저장했어요. 현재 중심 단계 ${readingStage(state)}`;
+});
 $('#parent-open').addEventListener('click', () => openParent());
 $('#mission-add-shortcut').addEventListener('click', () => openParent(true));
 $('#add-mission').addEventListener('click', () => openEditor());
@@ -314,7 +329,7 @@ $('#reset-learning-confirm').addEventListener('click', () => {
   if (!storageAvailable) { toast('브라우저 저장 공간에 접근할 수 없어 초기화하지 않았어요.'); return; }
   const cleared = { ...state };
   if (resetMode === 'quests') resetTodayQuests(cleared);
-  else { delete cleared.collection; delete cleared.partner; }
+  else { delete cleared.collection; delete cleared.partner; delete cleared.hardReading; }
   try {
     localStorage.setItem(key, JSON.stringify(cleared));
     state = cleared;

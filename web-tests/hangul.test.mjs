@@ -43,17 +43,17 @@ test('new quests are preferred over same-day review', () => {
   assert.ok(next.questions.every(q => !completed.includes(q.id)));
   assert.equal(createQuiz(() => 0.4, QUESTIONS.map(q => q.id)).questions.length, 0);
 });
-test('three levels keep quest identity but present different tasks', () => {
+test('easy and medium use vocabulary while hard uses separate sentence-picture questions', () => {
   const easy = createQuiz(() => 0.4, [], 'easy');
   const medium = createQuiz(() => 0.4, [], 'medium');
   const hard = createQuiz(() => 0.4, [], 'hard');
   easy.questions.forEach(q => { assert.equal(q.answer, q.reading); assert.deepEqual([...q.choices].sort(), [...q.reading].sort()); });
-  assert.deepEqual(medium.questions.map(q => q.id), hard.questions.map(q => q.id));
+  assert.ok(hard.questions.every(q=>q.id.startsWith('sentence-')));
   medium.questions.forEach(q => { assert.equal(q.word, q.reading); assert.equal(q.answer, q.picture); assert.equal(new Set(q.choices).size, 3); assert.equal(q.choices.filter(c => c === q.picture).length, 1); });
-  hard.questions.forEach(q => { assert.equal(q.answer, q.reading); assert.deepEqual([...q.choices].sort(), [...q.reading].sort()); });
+  hard.questions.forEach(q => { assert.equal(q.options.length,3); assert.equal(q.options.filter(o=>o.id===q.answer).length,1); assert.ok(q.sentence.endsWith('.')); });
 });
-test('hard requires ordered, distinct tiles including repeated syllables', () => {
-  const quiz = createQuiz(() => 0.4, [], 'hard');
+test('easy requires ordered, distinct tiles including repeated syllables', () => {
+  const quiz = createQuiz(() => 0.4, [], 'easy');
   quiz.questions[0] = { id: 'banana', reading: '바나나', answer: '바나나', choices: ['나', '바', '나'] };
   assert.equal(chooseQuizTile(quiz, 0), 'wrong');
   assert.equal(quiz.selected.length, 0);
@@ -80,8 +80,8 @@ test('answer revealed by hint cannot earn credit until a shuffled independent re
  chooseAnswer(quiz, question.answer);
  assert.equal(quizCreditReady(quiz), true);
 });
-test('three errors suspend reward; a second failed attempt enters easy practice', () => {
- const quiz = createQuiz(() => 0.4, [], 'hard');
+test('easy still uses three-error recovery and independent retries', () => {
+ const quiz = createQuiz(() => 0.4, [], 'easy');
  assert.equal(noteQuizMistake(quiz), 'hint');
  assert.equal(noteQuizMistake(quiz), 'hint');
  assert.equal(noteQuizMistake(quiz), 'practice');
@@ -140,7 +140,7 @@ test('today completed words never return even at a different difficulty or at th
  const medium=createQuiz(()=>0.4,done,'medium');
  assert.ok(medium.questions.every(q=>!done.includes(q.id)));
  const allButTwo=QUESTIONS.slice(0,-2).map(q=>q.id);
- assert.equal(createQuiz(()=>0.4,allButTwo,'hard').questions.length,2);
+ assert.equal(createQuiz(()=>0.4,allButTwo,'medium').questions.length,2);
  assert.equal(createQuiz(()=>0.4,QUESTIONS.map(q=>q.id),'easy').questions.length,0);
  assert.equal(createQuiz(()=>0.4,[],'easy').questions.length,5);
 });

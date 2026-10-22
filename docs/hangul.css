@@ -37,3 +37,16 @@
 .adventure-regions span{padding:12px 4px}.adventure-regions strong{font-size:11px;white-space:nowrap}
 
 #quiz-answers[data-long-word="true"] .quiz-answer{font-size:28px;padding:12px 2px;min-height:72px}
+
+/* Sentence reading: the prompt is readable; choices contain drawings only. */
+.quiz-dialog[data-mode="hard"]{width:min(calc(100% - 24px),780px)}
+.quiz-dialog[data-mode="hard"] .quiz-word{font-size:clamp(22px,4vw,32px);letter-spacing:0;line-height:1.65;padding:14px 10px;margin:12px 0;background:#ffffffb0;border-radius:14px;word-break:keep-all;overflow-wrap:break-word}
+.quiz-dialog[data-mode="hard"] .quiz-answer.sentence-answer{padding:3px;min-height:0;border-radius:14px;overflow:hidden;line-height:0}
+.sentence-answer svg{display:block;width:100%;height:auto;pointer-events:none}
+.sentence-answer.answer-revealed{border-color:#77a56d;box-shadow:0 0 0 3px #a8cc8b88}
+.quiz-dialog[data-mode="hard"] #quiz-progress{line-height:1.8}
+.quiz-dialog[data-mode="hard"] #quiz-answers{gap:8px}
+#hard-reading-mode-label select{margin-top:7px}
+@media(max-width:400px){.quiz-dialog[data-mode="hard"]{padding:16px 12px}.quiz-dialog[data-mode="hard"] #quiz-answers{gap:5px}.quiz-dialog[data-mode="hard"] .quiz-word{font-size:23px}.quiz-dialog[data-mode="hard"] #quiz-prompt{font-size:14px}}
+@media(max-width:480px){.quiz-dialog[data-mode="hard"] #quiz-answers{grid-template-columns:1fr!important;gap:10px}.sentence-answer svg{max-height:180px}.quiz-dialog[data-mode="hard"] .quiz-word{position:sticky;top:0;z-index:2;background:#fffaf4;box-shadow:0 3px 8px #65508013}}
+@media(max-width:480px){.quiz-dialog[data-mode="hard"] .adventure-scene{display:none}.quiz-dialog[data-mode="hard"] .adventure-footsteps{margin-bottom:9px}}

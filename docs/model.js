@@ -1,3 +1,4 @@
+import { validateReading } from './sentence-learning.js?v=sentence-reading';
 export const MAX_MINUTES = 240;
 export function dayKey(date = new Date()) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
@@ -64,6 +65,7 @@ export function validateState(value) {
       !Number.isFinite(value.usedSeconds) || value.usedSeconds < 0 ||
       !(value.startedAt === null || Number.isFinite(value.startedAt)) ||
       !Array.isArray(value.entries) || !Array.isArray(value.missions)) return false;
+  if (value.hardReading !== undefined && !validateReading(value.hardReading)) return false;
   if (value.partner !== undefined && (!value.partner || typeof value.partner.id !== 'string' || typeof value.partner.shiny !== 'boolean')) return false;
   if (value.collection !== undefined && (!value.collection || !Number.isSafeInteger(value.collection.total) || value.collection.total < 0 ||
       typeof value.collection.day !== 'string' || !Array.isArray(value.collection.questions) ||
