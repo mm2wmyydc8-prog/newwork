@@ -177,3 +177,23 @@ test('explicit full-capture testing unlocks every form without faking study or T
  assert.equal(revealedPokemon(state).length,151);
  assert.equal(shinyDiscovered(state),false);
 });
+
+
+
+test('shiny gift captures only its shiny form; a later independent normal capture remains independent', async()=>{
+ const {availablePartners}=await import('../docs/partner.js');
+ const state=initialState();
+ for(let i=1;i<=24;i++){
+  recordExploration(state,'only-shiny-'+i,'easy','forest',()=>.9);
+  assert.equal(state.collection.pendingEncounters.some(p=>p.shinyGift),false);
+ }
+ recordExploration(state,'only-shiny-25','easy','forest',()=>.9);
+ const gift=state.collection.pendingEncounters.find(p=>p.shinyGift);assert.ok(gift);
+ completeCapture(state,gift.pendingId);
+ assert.ok(state.collection.shiny.includes('pikachu'));assert.ok(!state.collection.owned.includes('pikachu'));
+ assert.ok(collectionProgress(state).owned.some(p=>p.id==='pikachu'));
+ assert.ok(!collectionProgress(state).normal.some(p=>p.id==='pikachu'));
+ const partners=availablePartners(state).filter(p=>p.id==='pikachu');assert.deepEqual(partners.map(p=>p.shiny),[true]);
+ state.collection.pendingEncounters.push({id:'pikachu',pendingId:'real-normal',shiny:false});completeCapture(state,'real-normal');
+ assert.ok(state.collection.owned.includes('pikachu'));assert.equal(availablePartners(state).filter(p=>p.id==='pikachu').length,2);
+});

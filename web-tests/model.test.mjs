@@ -75,3 +75,13 @@ test('reset today quests removes only today mission rewards while preserving col
  assert.equal(JSON.stringify(state.missions),missions);
  assert.ok(validateState(state));
 });
+
+test('full test reset clears all progress but keeps mission, voice and base-time preferences', async()=>{
+ const {resetTestProgress}=await import('../docs/model.js');
+ const state=initialState();state.baseMinutes=45;state.speechAuto=false;state.speechRate=.65;state.quizDifficulty='hard';
+ state.entries=[{id:'test',day:state.day,date:Date.now(),missionId:'hangul',minutes:30,reason:'test'}];state.collection={total:25,shiny:['pikachu'],pendingEncounters:[{}]};state.hardReading={seen:['old']};state.partner={id:'pikachu',shiny:true};state.usedSeconds=90;state.startedAt=Date.now();
+ const clean=resetTestProgress(state);
+ assert.deepEqual(clean.entries,[]);assert.equal(clean.collection,undefined);assert.equal(clean.hardReading,undefined);assert.equal(clean.partner,undefined);assert.equal(clean.usedSeconds,0);assert.equal(clean.startedAt,null);
+ assert.equal(clean.baseMinutes,45);assert.equal(clean.speechAuto,false);assert.equal(clean.speechRate,.65);assert.equal(clean.quizDifficulty,'hard');assert.deepEqual(clean.missions,state.missions);assert.notEqual(clean.missions,state.missions);
+ assert.ok(validateState(clean));assert.equal(state.collection.total,25);
+});

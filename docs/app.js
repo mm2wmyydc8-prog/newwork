@@ -2,12 +2,12 @@ import { ensureReading, readingStage } from './sentence-learning.js?v=sentence-r
 import { createMoveScene } from './move-scene.js?v=move-batch';
 import { createMoveSound } from './move-sound.js?v=techniques-2';
 import { classifyMove } from './move-effects.js?v=move-batch';
-import { availablePartners, getPartner, selectPartner, missionPartnerSlot, partnerCelebrationSlots, revealedPartnerSlots } from './partner.js?v=move-batch';
-import { initialState, validateState, settle, totalMinutes, remainingSeconds, start, pause, adjust, missionDone, resetTodayQuests } from './model.js?v=sentence-reading';
+import { availablePartners, getPartner, selectPartner, missionPartnerSlot, partnerCelebrationSlots, revealedPartnerSlots } from './partner.js?v=shiny-form-fix';
+import { initialState, validateState, settle, totalMinutes, remainingSeconds, start, pause, adjust, missionDone, resetTodayQuests, resetTestProgress } from './model.js?v=full-test-reset';
 import { PSYCHIC_THRESHOLD, missionMove, earnedMissionMinutes } from './moves.js?v=partner-habitats';
 import { setupHangulQuiz } from './hangul.js?v=sentence-reading';
 import { createKoreanSpeech } from './speech.js?v=tts-all-questions';
-import { setupCollection, captureAllForTesting } from './collection.js?v=test-all-captured';
+import { setupCollection, captureAllForTesting } from './collection.js?v=shiny-form-fix';
 import { setupTrainer } from './trainer.js?v=photo-picker-fix';
 
 const $ = selector => document.querySelector(selector);
@@ -308,6 +308,15 @@ function openLearningReset() {
   $('#reset-learning-summary').textContent = `누적 퀴즈 ${data.total ?? 0}개 · 포켓몬 ${data.owned?.length ?? 0}마리 · 포획 대기 ${data.pendingEncounters?.length ?? 0}개 기록을 초기화합니다.`;
   $('#reset-learning-dialog').showModal();
 }
+function openFullTestReset() {
+  resetMode = 'all';
+  $('#reset-learning-title').textContent = '테스트를 처음부터 시작할까요?';
+  $('#reset-learning-summary').textContent = '누적 공부 0개 · 도감 0마리 · 오늘 완료 0개로 돌아가요.';
+  $('#reset-description').textContent = '일반·이로치 포켓몬, 포획 대기, 아이템, 문장 학습과 복습 기록, 오늘 완료와 TV 보상·시청 기록을 초기화해요. 미션·기본 시간·음성 설정과 사진은 유지해요.';
+  $('#reset-learning-confirm').textContent = '전체 테스트 초기화';
+  $('#reset-learning-dialog').showModal();
+}
+$('#reset-all-open').addEventListener('click', openFullTestReset);
 function openQuestReset() {
   resetMode = 'quests'; settle(state);
   const entries = state.entries.filter(entry => entry.day === state.day && entry.missionId != null);
@@ -318,7 +327,7 @@ function openQuestReset() {
   $('#reset-learning-dialog').showModal();
 }
 $('#reset-quests-open').addEventListener('click', openQuestReset);
-$('#reset-quests-shortcut').addEventListener('click', openQuestReset);
+$('#reset-quests-shortcut').addEventListener('click', openFullTestReset);
 $('#test-capture-all').addEventListener('click', () => {
   if (!confirm('테스트용으로 모든 포켓몬·메가 X·Y·이로치를 포획 처리할까요? 실제 공부 횟수와 TV 시간은 그대로 유지돼요.')) return;
   captureAllForTesting(state); saveAndRender(); collection.render();
@@ -327,8 +336,9 @@ $('#test-capture-all').addEventListener('click', () => {
 $('#reset-learning-open').addEventListener('click', openLearningReset);
 $('#reset-learning-confirm').addEventListener('click', () => {
   if (!storageAvailable) { toast('브라우저 저장 공간에 접근할 수 없어 초기화하지 않았어요.'); return; }
-  const cleared = { ...state };
-  if (resetMode === 'quests') resetTodayQuests(cleared);
+  const cleared = resetMode === 'all' ? resetTestProgress(state) : { ...state };
+  if (resetMode === 'all') { /* resetTestProgress already returned a clean game state. */ }
+  else if (resetMode === 'quests') resetTodayQuests(cleared);
   else { delete cleared.collection; delete cleared.partner; delete cleared.hardReading; }
   try {
     localStorage.setItem(key, JSON.stringify(cleared));
@@ -338,10 +348,11 @@ $('#reset-learning-confirm').addEventListener('click', () => {
 });
 const entryUrl = new URL(window.location.href);
 const requestedReset = entryUrl.searchParams.get('reset');
-if (['learning', 'quests'].includes(requestedReset)) {
+if (['learning', 'quests', 'all'].includes(requestedReset)) {
   entryUrl.searchParams.delete('reset');
   window.history.replaceState(null, '', entryUrl.pathname + entryUrl.search + entryUrl.hash);
-  if (requestedReset === 'quests') openQuestReset();
+  if (requestedReset === 'all') openFullTestReset();
+  else if (requestedReset === 'quests') openQuestReset();
   else openLearningReset();
 }
 

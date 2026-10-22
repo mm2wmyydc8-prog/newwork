@@ -1,4 +1,4 @@
-import { POKEMON, collectionProgress, canUseMegaMoves, shinyDiscovered } from './collection.js?v=test-all-captured';
+import { POKEMON, collectionProgress, canUseMegaMoves, shinyDiscovered } from './collection.js?v=shiny-form-fix';
 import { PARTNER_MOVESETS } from './partner-moves.js?v=move-batch';
 import { PSYCHIC_THRESHOLD, earnedMissionMinutes } from './moves.js?v=partner-habitats';
 
@@ -6,10 +6,15 @@ function decorate(pokemon, shiny = false) {
   return { ...pokemon, shiny, moves: PARTNER_MOVESETS[pokemon.id], image: `assets/${shiny ? 'shiny/' : ''}${pokemon.id}.png` };
 }
 export function availablePartners(state) {
-  const { owned, shiny } = collectionProgress(state);
+  const { normal, shiny } = collectionProgress(state);
   const defaultPartner = POKEMON.find(p => p.id === 'mewtwo');
-  const normal = [defaultPartner, ...owned.filter(p => p.id !== 'mewtwo' && (!p.form || canUseMegaMoves(state, p.id)))];
-  return normal.flatMap(p => [decorate(p), ...(shinyDiscovered(state) && shiny.includes(p.id) ? [decorate(p, true)] : [])]);
+  const forms = [defaultPartner, ...normal.filter(p => p.id !== 'mewtwo' && (!p.form || canUseMegaMoves(state, p.id)))];
+  const partners = forms.map(p => decorate(p));
+  if (shinyDiscovered(state)) for (const id of shiny) {
+    const pokemon = POKEMON.find(p=>p.id===id);
+    if (pokemon && (!pokemon.form || canUseMegaMoves(state,id))) partners.push(decorate(pokemon,true));
+  }
+  return partners;
 }
 export function getPartner(state) {
   return availablePartners(state).find(p => p.id === state.partner?.id && p.shiny === Boolean(state.partner?.shiny))

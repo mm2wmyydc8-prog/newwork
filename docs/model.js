@@ -12,6 +12,13 @@ export function initialState(now = Date.now()) {
       { id: 'reading', title: '책읽기', minutes: 30 }
     ] };
 }
+export function resetTestProgress(state, now = Date.now()) {
+  const clean = initialState(now);
+  clean.missions = state.missions.map(m=>({...m}));
+  clean.baseMinutes = state.baseMinutes;
+  for (const key of ['speechAuto','speechRate','quizDifficulty']) if (state[key] !== undefined) clean[key] = state[key];
+  return clean;
+}
 export function totalMinutes(state) {
   const bonus = state.entries.filter(x => x.day === state.day).reduce((sum, x) => sum + x.minutes, 0);
   return Math.max(0, Math.min(MAX_MINUTES, state.baseMinutes + bonus));

@@ -1094,7 +1094,7 @@ function ruleProgress(data, rule) {
 export function hasMewtwonite(state) { const data = ensureCollection(state); return data.total >= 100 || data.testAllCaptured === true; }
 export function canUseMegaMoves(state, id) {
   const pokemon = POKEMON.find(p => p.id === id && p.form);
-  return Boolean(pokemon && hasMewtwonite(state) && eligible(ensureCollection(state), pokemon));
+  return Boolean(pokemon && hasMewtwonite(state) && (eligible(ensureCollection(state), pokemon) || ensureCollection(state).shiny.includes(pokemon.id)));
 }
 function rewardEligible(data, pokemon) {
   const rule = REWARD_RULES.get(pokemon.id);
@@ -1111,13 +1111,14 @@ export function revealedPokemon(state, shinyView = false) {
 }
 export function collectionProgress(state, difficulty = state.quizDifficulty ?? 'easy') {
   const data = ensureCollection(state);
-  const owned = POKEMON.filter(p => eligible(data, p));
+  const normal = POKEMON.filter(p => eligible(data, p));
+  const owned = POKEMON.filter(p => normal.some(n=>n.id===p.id) || (data.shiny.includes(p.id) && (!p.form || hasMewtwonite(state))));
   const targetLevel = RANK[difficulty] === undefined ? 'easy' : difficulty;
   const nextPokemon = POKEMON.find(p => (!p.form || data.total >= 100) && !eligible(data, p) && REWARD_RULES.get(p.id).level === targetLevel)
     ?? POKEMON.find(p => (!p.form || data.total >= 100) && !eligible(data, p));
   const rule = nextPokemon ? REWARD_RULES.get(nextPokemon.id) : null;
   const next = nextPokemon ? { ...nextPokemon, threshold: rule.target, progress: ruleProgress(data, rule), requirement: rule.label } : null;
-  return { total: data.total, owned, next, byDifficulty: data.byDifficulty, shiny: data.shiny };
+  return { total: data.total, owned, normal, next, byDifficulty: data.byDifficulty, shiny: data.shiny };
 }
 export function completedAtDifficulty(state, difficulty) {
   const data = ensureCollection(state);
@@ -1144,7 +1145,7 @@ export function recordQuest(state, questionId, difficulty = 'easy', random = Mat
   if (data.total >= 25 && !data.pikachuGiftClaimed) {
     data.pikachuGiftClaimed = true;
     if (!data.shiny.includes('pikachu')) {
-      if (!data.adventureMode) { data.shiny.push('pikachu'); data.owned = [...new Set([...data.owned, 'pikachu'])]; }
+      if (!data.adventureMode) { data.shiny.push('pikachu'); }
       unlocked.push({ ...POKEMON.find(p => p.id === 'pikachu'), shiny: true, shinyGift: true });
     }
   }
@@ -1250,8 +1251,9 @@ export function completeCapture(state, pendingId) {
   const index = data.pendingEncounters.findIndex(p => p.pendingId === pendingId);
   if (index < 0) return false;
   const [pokemon] = data.pendingEncounters.splice(index, 1);
-  if (!data.owned.includes(pokemon.id)) data.owned.push(pokemon.id);
-  if (pokemon.shiny && !data.shiny.includes(pokemon.id)) data.shiny.push(pokemon.id);
+  if (pokemon.shiny) {
+    if (!data.shiny.includes(pokemon.id)) data.shiny.push(pokemon.id);
+  } else if (!data.owned.includes(pokemon.id)) data.owned.push(pokemon.id);
   return true;
 }
 
@@ -1294,8 +1296,8 @@ export function setupCollection({ getState, save, speech, onCapture = () => {} }
   });
   function render() {
     const state = getState();
-    const { total, owned, next, byDifficulty, shiny } = collectionProgress(state);
-    const ownedIds = new Set(owned.map(p => p.id));
+    const { total, owned, normal, next, byDifficulty, shiny } = collectionProgress(state);
+    const ownedIds = new Set(normal.map(p => p.id));
     const discovered = shinyDiscovered(state);
     $('#collection-shiny').hidden = !discovered;
     $('#pokedex-form-label').hidden = !discovered;
