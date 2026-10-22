@@ -19,7 +19,7 @@ test('authored list and bank contain exactly 20/20/10 unique sentences and three
   const images=q.options.map(o=>sentencePicture(o.scene));assert.equal(new Set(images).size,3);
   for(const svg of images){assert.match(svg,/^<svg/);assert.doesNotMatch(svg,/<text|<script|foreignObject/i);
    for (const match of svg.matchAll(/href="([^"]+)"/g)) {
-    assert.ok(PICTURE_POKEMON.some(name=>match[1]===`assets/${name}.png`));
+    assert.ok(PICTURE_POKEMON.some(name=>match[1]===`assets/reading/sleep/${name}.png`) || PICTURE_POKEMON.some(name=>match[1]===`assets/${name}.png`));
     assert.ok(readFileSync(new URL('../docs/'+match[1],import.meta.url)).length>0);
    }}
   assert.equal(q.hints.length,2);assert.notEqual(q.hints[0],q.hints[1]);assert.ok(q.reveal.includes(q.sentence));
@@ -96,5 +96,17 @@ test('five correct hard sentences reach a separate capturable wild encounter in 
   assert.equal(finishCaptureAttempt(state,0),true);
   assert.equal(completeCapture(state,encounters[0].pendingId),true);
   assert.equal(state.collection.owned.length,1);assert.deepEqual(state.collection.shiny,[]);
+ }
+});
+
+
+test('Pokemon and cats use ground sleeping poses while humans keep their bed',()=>{
+ for(const actor of [...PICTURE_POKEMON,'kiki','huchu']){
+  const svg=sentencePicture({kind:'action',actor,action:'sleep'});
+  assert.match(svg,/data-sleep-pose=/);assert.doesNotMatch(svg,/data-human-bed|rotate\(-90/);
+ }
+ for(const actor of ['yeonwoo','mom','dad']){
+  const svg=sentencePicture({kind:'action',actor,action:'sleep'});
+  assert.match(svg,/data-human-bed=/);assert.doesNotMatch(svg,/data-sleep-pose=/);
  }
 });

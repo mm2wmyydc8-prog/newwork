@@ -1,7 +1,9 @@
+import { SLEEPING_POSES } from './sleeping-poses.js?v=ground-sleep';
 // Text-free SVG scenes with local Pokedex artwork for Pokemon and drawn props.
 const COLORS={red:'#ed4953',blue:'#4289e6',yellow:'#f0cf40',green:'#4baa6e'};
 const PALETTE={pikachu:'#f4d351',charmander:'#ed9457',squirtle:'#8ccbd2',bulbasaur:'#7dbab0',eevee:'#b88a62',kiki:'#e1ad69',huchu:'#9aa6ac',yeonwoo:'#759bdb',mom:'#e3939d',dad:'#80b293'};
 export const PICTURE_POKEMON = ['pikachu','charmander','squirtle','bulbasaur','eevee'];
+export const PICTURE_SLEEPERS = [...PICTURE_POKEMON, 'kiki', 'huchu'];
 const ellipse=(x,y,rx,ry,fill,extra='')=>`<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" fill="${fill}" ${extra}/>`;
 const path=(d,fill='none',stroke='#43535b',width=3)=>`<path d="${d}" fill="${fill}" stroke="${stroke}" stroke-width="${width}" stroke-linecap="round" stroke-linejoin="round"/>`;
 const rect=(x,y,w,h,fill,r=5)=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${r}" fill="${fill}"/>`;
@@ -22,10 +24,7 @@ function actor(name,action='stand',hatColor){
   const gesture = action === 'wave'
    ? path('M38 -15 Q54 -30 45 -43 M48 -46 L55 -55 M55 -33 L65 -37','none','#7995a1',3)
    : '';
-  const masks = {pikachu:[-68,-53,73,30,-15],charmander:[-64,-83,78,34,0],squirtle:[-56,-88,75,33,0],bulbasaur:[-78,-40,95,35,8],eevee:[-58,-40,74,33,10]};
-  const [mx,my,mw,mh,tilt] = masks[name];
-  const sleepMask = action === 'sleep' ? `<g transform="rotate(${tilt} ${mx+mw/2} ${my+mh/2})">${rect(mx,my,mw,mh,'#7785bd',14)}${path(`M${mx+12} ${my+mh/2} Q${mx+20} ${my+mh/2+7} ${mx+28} ${my+mh/2} M${mx+mw-28} ${my+mh/2} Q${mx+mw-20} ${my+mh/2+7} ${mx+mw-12} ${my+mh/2}`,'none','#dfe8ff',3)}</g>` : '';
-  return `<image data-pokemon="${name}" href="assets/${name}.png" x="-95" y="-105" width="200" height="185" preserveAspectRatio="xMidYMax meet"/>${gesture}${sleepMask}`;
+  return `<image data-pokemon="${name}" href="assets/${name}.png" x="-95" y="-105" width="200" height="185" preserveAspectRatio="xMidYMax meet"/>${gesture}`;
  }
 
  const color=PALETTE[name]??'#a5c6b2',human=['yeonwoo','mom','dad'].includes(name),cat=['kiki','huchu','eevee'].includes(name),sleep=action==='sleep';
@@ -62,15 +61,34 @@ function actor(name,action='stand',hatColor){
  return s;
 }
 function actionPicture(name,action,{x=145,y=143,scale=.83,color,propName,size='medium'}={}){
+ if (action === 'sleep' && PICTURE_SLEEPERS.includes(name)) {
+  const pose = SLEEPING_POSES[name];
+  let sleeping;
+  if (pose) {
+   sleeping = `<svg x="-104" y="-58" width="208" height="128" viewBox="${pose.viewBox.join(' ')}" overflow="hidden" preserveAspectRatio="xMidYMax meet"><defs><clipPath id="sleep-frame-${name}" clipPathUnits="userSpaceOnUse"><rect x="${pose.viewBox[0]}" y="${pose.viewBox[1]}" width="${pose.viewBox[2]}" height="${pose.viewBox[3]}"/></clipPath></defs><image clip-path="url(#sleep-frame-${name})" data-sleep-art="${name}" href="assets/reading/sleep/${name}.png" x="0" y="0" width="${pose.width}" height="${pose.height}" style="image-rendering:pixelated"/></svg>`;
+  } else {
+   const coat = name === 'kiki' ? '#dea45f' : '#929da8', stripe = name === 'kiki' ? '#b9793c' : '#586879';
+   sleeping = ellipse(13,25,71,43,coat,'stroke="#59626a" stroke-width="3"')
+    + path('M66 6 Q104 54 51 58 Q17 59 16 34 Q19 15 37 27','none',stripe,18)
+    + path('M-64 5 L-67 -24 L-40 -11 M-34 -9 L-17 -31 L-15 8',coat,'#59626a',3)
+    + ellipse(-40,14,37,31,coat,'stroke="#59626a" stroke-width="3"')
+    + path('M-61 11 Q-53 19 -45 11 M-35 11 Q-27 19 -19 11','none','#37434c',3)
+    + path('M-44 25 L-38 25 L-41 29 Z','#cf8d91','#bd7a7d',1.5)
+    + path('M-63 23 L-82 18 M-64 28 L-84 29 M-23 24 L-7 19 M-23 29 L-4 30','none','#56616a',2)
+    + path('M-52 -10 L-48 -1 M-38 -14 L-37 -3 M-25 -10 L-28 -2 M7 -10 L14 2 M28 -9 L32 2','none',stripe,5)
+    + ellipse(-30,43,24,10,coat,'stroke="#59626a" stroke-width="2"');
+  }
+  return `<g data-sleep-pose="${name}" transform="translate(${x} ${y}) scale(${scale})">${ellipse(0,72,94,9,'#647a7e22')}${sleeping}</g>`;
+ }
  let before='',after='',a=action,dy=0,angle=0;
  if(a==='sleep'){
-  angle=-90; if (PICTURE_POKEMON.includes(name)) dy=-35;
+  angle=-90;
   before=rect(-94,12,190,29,'#b78d74',9)+rect(-94,5,190,18,'#f8f3e9',9)+rect(-91,-37,63,46,'#fffdf9',14)+path('M-81 -29 Q-65 -37 -40 -29','none','#d9d4e6',3)+rect(-92,38,12,29,'#9b735e')+rect(76,38,12,29,'#9b735e');
   after=rect(-8,-30,101,58,'#8db1e0',10)+path('M-5 -20 L88 -20 M9 -9 L9 24 M37 -9 L37 24 M66 -9 L66 24','none','#c8ddf6',3)+path('M91 -81 Q66 -70 82 -52 Q55 -49 61 -73 Q70 -91 91 -81','#f4d76b','#c4a94e',2);
  }
  if(a==='sit')before=rect(-37,-8,74,65,'#c6a17c')+rect(-41,53,82,12,'#a98865')+rect(-37,64,12,17,'#a98865')+rect(25,64,12,17,'#a98865');
  if(a==='walk')after+=path('M-57 66 L-75 66 M-60 53 L-84 53','none','#9bb5bf',3);
- if(a==='jump'){dy=-31;after+=path('M-53 23 L-53 3 M-62 10 L-53 0 L-44 10 M58 23 L58 3 M49 10 L58 0 L67 10','none','#a3c0ca',3);}
+ if(a==='jump'){dy=-45;angle=PICTURE_POKEMON.includes(name)?-8:0;after+=path('M-53 23 L-53 3 M-62 10 L-53 0 L-44 10 M58 23 L58 3 M49 10 L58 0 L67 10','none','#a3c0ca',3);}
  if(a==='run'){angle=12;after+=path('M-62 -20 L-91 -20 M-63 0 L-106 0 M-68 20 L-94 20','none','#a0b7c1',4);}
  if(a==='eat')after+=ellipse(0,36,48,12,'#ffffff','stroke="#87a6b2" stroke-width="3"')+prop('apple',21,27,14,'#ec5e57')+prop('apple',-11,-19,23,'#ec5e57')+ellipse(1,-25,6,7,'#fff3d7')+path('M-26 9 Q-36 -8 -24 -13 M26 9 Q32 -3 12 -12','none',PALETTE[name]??'#edc8a8',12)+ellipse(-25,-13,8,7,PALETTE[name]??'#edc8a8')+path('M-45 -32 L-53 -39 M40 -36 L48 -43','none','#d1a66b',3);
  if(a==='drink')after+=prop('cup',23,-9,28)+path('M24 -27 L20 -39 L6 -23','none','#f2a06e',4)+path('M26 15 Q45 3 36 -10','none',PALETTE[name]??'#edc8a8',11);
@@ -82,7 +100,7 @@ function actionPicture(name,action,{x=145,y=143,scale=.83,color,propName,size='m
  if(a==='hold')after+=prop(propName??'apple',45,7,size==='big'?44:size==='small'?15:27,color??'#e56f63');
  if(propName==='hat'&&name!=='yeonwoo'&&!['read','ball'].includes(a))after+=path('M-45 -65 Q-38 -91 -12 -84 Q5 -79 7 -65 L20 -56 L-46 -56 Z',color??'#ed4953');
  if (PICTURE_POKEMON.includes(name) && ['eat','drink','read'].includes(a)) after = `<g transform="translate(-18 -5)">${after}</g>`;
- return `<g transform="translate(${x} ${y}) scale(${scale})">${before}${ellipse(0,77,54,8,'#647a7e22')}<g transform="translate(0 ${dy}) rotate(${angle})">${actor(name,a,propName==='hat'?color:undefined)}</g>${after}</g>`;
+ return `<g transform="translate(${x} ${y}) scale(${scale})">${a === 'sleep' ? `<g data-human-bed="true">${before}</g>` : before}${ellipse(0,77,54,8,'#647a7e22')}<g transform="translate(0 ${dy}) rotate(${angle})">${actor(name,a,propName==='hat'?color:undefined)}</g>${after}</g>`;
 }
 function reference(ref){
  if(ref==='tree')return rect(145,102,30,109,'#a58b64',6)+ellipse(160,110,58,37,'#86ad7e')+ellipse(139,104,32,28,'#9dc08b')+path('M149 211 L130 220 M171 211 L190 220','none','#a58b64',6);

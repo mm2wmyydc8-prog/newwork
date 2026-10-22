@@ -1,6 +1,6 @@
 import { regionArt, sceneryArt } from './region-art.js?v=no-previews';
 import { createSentenceQuiz, ensureReading, markSentenceShown, noteSentenceWrong, recordSentenceCorrect } from './sentence-learning.js?v=sentence-reading';
-import { sentencePicture } from './sentence-pictures.js?v=pokedex-reading-art';
+import { sentencePicture } from './sentence-pictures.js?v=ground-sleep';
 import { REGIONS } from './collection.js?v=swipe-capture';
 
 export const QUESTIONS = [
