@@ -1,4 +1,4 @@
-import { SENTENCE_QUESTIONS } from './sentence-questions.js?v=all-scenes';
+import { SENTENCE_QUESTIONS } from './sentence-questions.js?v=three-errors';
 const IDS = new Set(SENTENCE_QUESTIONS.map(q=>q.id));
 export const DEFAULT_READING_SETTINGS = {stage2Correct:12,stage3Correct:12,minAccuracy:70,reviewEnabled:true};
 export function mix(items,random=Math.random){const a=[...items];for(let i=a.length-1;i>0;i--){const j=Math.min(i,Math.floor(random()*(i+1)));[a[i],a[j]]=[a[j],a[i]];}return a;}
@@ -49,7 +49,7 @@ export function noteSentenceWrong(state,quiz){
  quiz.totalMistakes++;quiz.consecutiveWrong++;d.streak=quiz.consecutiveWrong;quiz.mistakes=(quiz.mistakes??0)+1;quiz.assisted=true;
  if(!d.reviews.includes(q.id))d.reviews.push(q.id);
  const s=d.stats[q.id]??={correct:0,wrong:0,helped:0,firstTryCorrect:0};s.wrong++;
- if(quiz.consecutiveWrong>=5){quiz.captureFailed=true;quiz.answerRevealed=true;return 'reveal';}
+ if(quiz.consecutiveWrong>=3){quiz.captureFailed=true;quiz.answerRevealed=true;return 'reveal';}
  return quiz.consecutiveWrong===1?'hint':'detail';
 }
 export function recordSentenceCorrect(state,quiz,now=Date.now()){

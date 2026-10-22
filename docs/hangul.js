@@ -1,7 +1,7 @@
-import { regionArt, sceneryArt } from './region-art.js?v=all-scenes';
-import { createSentenceQuiz, ensureReading, markSentenceShown, noteSentenceWrong, recordSentenceCorrect } from './sentence-learning.js?v=all-scenes';
-import { sentencePicture } from './sentence-pictures.js?v=all-scenes';
-import { REGIONS } from './collection.js?v=all-scenes';
+import { regionArt, sceneryArt } from './region-art.js?v=three-errors';
+import { createSentenceQuiz, ensureReading, markSentenceShown, noteSentenceWrong, recordSentenceCorrect } from './sentence-learning.js?v=three-errors';
+import { sentencePicture } from './sentence-pictures.js?v=three-errors';
+import { REGIONS } from './collection.js?v=three-errors';
 
 export const QUESTIONS = [
   { id: 'tree', picture: '🌳', word: '', reading: '나무', prompt: '그림에 맞는 낱말을 골라볼까?', answer: '나무', choices: ['나무', '나비', '누나'], hint: '나무! “나” 하고 천천히 읽어 봐.' },
@@ -87,7 +87,7 @@ function shuffled(items, random) {
 export const DIFFICULTIES = {
   easy: { name: '쉬움', help: '소리를 듣고 낱말을 만들어요. 두 글자 2개·세 글자 2개·네 글자 1개를 섞어요. 오늘 푼 낱말은 다시 나오지 않아요.' },
   medium: { name: '보통', help: '짧은 낱말을 스스로 읽고, 알맞은 그림을 골라요. 막히면 뮤에게 소리 도움을 요청해요.' },
-  hard: { name: '어려움', help: '짧은 문장을 혼자 읽고 그림을 골라요. 막히면 뮤에게 설명을 부탁해요. 5연속 오답이면 포획에 실패해요.' }
+  hard: { name: '어려움', help: '짧은 문장을 혼자 읽고 그림을 골라요. 막히면 뮤에게 설명을 부탁해요. 3연속 오답이면 포획에 실패해요.' }
 };
 export function createQuiz(random = Math.random, completed = [], difficulty = 'easy') {
   if (difficulty === 'hard') return createSentenceQuiz({}, {random});
@@ -348,7 +348,7 @@ export function setupHangulQuiz({ getState, confirmMission, notify, speech, coll
         } else {
           const result = noteSentenceWrong(getState(), quiz);
           if (result === 'reveal') collection.markCaptureFailure();
-          const message = result === 'reveal' ? `다섯 번 연속 틀렸어. 이번 포획은 실패야. ${question.reveal}` : question.hints[result === 'hint' ? 0 : 1];
+          const message = result === 'reveal' ? `세 번 연속 틀렸어. 이번 포획은 실패야. ${question.reveal}` : question.hints[result === 'hint' ? 0 : 1];
           $('#quiz-feedback').textContent = message;
           if (result === 'reveal') {
             $('#quiz-answers').querySelectorAll('button').forEach(b => {

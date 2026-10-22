@@ -1,4 +1,4 @@
-import { validateReading } from './sentence-learning.js?v=all-scenes';
+import { validateReading } from './sentence-learning.js?v=three-errors';
 export const MAX_MINUTES = 240;
 export function dayKey(date = new Date()) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;

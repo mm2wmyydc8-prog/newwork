@@ -48,11 +48,11 @@ test('first rounds focus on stage one; configurable counts and first-try accurac
  d.stats[BANK[20].id]={correct:2,wrong:0,helped:0,firstTryCorrect:2};assert.equal(readingStage(state),3);
  d.settings.minAccuracy=100;d.stats[BANK[0].id].firstTryCorrect=1;assert.equal(readingStage(state),1);
 });
-test('help and mistakes do not remove hard credit; five consecutive errors fail capture and a correct answer resets the streak',()=>{
+test('help and mistakes do not remove hard credit; three consecutive errors fail capture and a correct answer resets the streak',()=>{
  const state=initialState(),quiz=createSentenceQuiz(state,{random:rng}),q=quiz.questions[0];markSentenceShown(state,q);
  assert.equal(noteSentenceWrong(state,quiz),'hint');assert.equal(noteSentenceWrong(state,quiz),'detail');assert.equal(quiz.captureFailed,false);
  quiz.assisted=true;chooseAnswer(quiz,q.answer);assert.equal(quizCreditReady(quiz),true);recordSentenceCorrect(state,quiz);assert.equal(quiz.consecutiveWrong,0);
- nextQuestion(quiz);for(let i=0;i<4;i++){noteSentenceWrong(state,quiz);assert.equal(quiz.captureFailed,false);}
+ nextQuestion(quiz);for(let i=0;i<2;i++){noteSentenceWrong(state,quiz);assert.equal(quiz.captureFailed,false);}
  assert.equal(noteSentenceWrong(state,quiz),'reveal');assert.equal(quiz.captureFailed,true);
  chooseAnswer(quiz,quiz.questions[quiz.index].answer);recordSentenceCorrect(state,quiz);assert.equal(quiz.consecutiveWrong,0);assert.equal(quiz.captureFailed,true);
  assert.deepEqual(state.entries,[]);assert.ok(validateState(state));

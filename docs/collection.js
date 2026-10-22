@@ -1,4 +1,4 @@
-import { sceneryArt } from './region-art.js?v=all-scenes';
+import { sceneryArt } from './region-art.js?v=three-errors';
 export const POKEMON = [
   {
     "id": "bulbasaur",
