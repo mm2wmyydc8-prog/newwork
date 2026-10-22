@@ -1,4 +1,4 @@
-import { POKEMON, collectionProgress, canUseMegaMoves, shinyDiscovered } from './collection.js?v=legend-goals-90-100';
+import { POKEMON, collectionProgress, canUseMegaMoves, shinyDiscovered } from './collection.js?v=hard-encounter-actions';
 import { PARTNER_MOVESETS } from './partner-moves.js?v=move-batch';
 import { PSYCHIC_THRESHOLD, earnedMissionMinutes } from './moves.js?v=partner-habitats';
 

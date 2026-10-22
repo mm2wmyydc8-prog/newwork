@@ -6,6 +6,7 @@ import {sentencePicture} from '../docs/sentence-pictures.js';
 import {ensureReading,createSentenceQuiz,markSentenceShown,noteSentenceWrong,recordSentenceCorrect,readingStage} from '../docs/sentence-learning.js';
 import {initialState,validateState} from '../docs/model.js';
 import {quizCreditReady,chooseAnswer,nextQuestion} from '../docs/hangul.js';
+import {REGIONS,recordExploration,visibleEncounters,finishCaptureAttempt,completeCapture} from '../docs/collection.js';
 const rng=()=>.4;
 function resolve(state,quiz,q){markSentenceShown(state,q);chooseAnswer(quiz,q.answer);recordSentenceCorrect(state,quiz);nextQuestion(quiz);}
 
@@ -74,4 +75,22 @@ test('closing and reopening cannot evade a four-error streak; a success resets i
  assert.equal(noteSentenceWrong(restored,next),'reveal');assert.equal(next.captureFailed,true);
  chooseAnswer(next,next.questions[0].answer);recordSentenceCorrect(restored,next);
  assert.equal(createSentenceQuiz(restored,{random:rng}).consecutiveWrong,0);
+});
+
+test('five correct hard sentences reach a separate capturable wild encounter in every region',()=>{
+ for(const region of Object.keys(REGIONS)){
+  const state=initialState(),quiz=createSentenceQuiz(state,{random:rng});
+  for(const q of quiz.questions){
+   markSentenceShown(state,q);chooseAnswer(quiz,q.answer);recordSentenceCorrect(state,quiz);
+   assert.equal(recordExploration(state,q.rewardId,'hard',region,rng).counted,true);
+   nextQuestion(quiz);
+  }
+  assert.equal(quiz.index,5);assert.equal(state.collection.byDifficulty.hard,5);
+  const encounters=visibleEncounters(state);
+  assert.equal(encounters.length,1);assert.equal(encounters[0].region,region);
+  assert.deepEqual(state.collection.owned,[]);
+  assert.equal(finishCaptureAttempt(state,0),true);
+  assert.equal(completeCapture(state,encounters[0].pendingId),true);
+  assert.equal(state.collection.owned.length,1);assert.deepEqual(state.collection.shiny,[]);
+ }
 });

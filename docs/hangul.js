@@ -1,6 +1,6 @@
 import { createSentenceQuiz, ensureReading, markSentenceShown, noteSentenceWrong, recordSentenceCorrect } from './sentence-learning.js?v=sentence-reading';
-import { sentencePicture } from './sentence-pictures.js?v=sentence-reading';
-import { REGIONS } from './collection.js?v=partner-habitats';
+import { sentencePicture } from './sentence-pictures.js?v=clear-reading-actions';
+import { REGIONS } from './collection.js?v=hard-encounter-actions';
 
 export const QUESTIONS = [
   { id: 'tree', picture: '🌳', word: '', reading: '나무', prompt: '그림에 맞는 낱말을 골라볼까?', answer: '나무', choices: ['나무', '나비', '누나'], hint: '나무! “나” 하고 천천히 읽어 봐.' },
@@ -227,8 +227,10 @@ export function setupHangulQuiz({ getState, confirmMission, notify, speech, coll
       $('#quiz-claim').focus();
       const waiting = collection.pendingCount({ includeRetry: true });
       $('#quiz-finish-area h3').textContent = waiting ? '탐험 성공! 야생 포켓몬을 발견했어!' : `${quiz.questions.length}문제 성공! 잘했어, 연우!`;
-      say(waiting ? `${REGIONS[region].name} 탐험 성공! 누가 나타났을까?` : `${quiz.questions.length}문제 성공! 오늘도 멋져!`);
+      // Open the earned encounter before optional narration. A native speech
+      // failure must never prevent a completed round from reaching capture.
       collection.finishRound({ mistakes: quiz.difficulty === 'hard' ? (quiz.captureFailed ? 3 : 0) : quiz.totalMistakes ?? 0, region });
+      if (!waiting) say(`${quiz.questions.length}문제 성공! 오늘도 멋져!`);
       return;
     }
     const question = quiz.questions[quiz.index];
