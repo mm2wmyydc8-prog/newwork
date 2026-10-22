@@ -2,12 +2,12 @@ import { ensureReading, readingStage } from './sentence-learning.js?v=sentence-r
 import { createMoveScene } from './move-scene.js?v=move-batch';
 import { createMoveSound } from './move-sound.js?v=techniques-2';
 import { classifyMove } from './move-effects.js?v=move-batch';
-import { availablePartners, getPartner, selectPartner, missionPartnerSlot, partnerCelebrationSlots, revealedPartnerSlots } from './partner.js?v=hard-encounter-actions';
+import { availablePartners, getPartner, selectPartner, missionPartnerSlot, partnerCelebrationSlots, revealedPartnerSlots } from './partner.js?v=capture-scenery-fix';
 import { initialState, validateState, settle, totalMinutes, remainingSeconds, start, pause, adjust, missionDone, resetTodayQuests, resetTestProgress } from './model.js?v=full-test-reset';
 import { PSYCHIC_THRESHOLD, missionMove, earnedMissionMinutes } from './moves.js?v=partner-habitats';
-import { setupHangulQuiz } from './hangul.js?v=hard-encounter-actions';
+import { setupHangulQuiz } from './hangul.js?v=capture-scenery-fix';
 import { createKoreanSpeech } from './speech.js?v=voice-start-recovery';
-import { setupCollection, captureAllForTesting } from './collection.js?v=hard-encounter-actions';
+import { setupCollection, captureAllForTesting } from './collection.js?v=capture-scenery-fix';
 import { setupTrainer } from './trainer.js?v=photo-picker-fix';
 
 const $ = selector => document.querySelector(selector);

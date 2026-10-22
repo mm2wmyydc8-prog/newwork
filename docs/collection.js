@@ -1380,18 +1380,18 @@ export function setupCollection({ getState, save, speech, onCapture = () => {} }
     $('#capture-title').textContent = `${REGIONS[region].name}에서 누가 나타날까?`;
     $('#capture-label').textContent = 'EXPLORING';
     $('#capture-message').textContent = REGIONS[region].encounter;
-    $('#capture-continue').textContent = '잠깐 쉬기';
+    $('#capture-continue').textContent = '포켓몬을 찾는 중…';
+    $('#capture-continue').disabled = true;
     $('#capture-gesture-hint').hidden = true;
     $('#capture-dialog').showModal();
     if (!preview && getState().speechAuto !== false) speech.speak(`${REGIONS[region].name}. ${REGIONS[region].encounter} 누가 나타날까?`);
-    try {
-      await Promise.all([$('#capture-image').decode(), new Promise(resolve => setTimeout(resolve, preview ? 100 : 1100))]);
-    } catch {
-      if (token === encounterToken && $('#capture-dialog').open) $('#capture-message').textContent = '포켓몬 그림을 불러오지 못했어요. 잠깐 쉬었다가 다시 만나보자!';
-      return;
-    }
+    // Decoding a hidden image may reject or never settle in Safari. Scenery
+    // timing must not depend on decoding: a late image can render naturally.
+    Promise.resolve().then(() => $('#capture-image').decode?.()).catch(() => {});
+    await new Promise(resolve => setTimeout(resolve, preview ? 100 : 1100));
     if (token !== encounterToken || !$('#capture-dialog').open) return;
     $('#capture-image').hidden = false;
+    $('#capture-continue').disabled = false;
     $('#capture-dialog').dataset.phase = 'encounter';
     $('#capture-image').style.animation = 'none'; void $('#capture-image').offsetWidth; $('#capture-image').style.removeProperty('animation');
     if (pokemon.shinyGift && !preview && getState().collection.total >= 25) {
@@ -1457,7 +1457,7 @@ export function setupCollection({ getState, save, speech, onCapture = () => {} }
   }
   $('#capture-continue').addEventListener('click', () => {
     if ($('#capture-dialog').dataset.phase === 'encounter') throwBall();
-    else if (['searching', 'caught', 'failed'].includes($('#capture-dialog').dataset.phase)) $('#capture-dialog').close();
+    else if (['caught', 'failed'].includes($('#capture-dialog').dataset.phase)) $('#capture-dialog').close();
   });
   $('#capture-skip').addEventListener('click', resolveCapture);
   $('#capture-replay').addEventListener('click', throwBall);
