@@ -1,4 +1,4 @@
-import { sceneryArt } from './region-art.js?v=local-regions';
+import { sceneryArt } from './region-art.js?v=desk-actions';
 export const POKEMON = [
   {
     "id": "bulbasaur",
@@ -1169,7 +1169,7 @@ export function recordQuest(state, questionId, difficulty = 'easy', random = Mat
 export const REGIONS = {
   forest: { name: '숲', icon: '🌳', scenery: '🌲 🌳 🌼 🌲 🌿', encounter: '풀숲이 바스락!' },
   sea: { name: '바다', icon: '🌊', scenery: '🐚 🌊 🪸 🌊 🐚', encounter: '물결이 출렁!' },
-  cave: { name: '동굴', icon: '🪨', scenery: '🪨 💎 🪨 ✨ 🪨', encounter: '동굴 안에서 부스럭!' },
+  cave: { name: '동굴', icon: 'cave', scenery: '🪨 💎 cave 💎 🪨', encounter: '동굴 안에서 부스럭!' },
   powerplant: { name: '발전소', icon: '⚡', scenery: '🏭 ⚡ 🔋 ⚡ 🏭', encounter: '전기가 찌릿찌릿!' },
   haunted: { name: '폐가', icon: '👻', scenery: '🕸️ 🏚️ 🕯️ 🏚️ 🕸️', encounter: '낡은 집에서 살금살금!' },
   ice: { name: '얼음지대', icon: '❄️', scenery: '❄️ 🧊 ⛄ 🧊 ❄️', encounter: '눈밭에서 사박사박!' },

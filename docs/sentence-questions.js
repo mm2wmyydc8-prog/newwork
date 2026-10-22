@@ -1,4 +1,3 @@
-// Authored first in learning/HARD_QUESTIONS.md. Pictures contain no text.
 export const SENTENCE_QUESTIONS = [
   {
     "id": "sentence-01",
@@ -1616,45 +1615,45 @@ export const SENTENCE_QUESTIONS = [
   {
     "id": "sentence-39",
     "stage": 2,
-    "sentence": "피카츄가 의자 아래에 있어요.",
+    "sentence": "피카츄가 책상 아래에 있어요.",
     "options": [
       {
         "id": "39-a",
-        "description": "피카츄가 의자 아래에 있는 그림",
+        "description": "피카츄가 책상 아래에 있는 그림",
         "scene": {
           "kind": "position",
           "actor": "pikachu",
-          "reference": "chair",
+          "reference": "desk",
           "position": "under"
         }
       },
       {
         "id": "39-b",
-        "description": "피카츄가 의자 위에 있는 그림",
+        "description": "피카츄가 책상 위에 있는 그림",
         "scene": {
           "kind": "position",
           "actor": "pikachu",
-          "reference": "chair",
+          "reference": "desk",
           "position": "on"
         }
       },
       {
         "id": "39-c",
-        "description": "피카츄가 의자 옆에 있는 그림",
+        "description": "피카츄가 책상 옆에 있는 그림",
         "scene": {
           "kind": "position",
           "actor": "pikachu",
-          "reference": "chair",
+          "reference": "desk",
           "position": "beside"
         }
       }
     ],
     "answer": "39-a",
     "hints": [
-      "피카츄가 의자 아래에 있어요. ‘아래’라는 위치 말을 찾아보자.",
-      "피카츄가 의자 아래에 있어요. 의자를 먼저 찾고, 그 아래에 누가 있는지 봐."
+      "피카츄가 책상 아래에 있어요. ‘아래’라는 위치 말을 찾아보자.",
+      "피카츄가 책상 아래에 있어요. 책상를 먼저 찾고, 그 아래에 누가 있는지 봐."
     ],
-    "reveal": "정답은 피카츄가 의자 아래에 있는 그림이에요. 피카츄가 의자 아래에 있어요."
+    "reveal": "정답은 피카츄가 책상 아래에 있는 그림이에요. 피카츄가 책상 아래에 있어요."
   },
   {
     "id": "sentence-40",

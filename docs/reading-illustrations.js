@@ -135,6 +135,64 @@ export const ILLUSTRATION_ATLASES = {
         887
       ]
     ]
+  },
+  "remaining": {
+    "file": "assets/reading/remaining-actions.png",
+    "width": 1536,
+    "height": 1024,
+    "columns": 3,
+    "rows": 2,
+    "xRanges": [
+      [
+        0,
+        506
+      ],
+      [
+        518,
+        1018
+      ],
+      [
+        1030,
+        1536
+      ]
+    ],
+    "yRanges": [
+      [
+        0,
+        506
+      ],
+      [
+        518,
+        1024
+      ]
+    ]
+  },
+  "desks": {
+    "file": "assets/reading/desk-positions.png",
+    "width": 2172,
+    "height": 724,
+    "columns": 3,
+    "rows": 1,
+    "xRanges": [
+      [
+        0,
+        718
+      ],
+      [
+        729,
+        1443
+      ],
+      [
+        1454,
+        2172
+      ]
+    ],
+    "yRanges": [
+      [
+        0,
+        724
+      ]
+    ]
   }
 };
 export const ILLUSTRATION_FRAMES = {
@@ -392,6 +450,36 @@ export const ILLUSTRATION_FRAMES = {
     "atlas": "details",
     "column": 5,
     "row": 2
+  },
+  "charmander:sit": {
+    "atlas": "remaining",
+    "column": 0,
+    "row": 1
+  },
+  "charmander:wave": {
+    "atlas": "remaining",
+    "column": 1,
+    "row": 1
+  },
+  "squirtle:wave": {
+    "atlas": "remaining",
+    "column": 2,
+    "row": 1
+  },
+  "pikachu:desk:under": {
+    "atlas": "desks",
+    "column": 0,
+    "row": 0
+  },
+  "pikachu:desk:on": {
+    "atlas": "desks",
+    "column": 1,
+    "row": 0
+  },
+  "pikachu:desk:beside": {
+    "atlas": "desks",
+    "column": 2,
+    "row": 0
   }
 };
 export function illustrationKey(scene) {
@@ -399,7 +487,7 @@ export function illustrationKey(scene) {
  if(kind==='color' && action==='water' && prop==='flower') return `${actor}:water:${color}`;
  if(kind==='color' && action==='ball') return `${actor}:ball:color:${color}`;
  if(kind==='size' && prop==='ball') return `${actor}:ball:size:${size}`;
- if(kind==='position' && reference==='tree') return `${actor}:tree:${position}`;
+ if(kind==='position') return `${actor}:${reference}:${position}`;
  if(kind==='action' && !prop) return `${actor}:${action}`;
  return null;
 }

@@ -1,4 +1,4 @@
-import { illustratedScene } from './reading-illustrations.js?v=complete-companions';
+import { illustratedScene } from './reading-illustrations.js?v=desk-actions';
 import { SLEEPING_POSES } from './sleeping-poses.js?v=ground-sleep';
 // Text-free SVG scenes with local Pokedex artwork for Pokemon and drawn props.
 const COLORS={red:'#ed4953',blue:'#4289e6',yellow:'#f0cf40',green:'#4baa6e'};

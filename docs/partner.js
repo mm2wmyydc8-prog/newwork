@@ -1,4 +1,4 @@
-import { POKEMON, collectionProgress, canUseMegaMoves, shinyDiscovered } from './collection.js?v=swipe-capture';
+import { POKEMON, collectionProgress, canUseMegaMoves, shinyDiscovered } from './collection.js?v=desk-actions';
 import { PARTNER_MOVESETS } from './partner-moves.js?v=move-batch';
 import { PSYCHIC_THRESHOLD, earnedMissionMinutes } from './moves.js?v=partner-habitats';
 

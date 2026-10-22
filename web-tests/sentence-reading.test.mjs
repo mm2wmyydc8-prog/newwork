@@ -20,7 +20,7 @@ test('authored list and bank contain exactly 20/20/10 unique sentences and three
   const images=q.options.map(o=>sentencePicture(o.scene));assert.equal(new Set(images).size,3);
   for(const svg of images){assert.match(svg,/^<svg/);assert.doesNotMatch(svg,/<text|<script|foreignObject/i);
    for (const match of svg.matchAll(/href="([^"]+)"/g)) {
-    assert.ok(['assets/reading/pokemon-actions.png','assets/reading/companion-actions.png','assets/reading/activity-details.png'].includes(match[1]) || PICTURE_POKEMON.some(name=>match[1]===`assets/reading/sleep/${name}.png`) || PICTURE_POKEMON.some(name=>match[1]===`assets/${name}.png`));
+    assert.ok(['assets/reading/pokemon-actions.png','assets/reading/companion-actions.png','assets/reading/activity-details.png','assets/reading/remaining-actions.png','assets/reading/desk-positions.png'].includes(match[1]) || PICTURE_POKEMON.some(name=>match[1]===`assets/reading/sleep/${name}.png`) || PICTURE_POKEMON.some(name=>match[1]===`assets/${name}.png`));
     assert.ok(readFileSync(new URL('../docs/'+match[1],import.meta.url)).length>0);
    }}
   assert.equal(q.hints.length,2);assert.notEqual(q.hints[0],q.hints[1]);assert.ok(q.reveal.includes(q.sentence));
@@ -150,4 +150,12 @@ test('illustration frame boundaries match each bundled atlas and never extend be
  // and leaks neighboring characters even though the image itself is valid.
  const widths=ILLUSTRATION_ATLASES.companions.xRanges.map(([a,b])=>b-a);
  assert.ok(new Set(widths).size>1);
+});
+
+test('the Pikachu location sentence, help and pictures consistently refer to a desk',()=>{
+ const q=BANK.find(q=>q.id==='sentence-39');assert.equal(q.sentence,'피카츄가 책상 아래에 있어요.');
+ for(const option of q.options){assert.equal(option.scene.reference,'desk');assert.match(sentencePicture(option.scene),/data-illustrated-scene="pikachu:desk:/);assert.ok(option.description.includes('책상'));}
+ for(const hint of q.hints)assert.ok(hint.includes('책상'));assert.ok(q.reveal.includes('책상'));
+ for(const actor of ['charmander','squirtle'])assert.match(sentencePicture({kind:'action',actor,action:'wave'}),/remaining-actions\.png/);
+ assert.match(sentencePicture({kind:'action',actor:'charmander',action:'sit'}),/remaining-actions\.png/);
 });
