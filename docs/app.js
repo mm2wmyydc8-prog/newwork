@@ -6,7 +6,7 @@ import { availablePartners, getPartner, selectPartner, missionPartnerSlot, partn
 import { initialState, validateState, settle, totalMinutes, remainingSeconds, start, pause, adjust, missionDone, resetTodayQuests, resetTestProgress } from './model.js?v=full-test-reset';
 import { PSYCHIC_THRESHOLD, missionMove, earnedMissionMinutes } from './moves.js?v=partner-habitats';
 import { setupHangulQuiz } from './hangul.js?v=capture-scenery-fix';
-import { createKoreanSpeech } from './speech.js?v=voice-start-recovery';
+import { createKoreanSpeech } from './speech.js?v=firefox-voice-resume';
 import { setupCollection, captureAllForTesting } from './collection.js?v=capture-scenery-fix';
 import { setupTrainer } from './trainer.js?v=photo-picker-fix';
 

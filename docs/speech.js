@@ -1,4 +1,5 @@
 export function createKoreanSpeech({ scope = globalThis, getRate = () => 0.8, onError = () => {}, onStatus = () => {} } = {}) {
+  const firefox = /Firefox\//i.test(scope.navigator?.userAgent ?? '');
   const supported = 'speechSynthesis' in scope && 'SpeechSynthesisUtterance' in scope;
   const later = scope.setTimeout?.bind(scope) ?? globalThis.setTimeout.bind(globalThis);
   const clear = scope.clearTimeout?.bind(scope) ?? globalThis.clearTimeout.bind(globalThis);
@@ -103,7 +104,9 @@ export function createKoreanSpeech({ scope = globalThis, getRate = () => 0.8, on
       try {
         if (scope.speechSynthesis.paused) scope.speechSynthesis.resume?.();
         scope.speechSynthesis.speak(utterance);
-        if (scope.speechSynthesis.paused) scope.speechSynthesis.resume?.();
+        // Firefox can retain a suspended native queue after cancel() while
+        // paused reports false. Explicitly resume the newly queued utterance.
+        if (firefox || scope.speechSynthesis.paused) scope.speechSynthesis.resume?.();
         if (!started && current === utterance && startWatchdog === null) startWatchdog = later(recoverStart, 1800);
         return true;
       } catch {

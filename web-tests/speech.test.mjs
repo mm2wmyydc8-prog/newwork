@@ -142,3 +142,18 @@ test('unstarted canceled speech recovers but repeated dropped starts report fail
  e.flush();e.flush();e.flush();
  assert.equal(e.spoken.length,2);assert.equal(errors.length,1);assert.equal(e.timers.size,0);
 });
+
+test('Firefox resumes the native queue after each speak even when paused incorrectly reports false',()=>{
+ const e=engine();e.scope.navigator={userAgent:'Mozilla/5.0 Firefox/144.0'};
+ let waiting=null;
+ e.scope.speechSynthesis.speak=function(u){e.spoken.push(u);waiting=u;this.speaking=false;};
+ e.scope.speechSynthesis.resume=function(){e.events.push('resume');this.paused=false;if(waiting){this.speaking=true;const u=waiting;waiting=null;u.onstart();}};
+ const r=createKoreanSpeech({scope:e.scope});
+ for(let i=1;i<=5;i++){
+  r.speak(`문제 ${i}`);if(i>1)e.flush();
+  assert.equal(e.scope.speechSynthesis.speaking,true);
+  assert.equal(e.spoken.at(-1).text,`문제 ${i}`);
+  assert.equal(e.timers.size,0);
+ }
+ assert.equal(e.events.filter(x=>x==='resume').length,5);
+});
