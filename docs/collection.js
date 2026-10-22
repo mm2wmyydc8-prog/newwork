@@ -1286,13 +1286,13 @@ export function setupCollection({ getState, save, speech, onCapture = () => {} }
     if (!drag || drag.id !== event.pointerId) return;
     const lifted = drag.y - event.clientY >= 18;
     resetBallDrag();
-    if (lifted && $('#capture-dialog').dataset.phase === 'encounter') throwBall();
+    if (lifted && $('#capture-dialog').dataset.phase === 'encounter') throwBall('swipe');
   });
   ball.addEventListener('pointercancel', resetBallDrag);
   ball.addEventListener('lostpointercapture', resetBallDrag);
   ball.addEventListener('keydown', event => {
-    if (['Enter', ' '].includes(event.key) && $('#capture-dialog').dataset.phase === 'encounter') {
-      event.preventDefault(); throwBall();
+    if (!event.repeat && ['Enter', ' '].includes(event.key) && $('#capture-dialog').dataset.phase === 'encounter') {
+      event.preventDefault(); throwBall('keyboard');
     }
   });
   function render() {
@@ -1347,7 +1347,8 @@ export function setupCollection({ getState, save, speech, onCapture = () => {} }
     const rule = REWARD_RULES.get(pokemon.id);
     const special = ['전설', '상위 전설', '환상'].includes(rule.tier);
     clearTimeout(captureTimer);
-    currentCapture = { pokemon, special, failed: roundCaptureFailed };
+    currentCapture = { pokemon, special, failed: roundCaptureFailed, thrownByUser: false };
+    $('#capture-continue').hidden = true;
     $('#capture-dialog').dataset.phase = 'encounter';
     $('#capture-dialog').dataset.shiny = String(Boolean(pokemon.shiny));
     $('#capture-shiny-badge').hidden = !pokemon.shiny;
@@ -1404,7 +1405,7 @@ export function setupCollection({ getState, save, speech, onCapture = () => {} }
   $('#pokedex-form').addEventListener('change', render);
   function resolveCapture() {
     clearTimeout(captureTimer);
-    if (!$('#capture-dialog').open || !currentCapture || $('#capture-dialog').dataset.phase !== 'throwing') return;
+    if (!$('#capture-dialog').open || !currentCapture || !currentCapture.thrownByUser || $('#capture-dialog').dataset.phase !== 'throwing') return;
     const { pokemon } = currentCapture;
     if (currentCapture.failed) {
       $('#capture-dialog').dataset.phase = 'failed';
@@ -1412,6 +1413,7 @@ export function setupCollection({ getState, save, speech, onCapture = () => {} }
       $('#capture-title').textContent = '포켓몬 포획 실패!';
       $('#capture-message').textContent = `${pokemon.name}가 볼에서 빠져나갔어! 이번 모험에서 오답이 3번 이상 쌓였어. 뮤와 연습하고 다음 모험에서 다시 만나자!`;
       $('#capture-continue').disabled = false;
+      $('#capture-continue').hidden = false;
       $('#capture-continue').textContent = '다음 모험에서 다시 도전!';
       $('#capture-skip').hidden = true;
       $('#quiz-finish-area h3').textContent = '포켓몬 포획 실패!';
@@ -1427,14 +1429,17 @@ export function setupCollection({ getState, save, speech, onCapture = () => {} }
     $('#quiz-finish-area h3').textContent = '포켓몬 포획 성공!';
     $('#capture-message').textContent = `${pokemon.shiny ? '이로치 ' : ''}${pokemon.name}를 잡았다! 연우의 도감에 저장했어요.`;
     $('#capture-continue').disabled = false;
+    $('#capture-continue').hidden = false;
     $('#capture-continue').textContent = '포획 완료! 모험으로 돌아가기 ✦';
     $('#capture-skip').hidden = true;
     if (getState().speechAuto !== false) speech.speak(`신난다! ${pokemon.name} 포획 성공! 연우의 새로운 친구야!`);
   }
-  function throwBall() {
+  function throwBall(source) {
+    if (!['swipe', 'keyboard'].includes(source)) return;
     if (!currentCapture || !$('#capture-dialog').open) return;
     const phase = $('#capture-dialog').dataset.phase;
     if (phase !== 'encounter') return;
+    currentCapture.thrownByUser = true;
     resetBallDrag();
     ball.tabIndex = -1;
     $('#capture-gesture-hint').hidden = true;
@@ -1451,8 +1456,7 @@ export function setupCollection({ getState, save, speech, onCapture = () => {} }
     captureTimer = setTimeout(resolveCapture, window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 100 : 3400);
   }
   $('#capture-continue').addEventListener('click', () => {
-    if ($('#capture-dialog').dataset.phase === 'encounter') throwBall();
-    else if (['caught', 'failed'].includes($('#capture-dialog').dataset.phase)) $('#capture-dialog').close();
+    if (['caught', 'failed'].includes($('#capture-dialog').dataset.phase)) $('#capture-dialog').close();
   });
   $('#capture-skip').addEventListener('click', resolveCapture);
   $('#capture-dialog').addEventListener('close', () => {
