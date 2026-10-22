@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {SENTENCE_QUESTIONS as BANK} from '../docs/sentence-questions.js';
-import {sentencePicture} from '../docs/sentence-pictures.js';
+import {sentencePicture, PICTURE_POKEMON} from '../docs/sentence-pictures.js';
 import {ensureReading,createSentenceQuiz,markSentenceShown,noteSentenceWrong,recordSentenceCorrect,readingStage} from '../docs/sentence-learning.js';
 import {initialState,validateState} from '../docs/model.js';
 import {quizCreditReady,chooseAnswer,nextQuestion} from '../docs/hangul.js';
@@ -17,7 +17,11 @@ test('authored list and bank contain exactly 20/20/10 unique sentences and three
  for(const q of BANK){
   assert.ok(spec.includes(q.sentence));assert.equal(q.options.filter(o=>o.id===q.answer).length,1);assert.equal(new Set(q.options.map(o=>JSON.stringify(o.scene))).size,3);
   const images=q.options.map(o=>sentencePicture(o.scene));assert.equal(new Set(images).size,3);
-  for(const svg of images){assert.match(svg,/^<svg/);assert.doesNotMatch(svg,/<text|<image|<script|foreignObject|(?:href|src)=/i);}
+  for(const svg of images){assert.match(svg,/^<svg/);assert.doesNotMatch(svg,/<text|<script|foreignObject/i);
+   for (const match of svg.matchAll(/href="([^"]+)"/g)) {
+    assert.ok(PICTURE_POKEMON.some(name=>match[1]===`assets/${name}.png`));
+    assert.ok(readFileSync(new URL('../docs/'+match[1],import.meta.url)).length>0);
+   }}
   assert.equal(q.hints.length,2);assert.notEqual(q.hints[0],q.hints[1]);assert.ok(q.reveal.includes(q.sentence));
  }
 });

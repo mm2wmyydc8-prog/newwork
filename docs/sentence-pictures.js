@@ -1,6 +1,7 @@
-// Original SVG picture scenes. No text, numbers, emoji glyphs or remote assets.
+// Text-free SVG scenes with local Pokedex artwork for Pokemon and drawn props.
 const COLORS={red:'#ed4953',blue:'#4289e6',yellow:'#f0cf40',green:'#4baa6e'};
 const PALETTE={pikachu:'#f4d351',charmander:'#ed9457',squirtle:'#8ccbd2',bulbasaur:'#7dbab0',eevee:'#b88a62',kiki:'#e1ad69',huchu:'#9aa6ac',yeonwoo:'#759bdb',mom:'#e3939d',dad:'#80b293'};
+export const PICTURE_POKEMON = ['pikachu','charmander','squirtle','bulbasaur','eevee'];
 const ellipse=(x,y,rx,ry,fill,extra='')=>`<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" fill="${fill}" ${extra}/>`;
 const path=(d,fill='none',stroke='#43535b',width=3)=>`<path d="${d}" fill="${fill}" stroke="${stroke}" stroke-width="${width}" stroke-linecap="round" stroke-linejoin="round"/>`;
 const rect=(x,y,w,h,fill,r=5)=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${r}" fill="${fill}"/>`;
@@ -15,6 +16,18 @@ function prop(kind,x,y,size=28,color='#ec6668'){
  return `<g transform="translate(${x} ${y}) scale(${s})">${body}</g>`;
 }
 function actor(name,action='stand',hatColor){
+ if (PICTURE_POKEMON.includes(name)) {
+  // Reuse the exact Pokedex artwork so species remain instantly recognizable.
+  // Action props and hands are layered over it by actionPicture.
+  const gesture = action === 'wave'
+   ? path('M38 -15 Q54 -30 45 -43 M48 -46 L55 -55 M55 -33 L65 -37','none','#7995a1',3)
+   : '';
+  const masks = {pikachu:[-68,-53,73,30,-15],charmander:[-64,-83,78,34,0],squirtle:[-56,-88,75,33,0],bulbasaur:[-78,-40,95,35,8],eevee:[-58,-40,74,33,10]};
+  const [mx,my,mw,mh,tilt] = masks[name];
+  const sleepMask = action === 'sleep' ? `<g transform="rotate(${tilt} ${mx+mw/2} ${my+mh/2})">${rect(mx,my,mw,mh,'#7785bd',14)}${path(`M${mx+12} ${my+mh/2} Q${mx+20} ${my+mh/2+7} ${mx+28} ${my+mh/2} M${mx+mw-28} ${my+mh/2} Q${mx+mw-20} ${my+mh/2+7} ${mx+mw-12} ${my+mh/2}`,'none','#dfe8ff',3)}</g>` : '';
+  return `<image data-pokemon="${name}" href="assets/${name}.png" x="-95" y="-105" width="200" height="185" preserveAspectRatio="xMidYMax meet"/>${gesture}${sleepMask}`;
+ }
+
  const color=PALETTE[name]??'#a5c6b2',human=['yeonwoo','mom','dad'].includes(name),cat=['kiki','huchu','eevee'].includes(name),sleep=action==='sleep';
  let s='';
  if(name==='pikachu')s+=path('M23 18 L49 8 L36 -3 L56 -21 L69 -7 L54 14 L65 28 L28 42',color,'#746545',3);
@@ -51,7 +64,7 @@ function actor(name,action='stand',hatColor){
 function actionPicture(name,action,{x=145,y=143,scale=.83,color,propName,size='medium'}={}){
  let before='',after='',a=action,dy=0,angle=0;
  if(a==='sleep'){
-  angle=-90;
+  angle=-90; if (PICTURE_POKEMON.includes(name)) dy=-35;
   before=rect(-94,12,190,29,'#b78d74',9)+rect(-94,5,190,18,'#f8f3e9',9)+rect(-91,-37,63,46,'#fffdf9',14)+path('M-81 -29 Q-65 -37 -40 -29','none','#d9d4e6',3)+rect(-92,38,12,29,'#9b735e')+rect(76,38,12,29,'#9b735e');
   after=rect(-8,-30,101,58,'#8db1e0',10)+path('M-5 -20 L88 -20 M9 -9 L9 24 M37 -9 L37 24 M66 -9 L66 24','none','#c8ddf6',3)+path('M91 -81 Q66 -70 82 -52 Q55 -49 61 -73 Q70 -91 91 -81','#f4d76b','#c4a94e',2);
  }
@@ -61,13 +74,14 @@ function actionPicture(name,action,{x=145,y=143,scale=.83,color,propName,size='m
  if(a==='run'){angle=12;after+=path('M-62 -20 L-91 -20 M-63 0 L-106 0 M-68 20 L-94 20','none','#a0b7c1',4);}
  if(a==='eat')after+=ellipse(0,36,48,12,'#ffffff','stroke="#87a6b2" stroke-width="3"')+prop('apple',21,27,14,'#ec5e57')+prop('apple',-11,-19,23,'#ec5e57')+ellipse(1,-25,6,7,'#fff3d7')+path('M-26 9 Q-36 -8 -24 -13 M26 9 Q32 -3 12 -12','none',PALETTE[name]??'#edc8a8',12)+ellipse(-25,-13,8,7,PALETTE[name]??'#edc8a8')+path('M-45 -32 L-53 -39 M40 -36 L48 -43','none','#d1a66b',3);
  if(a==='drink')after+=prop('cup',23,-9,28)+path('M24 -27 L20 -39 L6 -23','none','#f2a06e',4)+path('M26 15 Q45 3 36 -10','none',PALETTE[name]??'#edc8a8',11);
- if(a==='read')after+=prop('book',0,6,34,color??'#7895bc')+ellipse(-37,7,7,9,PALETTE[name]??'#edc8a8')+ellipse(37,7,7,9,PALETTE[name]??'#edc8a8');
+ if(a==='read'){const y=PICTURE_POKEMON.includes(name)?33:6,w=PICTURE_POKEMON.includes(name)?29:34;after+=prop('book',0,y,w,color??'#7895bc')+ellipse(-w-3,y,7,9,PALETTE[name]??'#edc8a8')+ellipse(w+3,y,7,9,PALETTE[name]??'#edc8a8');}
  if(a==='ball')after+=prop('ball',67,43,size==='big'?43:size==='small'?15:29,color??'#db8f70');
  if(a==='draw')after+=rect(-39,10,83,46,'#fffaf2')+path('M-18 40 L-6 24 L9 40 L25 20','none','#dc9a6b',3)+path('M27 5 L4 34','none','#e37568',7);
  if(a==='wash')after+=rect(-55,20,110,29,'#cbdfe6',10)+path('M25 -29 L25 -42 Q-8 -50 -11 -24','none','#9dbac8',8)+path('M-11 -20 L-11 15 M-2 -18 L-2 16','none','#76b7d4',3)+ellipse(-5,13,27,10,'#e2f4f7');
  if(a==='water')after+=prop('flower',67,29,27,color??'#ed4953')+path('M37 -3 L60 13 M44 -8 L66 8 M51 -12 L72 4','none','#7cbdde',2)+rect(10,-6,27,24,'#a7c9db',4);
  if(a==='hold')after+=prop(propName??'apple',45,7,size==='big'?44:size==='small'?15:27,color??'#e56f63');
  if(propName==='hat'&&name!=='yeonwoo'&&!['read','ball'].includes(a))after+=path('M-45 -65 Q-38 -91 -12 -84 Q5 -79 7 -65 L20 -56 L-46 -56 Z',color??'#ed4953');
+ if (PICTURE_POKEMON.includes(name) && ['eat','drink','read'].includes(a)) after = `<g transform="translate(-18 -5)">${after}</g>`;
  return `<g transform="translate(${x} ${y}) scale(${scale})">${before}${ellipse(0,77,54,8,'#647a7e22')}<g transform="translate(0 ${dy}) rotate(${angle})">${actor(name,a,propName==='hat'?color:undefined)}</g>${after}</g>`;
 }
 function reference(ref){

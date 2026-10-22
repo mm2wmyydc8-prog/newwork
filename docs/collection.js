@@ -1409,12 +1409,12 @@ export function setupCollection({ getState, save, speech, onCapture = () => {} }
     if (currentCapture.failed) {
       $('#capture-dialog').dataset.phase = 'failed';
       $('#capture-label').textContent = 'OH NO!';
-      $('#capture-title').textContent = '포획 실패!';
+      $('#capture-title').textContent = '포켓몬 포획 실패!';
       $('#capture-message').textContent = `${pokemon.name}가 볼에서 빠져나갔어! 이번 모험에서 오답이 3번 이상 쌓였어. 뮤와 연습하고 다음 모험에서 다시 만나자!`;
       $('#capture-continue').disabled = false;
       $('#capture-continue').textContent = '다음 모험에서 다시 도전!';
       $('#capture-skip').hidden = true;
-      $('#quiz-finish-area h3').textContent = '포획 실패! 다음 모험에서 다시 만나자!';
+      $('#quiz-finish-area h3').textContent = '포켓몬 포획 실패!';
       $('#quiz-progress').textContent = '탐험 완료 · 포획 실패';
       $('#quiz-reward-note').textContent = '포획 기회는 그대로 기다리고 있어. 이미 번 TV 시간과 잡은 포켓몬도 그대로야!';
       if (getState().speechAuto !== false) speech.speak(`아! ${pokemon.name}가 볼에서 빠져나갔어! 포획 실패! 뮤랑 연습하고 다음 모험에서 다시 만나자!`);
@@ -1423,7 +1423,8 @@ export function setupCollection({ getState, save, speech, onCapture = () => {} }
     if (pokemon.pendingId && completeCapture(getState(), pokemon.pendingId)) { save(); render(); onCapture(); }
     $('#capture-dialog').dataset.phase = 'caught';
     $('#capture-label').textContent = 'GOTCHA!';
-    $('#capture-title').textContent = pokemon.shiny ? '이로치 포획 성공! ✦' : '포획 성공! ✦';
+    $('#capture-title').textContent = pokemon.shiny ? '이로치 포켓몬 포획 성공! ✦' : '포켓몬 포획 성공! ✦';
+    $('#quiz-finish-area h3').textContent = '포켓몬 포획 성공!';
     $('#capture-message').textContent = `${pokemon.shiny ? '이로치 ' : ''}${pokemon.name}를 잡았다! 연우의 도감에 저장했어요.`;
     $('#capture-continue').disabled = false;
     $('#capture-continue').textContent = '포획 완료! 모험으로 돌아가기 ✦';
