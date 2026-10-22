@@ -176,7 +176,7 @@ export function setupHangulQuiz({ getState, confirmMission, notify, speech, coll
   function advanceQuestion() {
     clearTimeout(advanceTimer);
     if ($('#quiz-dialog').open && quiz && nextQuestion(quiz)) {
-      stopSpeaking(); // A new question may replace the old reading; individual tile taps may not.
+      finishQuestionSpeech(); // A new question may replace the old reading; individual tile taps may not.
       render();
     }
   }
@@ -206,6 +206,7 @@ export function setupHangulQuiz({ getState, confirmMission, notify, speech, coll
   });
   $('#hard-reading-mode-label').hidden = $('#quiz-difficulty').value !== 'hard';
   function stopSpeaking() { speech.stop(); }
+  function finishQuestionSpeech() { if (speech.finishQuestion) speech.finishQuestion(); else stopSpeaking(); }
   function say(text, options) { if (getState().speechAuto !== false) speech.speak(text, { interrupt: false, enqueue: true, ...options }); }
   function wordPicture(node, picture) {
     const entry = QUESTIONS.find(q => q.picture === picture);
@@ -284,7 +285,7 @@ export function setupHangulQuiz({ getState, confirmMission, notify, speech, coll
           if (outcome.counted || outcome.upgraded) { walkSteps = outcome.encountered ? 5 : outcome.steps; renderAdventure(true); }
           button.classList.add('correct');
           $('#quiz-feedback').textContent = `맞았어! ${(question.reading ?? question.word.replace('□', question.answer))}! 잘했어, 연우! ✦`;
-          stopSpeaking(); // Clear this question and queued letter readings once the whole answer is correct.
+          finishQuestionSpeech(); // Clear this question and queued letter readings once the whole answer is correct.
           // Keep the success message visual so it cannot delay the next question's voice.
           $('#quiz-next').hidden = true;
           scheduleNextQuestion();
@@ -304,11 +305,11 @@ export function setupHangulQuiz({ getState, confirmMission, notify, speech, coll
       const listen = document.createElement('button');
       listen.type = 'button'; listen.className = 'quiz-choice-listen'; listen.textContent = '🔊 듣기';
       listen.setAttribute('aria-label', `${answer} 소리 듣기`); listen.disabled = !canSpeak;
-      listen.addEventListener('click', () => speech.speak(answer, { interrupt: false, enqueue: true }));
+      listen.addEventListener('click', () => speech.speak(answer));
       if (quiz.difficulty === 'medium') cell.append(button);
       else cell.append(button, listen); $('#quiz-answers').append(cell);
     }
-    say(questionText(question));
+    say(speech.preferShortPrompts && quiz.difficulty === 'easy' ? question.reading : questionText(question));
   }
   function renderSentence(question) {
     markSentenceShown(getState(), question); saveSettings();
@@ -340,7 +341,7 @@ export function setupHangulQuiz({ getState, confirmMission, notify, speech, coll
           saveSettings();
           button.classList.add('correct');
           $('#quiz-feedback').textContent = '맞았어! 문장을 잘 읽었어! ✦';
-          stopSpeaking();
+          finishQuestionSpeech();
           $('#quiz-answers').querySelectorAll('button').forEach(b => { b.disabled = true; });
           scheduleNextQuestion();
         } else {
@@ -425,7 +426,7 @@ export function setupHangulQuiz({ getState, confirmMission, notify, speech, coll
     const question = quiz.questions[quiz.index];
     if (quiz.difficulty === 'hard') {
       quiz.assisted = true;
-      speech.speak(question.hints[0], {interrupt: false, enqueue: true});
+      speech.speak(question.hints[0]);
       return;
     }
     if (quiz.difficulty === 'medium' && !quiz.answered) quiz.assisted = true;

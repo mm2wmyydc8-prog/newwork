@@ -3,7 +3,7 @@ export function createKoreanSpeech({ scope = globalThis, getRate = () => 0.8, on
   const supported = 'speechSynthesis' in scope && 'SpeechSynthesisUtterance' in scope;
   const later = scope.setTimeout?.bind(scope) ?? globalThis.setTimeout.bind(globalThis);
   const clear = scope.clearTimeout?.bind(scope) ?? globalThis.clearTimeout.bind(globalThis);
-  let current = null, timer = null, generation = 0, needsYield = false, queued = null, startWatchdog = null;
+  let current = null, timer = null, generation = 0, needsYield = false, queued = null, startWatchdog = null, currentStarted = false;
   const reportError = message => { onStatus(message); onError(message); };
   function stop() {
     if (!supported) return;
@@ -14,6 +14,7 @@ export function createKoreanSpeech({ scope = globalThis, getRate = () => 0.8, on
     if (timer !== null) clear(timer);
     timer = null;
     const previous = current;
+    currentStarted = false;
     current = null; // Invalidate before cancel(), which can synchronously dispatch events.
     if (previous) previous.onstart = previous.onend = previous.onerror = null;
     if (previous || scope.speechSynthesis.speaking || scope.speechSynthesis.pending) {
@@ -23,6 +24,16 @@ export function createKoreanSpeech({ scope = globalThis, getRate = () => 0.8, on
   }
   function speak(text, { interrupt = true, enqueue = false, recoveryAttempt = 0 } = {}) {
     if (!supported) { reportError('이 브라우저는 음성 읽기를 지원하지 않아요. Safari에서 열어주세요.'); return false; }
+    // A missing onend must not leave future readings queued forever after the
+    // native engine has already gone idle. Do not clear an unstarted utterance.
+    if (current && currentStarted && timer === null &&
+        !scope.speechSynthesis.speaking && !scope.speechSynthesis.pending) {
+      current.onstart = current.onend = current.onerror = null;
+      current = null;
+      currentStarted = false;
+      queued = null;
+      generation++;
+    }
     // Optional tile encouragement never interrupts a word, prompt, hint or manual reading.
     if (!interrupt && (current || timer !== null)) {
       if (enqueue) queued = String(text); // Keep only the latest relevant reading, never a stale backlog.
@@ -64,6 +75,7 @@ export function createKoreanSpeech({ scope = globalThis, getRate = () => 0.8, on
     utterance.onstart = () => {
       if (current !== utterance) return;
       started = true;
+      currentStarted = true;
       clearStartWatchdog();
       onStatus('음성 재생 중이에요. 소리가 안 들리면 탭 음소거와 Mac의 소리 출력 장치를 확인해 주세요.');
     };
@@ -96,6 +108,7 @@ export function createKoreanSpeech({ scope = globalThis, getRate = () => 0.8, on
       if (!['canceled', 'interrupted'].includes(event.error)) reportError('한국어 음성을 재생하지 못했어요. 기기 음량과 한국어 음성 설정을 확인해 주세요.');
     };
     current = utterance;
+    currentStarted = false;
     onStatus('음성을 준비하고 있어요.');
     function start() {
       timer = null;
@@ -118,5 +131,12 @@ export function createKoreanSpeech({ scope = globalThis, getRate = () => 0.8, on
     if (needsYield) { timer = later(start, 60); return true; }
     return start();
   }
-  return { supported, speak, stop };
+  function finishQuestion() {
+    if (!firefox) { stop(); return; }
+    // Repeated cancel() calls can wedge Firefox's macOS speech service.
+    // Let its short word finish naturally and discard only obsolete queued reads.
+    queued = null;
+    if (current && !currentStarted) stop();
+  }
+  return { supported, speak, stop, finishQuestion, preferShortPrompts: firefox };
 }

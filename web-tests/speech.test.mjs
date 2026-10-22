@@ -157,3 +157,30 @@ test('Firefox resumes the native queue after each speak even when paused incorre
  }
  assert.equal(e.events.filter(x=>x==='resume').length,5);
 });
+
+
+test('missing onend does not trap later manual or automatic readings behind an idle native engine',()=>{
+ const e=engine(),r=createKoreanSpeech({scope:e.scope});
+ r.speak('문제 1');const stale=e.spoken[0].onend;
+ r.speak('옛 글자',{interrupt:false,enqueue:true});
+ e.scope.speechSynthesis.speaking=false;e.scope.speechSynthesis.pending=false;
+ r.speak('문제 2',{interrupt:false,enqueue:true});
+ assert.deepEqual(e.spoken.map(u=>u.text),['문제 1','문제 2']);
+ stale();e.flush();assert.equal(e.spoken.at(-1).text,'문제 2');
+});
+
+
+test('Firefox hands off five short quiz prompts without canceling its native speech service',()=>{
+ const e=engine();e.scope.navigator={userAgent:'Firefox/144.0'};
+ const r=createKoreanSpeech({scope:e.scope});assert.equal(r.preferShortPrompts,true);
+ r.speak('나무');
+ for(const word of ['바다','사과','사다리','해바라기']){
+  r.speak('옛 글자',{interrupt:false,enqueue:true});
+  r.finishQuestion();r.finishQuestion();
+  r.speak(word,{interrupt:false,enqueue:true});
+  e.scope.speechSynthesis.speaking=false;e.spoken.at(-1).onend();e.flush();
+  assert.equal(e.spoken.at(-1).text,word);
+ }
+ assert.equal(e.events.includes('cancel'),false);
+ r.stop();assert.equal(e.events.at(-1),'cancel','closing still stops speech');
+});

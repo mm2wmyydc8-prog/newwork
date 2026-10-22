@@ -5,8 +5,8 @@ import { classifyMove } from './move-effects.js?v=move-batch';
 import { availablePartners, getPartner, selectPartner, missionPartnerSlot, partnerCelebrationSlots, revealedPartnerSlots } from './partner.js?v=capture-scenery-fix';
 import { initialState, validateState, settle, totalMinutes, remainingSeconds, start, pause, adjust, missionDone, resetTodayQuests, resetTestProgress } from './model.js?v=full-test-reset';
 import { PSYCHIC_THRESHOLD, missionMove, earnedMissionMinutes } from './moves.js?v=partner-habitats';
-import { setupHangulQuiz } from './hangul.js?v=local-word-pictures';
-import { createKoreanSpeech } from './speech.js?v=firefox-voice-resume';
+import { setupHangulQuiz } from './hangul.js?v=voice-idle-recovery';
+import { createKoreanSpeech } from './speech.js?v=voice-idle-recovery';
 import { setupCollection, captureAllForTesting } from './collection.js?v=capture-scenery-fix';
 import { setupTrainer } from './trainer.js?v=photo-picker-fix';
 
