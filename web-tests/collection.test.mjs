@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { POKEMON, collectionProgress, recordQuest, hasMewtwonite, canUseMegaMoves, revealedPokemon, shinyDifficulty, SHINY_CHANCE } from '../docs/collection.js';
+import { POKEMON, collectionProgress, recordQuest, hasMewtwonite, canUseMegaMoves, revealedPokemon, shinyDifficulty, SHINY_CHANCE, enableAdventure, completeCapture } from '../docs/collection.js';
 import { initialState, settle, validateState } from '../docs/model.js';
 
 test('151 species plus two Mega forms have PNG artwork', () => {
@@ -143,4 +143,14 @@ test('existing progress above 25 receives the introductory gift on next success 
  state.collection.total = 30; state.collection.byDifficulty.easy = 30;
  assert.ok(recordQuest(state, 'catchup', 'easy').unlocked.some(p => p.shinyGift));
  assert.ok(!recordQuest(state, 'next', 'easy').unlocked.some(p => p.shinyGift));
+});
+
+test('one capture consumes only its own opportunity and repeated completion cannot consume the next one',()=>{
+ const state=initialState(),data=enableAdventure(state);
+ data.pendingEncounters=[{id:'bulbasaur',shiny:false,pendingId:'one'},{id:'bulbasaur',shiny:true,pendingId:'two'},{id:'squirtle',shiny:false,pendingId:'three'}];
+ assert.equal(completeCapture(state,'one'),true);
+ assert.deepEqual(data.owned,['bulbasaur']);assert.deepEqual(data.shiny,[]);
+ assert.deepEqual(data.pendingEncounters.map(p=>p.pendingId),['two','three']);
+ assert.equal(completeCapture(state,'one'),false);
+ assert.deepEqual(data.pendingEncounters.map(p=>p.pendingId),['two','three']);
 });

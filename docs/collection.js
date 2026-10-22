@@ -1262,7 +1262,7 @@ export function setupCollection({ getState, save, speech, onCapture = () => {} }
   const $ = selector => document.querySelector(selector);
   enableAdventure(getState()); save();
   let pending = [];
-  let previewing = false, roundCaptureFailed = false;
+  let roundCaptureFailed = false;
   let captureTimer, currentCapture, encounterToken = 0, activeRegion = 'forest';
   const ball = $('#capture-ball');
   let drag = null;
@@ -1341,7 +1341,6 @@ export function setupCollection({ getState, save, speech, onCapture = () => {} }
     if (pokemon.shiny && !pokemon.shinyGift && !shinyDiscovered(getState())) return;
     const token = ++encounterToken;
     resetBallDrag();
-    previewing = preview;
     $('#capture-image').hidden = true;
     $('#capture-image').src = `assets/${pokemon.shiny ? 'shiny/' : ''}${pokemon.id}.png`;
     $('#capture-image').alt = `${pokemon.shiny ? '이로치 ' : ''}${pokemon.name}`;
@@ -1411,7 +1410,7 @@ export function setupCollection({ getState, save, speech, onCapture = () => {} }
   $('#shiny-preview').addEventListener('click', () => { if (shinyDiscovered(getState())) showCapture({ ...POKEMON.find(p => p.id === 'mewtwo'), shiny: true }, true); });
   function resolveCapture() {
     clearTimeout(captureTimer);
-    if (!$('#capture-dialog').open || !currentCapture) return;
+    if (!$('#capture-dialog').open || !currentCapture || $('#capture-dialog').dataset.phase !== 'throwing') return;
     const { pokemon, preview } = currentCapture;
     if (currentCapture.failed) {
       $('#capture-dialog').dataset.phase = 'failed';
@@ -1433,13 +1432,15 @@ export function setupCollection({ getState, save, speech, onCapture = () => {} }
     $('#capture-title').textContent = pokemon.shiny ? '이로치 포획 성공! ✦' : '포획 성공! ✦';
     $('#capture-message').textContent = preview ? '포획 연출 미리보기예요. 실제 도감에는 추가되지 않아요.' : `${pokemon.shiny ? '이로치 ' : ''}${pokemon.name}를 잡았다! 연우의 도감에 저장했어요.`;
     $('#capture-continue').disabled = false;
-    $('#capture-continue').textContent = preview ? '미리보기 닫기' : '도감에 있는 친구 확인! ✦';
+    $('#capture-continue').textContent = preview ? '미리보기 닫기' : '포획 완료! 모험으로 돌아가기 ✦';
     $('#capture-skip').hidden = true;
-    $('#capture-replay').hidden = false;
+    $('#capture-replay').hidden = !preview;
     if (getState().speechAuto !== false) speech.speak(preview ? '포획 성공! 미리보기야.' : `신난다! ${pokemon.name} 포획 성공! 연우의 새로운 친구야!`);
   }
   function throwBall() {
-    if (!currentCapture || !$('#capture-dialog').open || !['encounter', 'caught'].includes($('#capture-dialog').dataset.phase)) return;
+    if (!currentCapture || !$('#capture-dialog').open) return;
+    const phase = $('#capture-dialog').dataset.phase;
+    if (phase !== 'encounter' && !(currentCapture.preview && phase === 'caught')) return;
     resetBallDrag();
     ball.tabIndex = -1;
     $('#capture-gesture-hint').hidden = true;
@@ -1462,8 +1463,17 @@ export function setupCollection({ getState, save, speech, onCapture = () => {} }
   });
   $('#capture-skip').addEventListener('click', resolveCapture);
   $('#capture-replay').addEventListener('click', throwBall);
-  $('#capture-dialog').addEventListener('close', () => { encounterToken++; resetBallDrag(); clearTimeout(captureTimer); speech.stop(); if (previewing) { previewing = false; return; } if ($('#capture-dialog').dataset.phase === 'searching') { pending = []; return; } if (pending.length) showCapture(); });
-  $('#pending-captures').addEventListener('click', () => { roundCaptureFailed = false; pending = visibleEncounters(getState()); if (pending.length) showCapture(); });
+  $('#capture-dialog').addEventListener('close', () => {
+    encounterToken++; resetBallDrag(); clearTimeout(captureTimer); speech.stop();
+    // One dialog is one capture. Other earned encounters remain saved, never
+    // auto-chain into another capture when the child presses the finish button.
+    pending = []; currentCapture = null;
+  });
+  $('#pending-captures').addEventListener('click', () => {
+    roundCaptureFailed = false;
+    pending = visibleEncounters(getState()).slice(0, 1);
+    if (pending.length) showCapture();
+  });
   $('#stone-dialog').addEventListener('close', () => { speech.stop(); if (pending.length) showCapture(); });
   return {
     render,
@@ -1486,7 +1496,7 @@ export function setupCollection({ getState, save, speech, onCapture = () => {} }
       const passed = finishCaptureAttempt(getState(), mistakes); save(); render();
       roundCaptureFailed = !passed;
       pending = visibleEncounters(getState(), { allowFailedAttempt: true }).sort((a, b) =>
-        Number(Boolean(b.shinyGift)) - Number(Boolean(a.shinyGift)) || Number(b.region === activeRegion) - Number(a.region === activeRegion));
+        Number(Boolean(b.shinyGift)) - Number(Boolean(a.shinyGift)) || Number(b.region === activeRegion) - Number(a.region === activeRegion)).slice(0, 1);
       const state = getState();
       if (hasMewtwonite(state) && !state.collection.stoneNoticeSeen) {
         state.collection.stoneNoticeSeen = true; save();
