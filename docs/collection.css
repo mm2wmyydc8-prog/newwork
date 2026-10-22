@@ -8,7 +8,6 @@
 #pokedex-filter{margin-bottom:18px}.pokedex-mon img{content-visibility:auto}
 
 .capture-dialog p{word-break:keep-all;overflow-wrap:break-word}
-.legendary-preview{width:100%;background:linear-gradient(110deg,#ede0fc,#f9ecc4);color:#6f4b8c;font-size:12px;margin-bottom:18px}
 .capture-ring,.capture-sparks{display:none;position:absolute;pointer-events:none}
 .capture-dialog[data-grade="legendary"]{background:radial-gradient(circle at 50% 40%,#fff5bf,#fff0d8 50%,#f4e2bf);border:2px solid #d4ad5b;box-shadow:0 0 70px #e5ba5b55}
 .capture-dialog[data-grade="ultimate"]{background:radial-gradient(circle at 50% 40%,#e6d1ff,#f5e3fc 48%,#fff0c9);border:2px solid #ae75dc;box-shadow:0 0 80px #b275df66}
@@ -44,7 +43,7 @@
 .capture-dialog[data-phase="caught"] .capture-ball{animation:caught-bounce .45s ease-out both;filter:drop-shadow(0 0 12px #e4bc65)}
 .capture-dialog[data-phase="caught"] .caught-stars{animation:caught-stars .7s ease-out both}
 .capture-dialog[data-phase="caught"] .capture-art:before,.capture-dialog[data-phase="caught"] .capture-ring,.capture-dialog[data-phase="caught"] .capture-sparks{opacity:.25;animation:none}
-#capture-skip,#capture-replay{display:block;width:100%;font-size:12px;margin-top:12px;background:transparent;color:#775491}
+#capture-skip{display:block;width:100%;font-size:12px;margin-top:12px;background:transparent;color:#775491}
 @keyframes pokemon-absorb{0%,28%{opacity:1;transform:none;filter:none}36%{opacity:1;transform:scale(.9);filter:brightness(1.6) drop-shadow(0 0 14px #b88be5)}53%{opacity:0;transform:translateY(65px) scale(.02);filter:brightness(1.6)}100%{opacity:0;transform:translateY(65px) scale(.02)}}
 @keyframes throw-and-catch{0%{transform:translate(-95px,55px) rotate(-160deg) scale(.7)}24%{transform:translate(-35px,-110px) rotate(-30deg)}36%{transform:translate(0,-75px) rotate(0)}54%{transform:translate(0,0)}60%{transform:translate(0,-10px)}66%{transform:rotate(-13deg)}72%{transform:rotate(13deg)}78%{transform:rotate(0)}84%{transform:rotate(-11deg)}90%{transform:rotate(11deg)}100%{transform:none}}
 @keyframes ball-open-top{0%,28%{transform:none}36%,45%{transform:translateY(-12px) rotate(-8deg)}54%,100%{transform:none}}
@@ -53,7 +52,7 @@
 @keyframes caught-bounce{0%{transform:scale(1)}50%{transform:scale(1.14) translateY(-5px)}100%{transform:none}}
 @keyframes caught-stars{0%{opacity:0;transform:translateY(15px) scale(.5)}65%{opacity:1;transform:translateY(-8px) scale(1.15)}100%{opacity:1;transform:none}}
 @media(prefers-reduced-motion:reduce){.capture-dialog[data-phase] .capture-art *{animation:none!important}.capture-dialog[data-phase="throwing"] #capture-image{animation:none!important;opacity:0}.capture-dialog[data-phase="caught"] .caught-stars{opacity:1}}
-.collection-card .collection-shiny{font-size:11px;color:#877027;line-height:1.8;margin-top:9px}.shiny-owned{background:linear-gradient(145deg,#fff8d7,#eefbfa)!important;border-color:#e6cb73!important;position:relative}.shiny-owned:after{content:'✦';position:absolute;top:5px;right:8px;font-size:18px;color:#bb932e}.shiny-preview{background:linear-gradient(110deg,#dff6f2,#fff0b8)}.capture-shiny-badge{display:block;font-size:11px;font-weight:850;letter-spacing:1px;background:linear-gradient(110deg,#fff0ad,#d2f2e7);color:#75602d;border-radius:20px;padding:8px 10px;margin-top:12px}
+.collection-card .collection-shiny{font-size:11px;color:#877027;line-height:1.8;margin-top:9px}.shiny-owned{background:linear-gradient(145deg,#fff8d7,#eefbfa)!important;border-color:#e6cb73!important;position:relative}.shiny-owned:after{content:'✦';position:absolute;top:5px;right:8px;font-size:18px;color:#bb932e}.capture-shiny-badge{display:block;font-size:11px;font-weight:850;letter-spacing:1px;background:linear-gradient(110deg,#fff0ad,#d2f2e7);color:#75602d;border-radius:20px;padding:8px 10px;margin-top:12px}
 .capture-dialog[data-shiny="true"]{border:2px solid #d6be58;background:radial-gradient(circle at 50% 38%,#fff6bd,#e4f4f0 50%,#f8e9fd)}
 .capture-dialog[data-shiny="true"] .capture-sparks{display:block;inset:0}.capture-dialog[data-shiny="true"] .capture-sparks i{color:#ba972f;animation:shiny-spark 1.8s ease-out both}
 .capture-dialog[data-shiny="true"] .capture-ring{display:block;width:210px;height:210px;border:2px solid #d5bd58;border-radius:50%;box-shadow:0 0 22px #dcc55d77;animation:legendary-ring 1.5s ease-out both}
@@ -66,7 +65,7 @@
 .capture-ball:focus-visible{outline:3px solid #8452b6;outline-offset:5px;border-radius:50%}
 .capture-gesture-hint{font-size:13px;color:#775491;line-height:1.6;margin:12px 0}
 
-#collection-shiny[hidden],#pokedex-form-label[hidden],#pokedex-form[hidden],#shiny-preview[hidden]{display:none!important}
+#collection-shiny[hidden],#pokedex-form-label[hidden],#pokedex-form[hidden]{display:none!important}
 
 .capture-dialog[data-phase="failed"] #capture-image{animation:escape-ball .8s ease-out both!important;opacity:1}.capture-dialog[data-phase="failed"] .ball-top{transform:translateY(-12px) rotate(-8deg)}.capture-dialog[data-phase="failed"] .ball-bottom{transform:translateY(9px) rotate(6deg)}.capture-dialog[data-phase="failed"] .caught-stars{display:none}.capture-dialog[data-phase="failed"] .capture-ring,.capture-dialog[data-phase="failed"] .capture-sparks{display:none}
 @keyframes escape-ball{0%{opacity:0;transform:translateY(65px) scale(.05);filter:brightness(1.8)}65%{opacity:1;transform:translateY(-12px) scale(1.06)}100%{opacity:1;transform:none;filter:none}}

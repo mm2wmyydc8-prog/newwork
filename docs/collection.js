@@ -1303,7 +1303,6 @@ export function setupCollection({ getState, save, speech, onCapture = () => {} }
     $('#collection-shiny').hidden = !discovered;
     $('#pokedex-form-label').hidden = !discovered;
     $('#pokedex-form').hidden = !discovered;
-    $('#shiny-preview').hidden = !discovered;
     if (!discovered) $('#pokedex-form').value = 'normal';
     const shinyIds = new Set(discovered ? shiny : []), shinyView = discovered && $('#pokedex-form').value === 'shiny';
     $('#collection-count').textContent = `${owned.length} / ${revealedPokemon(state).length}모습`;
@@ -1328,16 +1327,16 @@ export function setupCollection({ getState, save, speech, onCapture = () => {} }
       const image = document.createElement('img'); image.src = `assets/${shinyView ? 'shiny/' : ''}${pokemon.id}.png`; image.alt = acquired ? `${shinyView ? '이로치 ' : ''}${pokemon.name}` : '아직 만나지 못한 포켓몬'; image.loading = 'lazy'; image.decoding = 'async';
       const name = document.createElement('strong'); name.textContent = pokemon.name;
       const rarity = document.createElement('span'); rarity.className = 'rarity'; rarity.textContent = rule.tier;
-      const status = document.createElement('small'); status.textContent = acquired ? (shinyView ? '✦ 이로치 친구' : shinyIds.has(pokemon.id) ? '✓ 친구 · ✦ 이로치도 획득' : '✓ 연우의 친구') : shinyView ? `${shinyDifficulty(pokemon) === 'medium' ? '보통 이상' : '어려움'}에서 기본형 획득 후 등장` : pokemon.form || ['전설', '환상'].includes(pokemon.rarity) ? `${rule.label} ${rule.target}개에 만나요` : `${REGIONS[pokemonRegion(pokemon)].name} 탐험에서 만나요`;
-      card.append(image, name, rarity, status); grid.append(card);
+      const status = document.createElement('small'); status.textContent = acquired ? (shinyView ? '✦ 이로치 친구' : shinyIds.has(pokemon.id) ? '✓ 친구 · ✦ 이로치도 획득' : '✓ 연우의 친구') : shinyView ? `${shinyDifficulty(pokemon) === 'medium' ? '보통 이상' : '어려움'}에서 기본형 획득 후 등장` : pokemon.form || ['전설', '환상'].includes(pokemon.rarity) ? `${rule.label} ${rule.target}개에 만나요` : '';
+      card.append(image, name, rarity); if (status.textContent) card.append(status); grid.append(card);
     });
     if (!visible.length) {
       const empty = document.createElement('p'); empty.className = 'empty';
       empty.textContent = '아직 친구를 만나기 전이야. 퀘스트 5개부터 시작해 보자!'; grid.append(empty);
     }
   }
-  async function showCapture(pokemon = pending.shift(), preview = false) {
-    if (!pokemon) return;
+  async function showCapture(pokemon = pending.shift()) {
+    if (!pokemon?.pendingId) return;
     if (pokemon.shiny && !pokemon.shinyGift && !shinyDiscovered(getState())) return;
     const token = ++encounterToken;
     resetBallDrag();
@@ -1348,7 +1347,7 @@ export function setupCollection({ getState, save, speech, onCapture = () => {} }
     const rule = REWARD_RULES.get(pokemon.id);
     const special = ['전설', '상위 전설', '환상'].includes(rule.tier);
     clearTimeout(captureTimer);
-    currentCapture = { pokemon, preview, special, failed: roundCaptureFailed && !preview };
+    currentCapture = { pokemon, special, failed: roundCaptureFailed };
     $('#capture-dialog').dataset.phase = 'encounter';
     $('#capture-dialog').dataset.shiny = String(Boolean(pokemon.shiny));
     $('#capture-shiny-badge').hidden = !pokemon.shiny;
@@ -1357,19 +1356,16 @@ export function setupCollection({ getState, save, speech, onCapture = () => {} }
     ball.tabIndex = 0;
     $('#capture-continue').disabled = false;
     $('#capture-skip').hidden = true;
-    $('#capture-replay').hidden = true;
     $('#capture-dialog').dataset.grade = ['상위 전설', '환상'].includes(rule.tier) ? 'ultimate' : special ? 'legendary' : 'normal';
     $('#capture-label').textContent = special ? rule.tier === '환상' ? 'MYTHICAL ENCOUNTER' : 'LEGENDARY ENCOUNTER' : 'NEW FRIEND!';
     $('#capture-title').textContent = rule.tier === '환상' ? '환상의 포켓몬이 나타났다!' : special ? '전설의 포켓몬이 나타났다!' : '새 포켓몬을 만났어!';
     if (pokemon.shiny) { $('#capture-label').textContent = 'SHINY ENCOUNTER!'; $('#capture-title').textContent = `색이 다른 ${pokemon.name} 등장!`; }
     $('#capture-rarity').textContent = rule.tier;
-    $('#capture-message').textContent = preview ? '포획 연출 미리보기예요. 포켓몬이나 실적은 추가되지 않아요.' : pokemon.shinyGift ? '퀴즈 누적 25개 성공 선물! 평소와 색이 다른 포켓몬을 이로치라고 해! 모험을 계속하면 다른 이로치 친구도 만날 수 있어!' : pokemon.shinyBonus ? `보통 이상 모험의 특별 보너스! 색이 다른 ${pokemon.name}를 만났어요. 볼을 던져 친구가 되어보자!` : `${rule.label} 퀘스트 ${rule.target}개 성공! ${pokemon.name}를 만났어요. 볼을 던져 친구가 되어보자!`;
+    $('#capture-message').textContent = pokemon.shinyGift ? '퀴즈 누적 25개 성공 선물! 평소와 색이 다른 포켓몬을 이로치라고 해! 모험을 계속하면 다른 이로치 친구도 만날 수 있어!' : pokemon.shinyBonus ? `보통 이상 모험의 특별 보너스! 색이 다른 ${pokemon.name}를 만났어요. 볼을 던져 친구가 되어보자!` : `${rule.label} 퀘스트 ${rule.target}개 성공! ${pokemon.name}를 만났어요. 볼을 던져 친구가 되어보자!`;
     $('#capture-gesture-hint').hidden = false;
     $('#capture-continue').textContent = special ? '마스터볼 던지기! ✦' : '몬스터볼 던지기! ✦';
-    if (!preview) {
-      $('#capture-title').textContent = `${pokemon.shiny ? '이로치 ' : '야생의 '}${pokemon.name}${pokemon.shiny ? ' 등장!' : '가 나타났다!'}`;
-      if (pokemon.exploration) $('#capture-message').textContent = `${REGIONS[pokemon.region].encounter} 다섯 걸음 탐험 성공! 볼을 위로 슥 던져봐!`;
-    }
+    $('#capture-title').textContent = `${pokemon.shiny ? '이로치 ' : '야생의 '}${pokemon.name}${pokemon.shiny ? ' 등장!' : '가 나타났다!'}`;
+    if (pokemon.exploration) $('#capture-message').textContent = `${REGIONS[pokemon.region].encounter} 다섯 걸음 탐험 성공! 볼을 위로 슥 던져봐!`;
     const readyTitle = $('#capture-title').textContent, readyMessage = $('#capture-message').textContent;
     const readyLabel = $('#capture-label').textContent, readyButton = $('#capture-continue').textContent;
     const region = pokemon.region ?? activeRegion;
@@ -1384,34 +1380,32 @@ export function setupCollection({ getState, save, speech, onCapture = () => {} }
     $('#capture-continue').disabled = true;
     $('#capture-gesture-hint').hidden = true;
     $('#capture-dialog').showModal();
-    if (!preview && getState().speechAuto !== false) speech.speak(`${REGIONS[region].name}. ${REGIONS[region].encounter} 누가 나타날까?`);
+    if (getState().speechAuto !== false) speech.speak(`${REGIONS[region].name}. ${REGIONS[region].encounter} 누가 나타날까?`);
     // Decoding a hidden image may reject or never settle in Safari. Scenery
     // timing must not depend on decoding: a late image can render naturally.
     Promise.resolve().then(() => $('#capture-image').decode?.()).catch(() => {});
-    await new Promise(resolve => setTimeout(resolve, preview ? 100 : 1100));
+    await new Promise(resolve => setTimeout(resolve, 1100));
     if (token !== encounterToken || !$('#capture-dialog').open) return;
     $('#capture-image').hidden = false;
     $('#capture-continue').disabled = false;
     $('#capture-dialog').dataset.phase = 'encounter';
     $('#capture-image').style.animation = 'none'; void $('#capture-image').offsetWidth; $('#capture-image').style.removeProperty('animation');
-    if (pokemon.shinyGift && !preview && getState().collection.total >= 25) {
+    if (pokemon.shinyGift && getState().collection.total >= 25) {
       getState().collection.shinyIntroSeen = true; save(); render();
     }
 
     $('#capture-title').textContent = readyTitle; $('#capture-message').textContent = readyMessage;
     $('#capture-label').textContent = readyLabel; $('#capture-continue').textContent = readyButton;
     $('#capture-gesture-hint').hidden = false;
-    if (getState().speechAuto !== false) speech.speak(pokemon.shinyGift ? '연우야! 퀴즈 25개 성공! 특별한 피카츄를 만났어! 평소와 색이 다른 포켓몬을 이로치라고 해! 반짝반짝 멋지지? 모험을 계속하면 다른 이로치 친구도 만날 수 있어!' : pokemon.shiny ? `반짝! 색이 다른 이로치 ${pokemon.name} 등장! ${preview ? '미리보기야.' : '연우가 특별한 친구를 만났어!'}` : preview ? `전설 등장 미리보기. ${pokemon.name}!`  : special ? `전설의 기운이 느껴져! ${pokemon.name} 등장! 연우가 전설의 파트너를 만났어! 정말 멋진 모험이었어!` : `야생의 ${pokemon.name}가 나타났다! ${pokemon.exploration ? REGIONS[pokemon.region].encounter : ''} 연우야, 볼을 위로 던져봐!`);
+    if (getState().speechAuto !== false) speech.speak(pokemon.shinyGift ? '연우야! 퀴즈 25개 성공! 특별한 피카츄를 만났어! 평소와 색이 다른 포켓몬을 이로치라고 해! 반짝반짝 멋지지? 모험을 계속하면 다른 이로치 친구도 만날 수 있어!' : pokemon.shiny ? `반짝! 색이 다른 이로치 ${pokemon.name} 등장! 연우가 특별한 친구를 만났어!`  : special ? `전설의 기운이 느껴져! ${pokemon.name} 등장! 연우가 전설의 파트너를 만났어! 정말 멋진 모험이었어!` : `야생의 ${pokemon.name}가 나타났다! ${pokemon.exploration ? REGIONS[pokemon.region].encounter : ''} 연우야, 볼을 위로 던져봐!`);
   }
   $('#pokedex-open').addEventListener('click', () => { render(); $('#pokedex-dialog').showModal(); });
   $('#pokedex-filter').addEventListener('change', render);
   $('#pokedex-form').addEventListener('change', render);
-  $('#legendary-preview').addEventListener('click', () => showCapture(POKEMON.find(p => p.id === 'mewtwo'), true));
-  $('#shiny-preview').addEventListener('click', () => { if (shinyDiscovered(getState())) showCapture({ ...POKEMON.find(p => p.id === 'mewtwo'), shiny: true }, true); });
   function resolveCapture() {
     clearTimeout(captureTimer);
     if (!$('#capture-dialog').open || !currentCapture || $('#capture-dialog').dataset.phase !== 'throwing') return;
-    const { pokemon, preview } = currentCapture;
+    const { pokemon } = currentCapture;
     if (currentCapture.failed) {
       $('#capture-dialog').dataset.phase = 'failed';
       $('#capture-label').textContent = 'OH NO!';
@@ -1419,28 +1413,27 @@ export function setupCollection({ getState, save, speech, onCapture = () => {} }
       $('#capture-message').textContent = `${pokemon.name}가 볼에서 빠져나갔어! 이번 모험에서 오답이 3번 이상 쌓였어. 뮤와 연습하고 다음 모험에서 다시 만나자!`;
       $('#capture-continue').disabled = false;
       $('#capture-continue').textContent = '다음 모험에서 다시 도전!';
-      $('#capture-skip').hidden = true; $('#capture-replay').hidden = true;
+      $('#capture-skip').hidden = true;
       $('#quiz-finish-area h3').textContent = '포획 실패! 다음 모험에서 다시 만나자!';
       $('#quiz-progress').textContent = '탐험 완료 · 포획 실패';
       $('#quiz-reward-note').textContent = '포획 기회는 그대로 기다리고 있어. 이미 번 TV 시간과 잡은 포켓몬도 그대로야!';
       if (getState().speechAuto !== false) speech.speak(`아! ${pokemon.name}가 볼에서 빠져나갔어! 포획 실패! 뮤랑 연습하고 다음 모험에서 다시 만나자!`);
       return;
     }
-    if (!preview && pokemon.pendingId && completeCapture(getState(), pokemon.pendingId)) { save(); render(); onCapture(); }
+    if (pokemon.pendingId && completeCapture(getState(), pokemon.pendingId)) { save(); render(); onCapture(); }
     $('#capture-dialog').dataset.phase = 'caught';
     $('#capture-label').textContent = 'GOTCHA!';
     $('#capture-title').textContent = pokemon.shiny ? '이로치 포획 성공! ✦' : '포획 성공! ✦';
-    $('#capture-message').textContent = preview ? '포획 연출 미리보기예요. 실제 도감에는 추가되지 않아요.' : `${pokemon.shiny ? '이로치 ' : ''}${pokemon.name}를 잡았다! 연우의 도감에 저장했어요.`;
+    $('#capture-message').textContent = `${pokemon.shiny ? '이로치 ' : ''}${pokemon.name}를 잡았다! 연우의 도감에 저장했어요.`;
     $('#capture-continue').disabled = false;
-    $('#capture-continue').textContent = preview ? '미리보기 닫기' : '포획 완료! 모험으로 돌아가기 ✦';
+    $('#capture-continue').textContent = '포획 완료! 모험으로 돌아가기 ✦';
     $('#capture-skip').hidden = true;
-    $('#capture-replay').hidden = !preview;
-    if (getState().speechAuto !== false) speech.speak(preview ? '포획 성공! 미리보기야.' : `신난다! ${pokemon.name} 포획 성공! 연우의 새로운 친구야!`);
+    if (getState().speechAuto !== false) speech.speak(`신난다! ${pokemon.name} 포획 성공! 연우의 새로운 친구야!`);
   }
   function throwBall() {
     if (!currentCapture || !$('#capture-dialog').open) return;
     const phase = $('#capture-dialog').dataset.phase;
-    if (phase !== 'encounter' && !(currentCapture.preview && phase === 'caught')) return;
+    if (phase !== 'encounter') return;
     resetBallDrag();
     ball.tabIndex = -1;
     $('#capture-gesture-hint').hidden = true;
@@ -1453,7 +1446,6 @@ export function setupCollection({ getState, save, speech, onCapture = () => {} }
     $('#capture-continue').disabled = true;
     $('#capture-continue').textContent = '두근두근… 포획 중';
     $('#capture-skip').hidden = false;
-    $('#capture-replay').hidden = true;
     if (getState().speechAuto !== false) speech.speak(currentCapture.special ? '마스터볼, 가라!' : '몬스터볼, 가라!');
     captureTimer = setTimeout(resolveCapture, window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 100 : 3400);
   }
@@ -1462,7 +1454,6 @@ export function setupCollection({ getState, save, speech, onCapture = () => {} }
     else if (['caught', 'failed'].includes($('#capture-dialog').dataset.phase)) $('#capture-dialog').close();
   });
   $('#capture-skip').addEventListener('click', resolveCapture);
-  $('#capture-replay').addEventListener('click', throwBall);
   $('#capture-dialog').addEventListener('close', () => {
     encounterToken++; resetBallDrag(); clearTimeout(captureTimer); speech.stop();
     // One dialog is one capture. Other earned encounters remain saved, never
